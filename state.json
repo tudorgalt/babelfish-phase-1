@@ -1,0 +1,61 @@
+{
+  "Migrations": {
+    "address": "0xB10ae36288B411cbd930E77038839d8657bF854e"
+  },
+  "Nexus": {
+    "address": "0xC255e73A7F3df32FeF771D85546b933318957C93",
+    "initialized": true
+  },
+  "DelayedProxyAdmin": {
+    "address": "0xB466e6F51d916697b6d2fB53222606F757e00305"
+  },
+  "BasketManager": {
+    "address": "0x620f16D6AAB6074a3A843687AB84C12249EB2875",
+    "initialized": true
+  },
+  "BasketManagerProxy": {
+    "address": "0xdA9d4fFF76578a42bEE4a9409Cb1BFE1d03c8E94",
+    "initialized": true
+  },
+  "AaveIntegration": {
+    "address": "0xaA91F2121Ba2Aa7763Dc80c401Ba301B33C16F49"
+  },
+  "AaveIntegrationProxy": {
+    "address": "0x9f0ac04BFf1044c6fb9Ce0424236c956d34EdC02",
+    "initialized": true
+  },
+  "CompoundInteghration": {
+    "address": "0xF931F74059f9DAA929a9100C2F7a9f5E98563dC2"
+  },
+  "CompoundInteghrationProxy": {
+    "address": "0x2E848e1a62e7fADE4BDc7514fe0cAb66a515e58b"
+  },
+  "ForgeValidator": {
+    "address": "0x40FE3F123eB0a3ca329Ec1023fd6AaE7904ce394"
+  },
+  "Masset": {
+    "address": "0xF47912462e396A95eE09C3E8f8cc3d4D263E4dc8"
+  },
+  "MassetProxy": {
+    "address": "0x0Bf0Bd6D2b6cF54745AFdd7029a0A257D1aC8dE7",
+    "initialized": true
+  },
+  "SavingsContract": {
+    "address": "0x1D315967dF9b76F6eD071c5EF7E9199Ec68b3Af4"
+  },
+  "CompoundIntegrationProxy": {
+    "initialized": true
+  },
+  "SavingsManager": {
+    "address": "0xa5E0d6E0BA65d1C8451068e5Cc99781D03736247"
+  },
+  "MetaToken": {
+    "address": "0x19e827fe8d4938bBAbC19B61C29DbD234ABF3134"
+  },
+  "RewardsDistributor": {
+    "address": "0x760c5f70F4409A29fA24C64dE54b542Ed5c61032"
+  },
+  "IncentivisedVotingLockup": {
+    "address": "0x305F9EA8214B0c0E95a606Ac2557FB19CbF85c74"
+  }
+}
