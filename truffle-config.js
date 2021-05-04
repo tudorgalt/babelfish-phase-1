@@ -20,7 +20,8 @@ module.exports = {
       host: '127.0.0.1',
       port: 7545,
       network_id: '*', // Match any network id
-      gas: 8000000
+      gas: 1000000000000000,
+      gasPrice: 0x01
     },
     fork: {
       host: '127.0.0.1',
@@ -68,7 +69,7 @@ module.exports = {
       settings: {
         optimizer: {
           enabled: true,
-          runs: 200
+          runs: 1
         }
       }
     }

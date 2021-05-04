@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../mStable-app/.idea/mStable-app.iml" filepath="$PROJECT_DIR$/../mStable-app/.idea/mStable-app.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/mStable-contracts-1.5.0.iml" filepath="$PROJECT_DIR$/.idea/mStable-contracts-1.5.0.iml" />
     </modules>
   </component>

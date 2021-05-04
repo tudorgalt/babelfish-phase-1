@@ -1,61 +1,64 @@
 {
   "Migrations": {
-    "address": "0xB10ae36288B411cbd930E77038839d8657bF854e"
+    "address": "0xdfe037E1F4457e639Ef0FC89A529466ffCd63aBe"
+  },
+  "Mock1": {
+    "address": "0xEC731e93A25f7c7C42f3145D189572C3cE82445b"
   },
   "Nexus": {
-    "address": "0xC255e73A7F3df32FeF771D85546b933318957C93",
+    "address": "0x22B27ea1C9d79c03c5D2e70f617D8b7336ACe51e",
     "initialized": true
   },
   "DelayedProxyAdmin": {
-    "address": "0xB466e6F51d916697b6d2fB53222606F757e00305"
+    "address": "0xC7885af23aE0E554E9c0F4c3d467F5b562b66753"
   },
   "BasketManager": {
-    "address": "0x620f16D6AAB6074a3A843687AB84C12249EB2875",
+    "address": "0x87a2A4e8fe40066a098bD7F096c86556bE293132",
     "initialized": true
   },
   "BasketManagerProxy": {
-    "address": "0xdA9d4fFF76578a42bEE4a9409Cb1BFE1d03c8E94",
+    "address": "0x878DBc6f4f4b411902dcd26B48384281cA7f45aC",
     "initialized": true
   },
   "AaveIntegration": {
-    "address": "0xaA91F2121Ba2Aa7763Dc80c401Ba301B33C16F49"
+    "address": "0xcc21fDf03C1135bd41a9FA3e52Fe08f9C9Ef09ea"
   },
   "AaveIntegrationProxy": {
-    "address": "0x9f0ac04BFf1044c6fb9Ce0424236c956d34EdC02",
+    "address": "0xF496dA920A673553E537Ec3c5872A207D08Ed5A6",
     "initialized": true
   },
   "CompoundInteghration": {
-    "address": "0xF931F74059f9DAA929a9100C2F7a9f5E98563dC2"
+    "address": "0x71029B5f55a7Aa69DC1DDE7693DD34114514aD42"
   },
   "CompoundInteghrationProxy": {
-    "address": "0x2E848e1a62e7fADE4BDc7514fe0cAb66a515e58b"
+    "address": "0x779C235537E6D60518626D9493acA2FdEfE7B003"
   },
   "ForgeValidator": {
-    "address": "0x40FE3F123eB0a3ca329Ec1023fd6AaE7904ce394"
+    "address": "0xC307A2Aab8066D3b2f34234D582F2Fa2442EeceF"
   },
   "Masset": {
-    "address": "0xF47912462e396A95eE09C3E8f8cc3d4D263E4dc8"
+    "address": "0x7aD451FeeaaFe68088015Ee658174986475a30F2"
   },
   "MassetProxy": {
-    "address": "0x0Bf0Bd6D2b6cF54745AFdd7029a0A257D1aC8dE7",
+    "address": "0x644576CaC2621c531Ae1315ccFEfF0b264E721EC",
     "initialized": true
   },
   "SavingsContract": {
-    "address": "0x1D315967dF9b76F6eD071c5EF7E9199Ec68b3Af4"
+    "address": "0xDA818caaF60aa74909Ee57c10a404590461F8D63"
   },
   "CompoundIntegrationProxy": {
     "initialized": true
   },
   "SavingsManager": {
-    "address": "0xa5E0d6E0BA65d1C8451068e5Cc99781D03736247"
+    "address": "0x2468531187AE77EaF5eAd3932Bcd7f503301c841"
   },
   "MetaToken": {
-    "address": "0x19e827fe8d4938bBAbC19B61C29DbD234ABF3134"
+    "address": "0x86784FdC34fB38a6e0456eCBd28C0D767647316c"
   },
   "RewardsDistributor": {
-    "address": "0x760c5f70F4409A29fA24C64dE54b542Ed5c61032"
+    "address": "0xD0C584bdBcf914F84954Eb6B62aD54d4Dc1720d9"
   },
   "IncentivisedVotingLockup": {
-    "address": "0x305F9EA8214B0c0E95a606Ac2557FB19CbF85c74"
+    "address": "0xA92b4Ddd9121F8697Cc2d55ABb1F221D12252fFF"
   }
 }

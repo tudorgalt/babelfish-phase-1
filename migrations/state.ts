@@ -38,7 +38,7 @@ export async function getDeployed(contract: Truffle.Contract, key: string): Truf
         state = await readState();
     }
     if (!state[key] || !state[key].address) {
-        throw new Error(`Not deployed: {key}`);
+        throw new Error('Not deployed: ' + key);
     }
 
     return contract.at(state[key].address);

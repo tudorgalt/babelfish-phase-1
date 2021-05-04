@@ -122,10 +122,14 @@ async function loadBassetsLocal(
 ): Promise<BassetIntegrationDetails> {
     const c_MockERC20 = artifacts.require("MockERC20");
     const c_MockAave = artifacts.require("MockAaveV2");
-    const c_MockAToken = artifacts.require("MockAToken");
+    const c_MockAToken = artifacts.require("MockATokenV2");
     const c_MockCToken = artifacts.require("MockCToken");
+
     //  - Mock bAssets
-    const mockBasset1 = await c_MockERC20.new("Mock1", "MK1", 12, deployer, 100000000);
+    const mockBasset1 = await conditionalDeploy(c_MockERC20, "Mock1", () => {
+        return c_MockERC20.new("Mock1", "MK1", 12, deployer, 100000000);
+    });
+
     const mockBasset2 = await c_MockERC20.new("Mock2", "MK2", 18, deployer, 100000000);
     const mockBasset3 = await c_MockERC20.new("Mock3", "MK3", 6, deployer, 100000000);
     const mockBasset4 = await c_MockERC20.new("Mock4", "MK4", 18, deployer, 100000000);
