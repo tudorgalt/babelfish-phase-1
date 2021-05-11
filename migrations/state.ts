@@ -58,3 +58,7 @@ async function writeState(obj) {
         if (err) throw err;
     });
 }
+
+export async function printState() {
+    console.log(state);
+}

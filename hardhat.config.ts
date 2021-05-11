@@ -10,8 +10,7 @@ require("tsconfig-paths/register");
 export default {
     networks: {
         hardhat: { allowUnlimitedContractSize: true },
-        localhost: { url: "http://localhost:8545" },
-        fork: { url: "http://localhost:7545" },
+        localhost: { url: "http://localhost:87545" },
     },
     solidity: {
         version: "0.5.16",

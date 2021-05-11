@@ -1,9 +1,9 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable lines-between-class-members */
 
+import utils from "web3-utils";
 import { Address } from "../types/common";
 import { BN } from "./tools";
-import utils from "web3-utils";
 
 /**
  * @notice This file contains constants relevant across the mStable test suite

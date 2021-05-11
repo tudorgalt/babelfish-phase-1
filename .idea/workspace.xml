@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="fda9babd-09e9-4a74-a0e2-3b4ee8fc8059" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/contracts/mocks/masset/MockDummy.sol" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/contracts/upgradability/BasketManagerProxy.sol" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/contracts/upgradability/MassetProxy.sol" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/contracts/upgradability/ThresholdProxyAdmin.sol" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/TestBasketManager.spec.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/TestMasset.spec.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/TestThresholdProxyAdmin.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/mStable-contracts-1.5.0.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/governance/ClaimableGovernor.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/governance/DelayedClaimableGovernor.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/governance/Governable.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/governance/IncentivisedVotingLockup.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/governance/InitializableGovernableWhitelist.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/interfaces/IBasketManager.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/interfaces/IBoostedVaultWithLockup.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/interfaces/IIncentivisedVotingLockup.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/interfaces/IMStableHelper.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/interfaces/IMasset.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/interfaces/IMetaToken.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/interfaces/INexus.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/interfaces/IPlatformIntegration.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/interfaces/IRewardsDistributionRecipient.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/interfaces/ISavingsContract.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/interfaces/ISavingsManager.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/BasketManager.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/masset/BasketManager.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/Masset.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/masset/Masset.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/forge-validator/ForgeValidator.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/forge-validator/IForgeValidator.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/liquidator/ICurveMetaPool.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/liquidator/ILiquidator.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/liquidator/IUniswapV2Router02.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/liquidator/Liquidator.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/platform-integrations/AaveIntegration.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/platform-integrations/AaveV2Integration.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/platform-integrations/CompoundIntegration.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/platform-integrations/IAave.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/platform-integrations/ICompound.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/platform-integrations/InitializableAbstractIntegration.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/shared/MStableHelper.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/shared/MassetHelpers.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/shared/MassetStructs.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/meta-token/GovernedMinterRole.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/meta-token/MetaToken.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/nexus/Nexus.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/rewards/InitializableRewardsDistributionRecipient.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/rewards/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/rewards/RewardsDistributionRecipient.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/rewards/RewardsDistributor.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/rewards/staking/PlatformTokenVendor.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/rewards/staking/StakingRewards.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/rewards/staking/StakingRewardsWithPlatformToken.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/rewards/staking/StakingTokenWrapper.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/savings/BoostedSavingsVault.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/savings/BoostedTokenWrapper.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/savings/SavingsContract.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/savings/SavingsManager.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/savings/peripheral/IConnector.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/savings/peripheral/SaveWrapper.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/CommonHelpers.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/IBasicToken.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/IERC20WithCheckpointing.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/InitializableERC20Detailed.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/helpers/InitializableERC20Detailed.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/InitializableModule.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/InitializableModule2.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/InitializableModuleKeys.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/InitializablePausableModule.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/InitializableReentrancyGuard.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/helpers/InitializableReentrancyGuard.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/InitializableToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/helpers/InitializableToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/Module.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/ModuleKeys.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/PausableModule.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/Root.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/SignedSafeMath128.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/shared/StableMath.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/upgradability/DelayedProxyAdmin.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/upgradability/Proxies.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/governance/Ejector.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/governance/MockGovernable.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/integrations/AbstractBuyAndMint.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/integrations/MintWith1Inch.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/integrations/MintWithKyber.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/masset/MockBasketManager.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mocks/masset/MockBasketManager.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/masset/MockMasset.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mocks/masset/MockMasset.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/masset/platform-integrations/DeadIntegration.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/masset/platform-integrations/MaliciousAaveIntegration.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/masset/platform-integrations/MockAave.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/masset/platform-integrations/MockCToken.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/masset/platform-integrations/MockCompoundIntegration.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/masset/platform-integrations/MockUpgradedAaveIntegration.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/nexus/MockNexus.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/rewards/MockRewardsDistributionRecipient.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/Connector_yVault_mUSD3Pool.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/MockConnector.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/MockErroneousConnector1.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/MockErroneousConnector2.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/MockLendingConnector.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/MockRevenueRecipient.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/MockSavingsManager.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/MockStakingContract.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/MockVaultConnector.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/MockyvMUSD.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/yEarn_Controller.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/yEarn_StrategyCurvemUSDVoterProxy.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/savings/yEarn_Vault.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockCommonHelpers.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockCurveMetaPool.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockERC20.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mocks/shared/MockERC20.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockERC20WithFee.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockInitializableModule.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockInitializablePausableModule.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockInitializableToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mocks/shared/MockInitializableToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockInitializableTokenWithFee.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockModule.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockPausableModule.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockProxy.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mocks/shared/MockProxy.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockRoot.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockTrigger.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/MockUniswap.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/PublicStableMath.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/shared/SignedSafeMath128Mock.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/z_mocks/upgradability/MockImplementation.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mocks/upgradability/MockImplementation.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hardhat.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/hardhat.config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/migrations/1_main.js" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/1_main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/migrations/src/2_system.ts" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/src/2_system.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/migrations/src/2_system.ts_orig" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/migrations/src/3_rewards.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/migrations/src/4_staking.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/migrations/src/5_savev2.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/migrations/state.ts" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/state.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/src/mint.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/src/mint.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/state-last-ropsten.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/state.json" beforeDir="false" afterPath="$PROJECT_DIR$/state.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-utils/assertions.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-utils/constants.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-utils/constants.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-utils/machines/index.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-utils/machines/massetMachine.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-utils/machines/standardAccounts.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-utils/standardAccounts.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-utils/machines/systemMachine.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-utils/math.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-utils/mstable-objects.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/governance/ClaimableGovernor.behaviour.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/governance/DelayedClaimableGovernor.behaviour.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/governance/Governable.behaviour.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/governance/TestClaimableGovernor.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/governance/TestDelayedClaimableGovernor.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/governance/TestGovernable.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/governance/TestIncentivisedVotingLockup.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/governance/TestIncentivisedVotingLockupRewards.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/TestBasketManager.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/masset/TestBasketManager.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/TestMasset.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/masset/TestMasset.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/TestMassetCache.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/TestMassetMinting.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/masset/TestMassetMinting.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/TestMassetRedeemMulti.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/TestMassetRedemption.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/masset/TestMassetRedemption.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/TestMassetSwap.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/forge-validator/TestForgeValidatorM.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/forge-validator/TestForgeValidatorR.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/forge-validator/TestForgeValidatorS.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/liquidator/TestLiquidatorContract.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/platform-integrations/TestAaveIntegration.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/platform-integrations/TestAaveV2Integration.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/platform-integrations/TestCompoundIntegration.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/masset/platform-integrations/TestPlatformIntegrationUpgradability.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/meta-token/TestMetaToken.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/nexus/TestNexus.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/rewards/RewardsDistributionRecipient.behaviour.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/rewards/TestRewardsDistributor.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/rewards/TestStakingRewards.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/rewards/TestStakingRewardsWithPlatformToken.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/savings/TestSavingsContract.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/savings/TestSavingsManager.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/savings/TestSavingsVault.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/savings/peripheral/TestSaveWrapper.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/shared/TestCommonHelpers.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/shared/TestCommonHelpers.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/shared/TestInitializableModule.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/shared/TestInitializableModule.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/shared/TestInitializablePausableModule.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/shared/TestInitializablePausableModule.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/shared/TestModule.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/shared/TestModule.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/shared/TestPausableModule.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/shared/TestPausableModule.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/shared/TestRoot.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/shared/TestRoot.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/shared/TestSignedSafeMath128.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/shared/TestSignedSafeMath128.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/shared/TestStableMath.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/shared/TestStableMath.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/shared/behaviours/ERC20.behaviour.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/shared/behaviours/ERC20.behaviour.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/shared/behaviours/ERC20Burnable.behaviour.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/shared/behaviours/ERC20Burnable.behaviour.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/shared/behaviours/Module.behaviour.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/shared/behaviours/Module.behaviour.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/shared/behaviours/PausableModule.behaviour.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/shared/behaviours/PausableModule.behaviour.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/upgradability/TestDelayedProxyAdmin.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test-old/upgradability/TestThresholdProxyAdmin.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/truffle-config.js" beforeDir="false" afterPath="$PROJECT_DIR$/truffle-config.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/types/index.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/types/index.d.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/types/machines.ts" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/node_modules/@openzeppelin/test-helpers/src/expectEvent.js" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="ProjectId" id="1sGTwPootsT66uUWUQxvx29gwlE" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/test" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="nodejs_package_manager_path" value="yarn" />
+    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
+    <property name="ts.external.directory.path" value="$PROJECT_DIR$/node_modules/typescript/lib" />
+    <property name="vue.rearranger.settings.migration" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/test" />
+      <recent name="$PROJECT_DIR$/contracts/mocks/masset" />
+      <recent name="$PROJECT_DIR$/test-utils" />
+      <recent name="$PROJECT_DIR$/contracts" />
+      <recent name="$PROJECT_DIR$" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/test" />
+      <recent name="$PROJECT_DIR$/test-utils" />
+      <recent name="$PROJECT_DIR$/contracts/helpers" />
+      <recent name="$PROJECT_DIR$/contracts/masset" />
+      <recent name="$PROJECT_DIR$/contracts/upgradability" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="test" type="js.build_tools.npm" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="test" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="fda9babd-09e9-4a74-a0e2-3b4ee8fc8059" name="Default Changelist" comment="" />
+      <created>1620498165169</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1620498165169</updated>
+      <workItem from="1620498167444" duration="51429000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
