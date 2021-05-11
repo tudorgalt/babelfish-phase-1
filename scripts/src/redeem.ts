@@ -4,7 +4,7 @@ import { conditionalDeploy, conditionalInitialize, getDeployed } from "../../mig
 import { MassetContract } from "../../types/generated";
 import Truffle from 'truffle';
 
-const deployerAddress = '0x0c8Fd9E5506e6d3b701705EeeD04505c227Fcded';
+const deployerAddress = '0xe486c81D296A91740A58fCdE157c52f4b808dD73';
 
 export default async function redeem(truffle): Promise<any> {
     const wallet: HDWalletProvider = truffle.provider;
