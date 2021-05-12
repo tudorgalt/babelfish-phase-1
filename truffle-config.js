@@ -54,7 +54,17 @@ module.exports = {
       gasPrice: 20000000000, // 20 GWei,
       skipDryRun: true,
       gas: 2000000
-    }
+    },
+    rskTestnet: {
+      provider() {
+        return new HDWalletProvider('chimney toss kit now firm true scan laundry hazard buffalo tiny west',
+            'https://testnet.sovryn.app/rpc', 0, 31)
+      },
+      network_id: 31,
+      gasPrice: 71680400, // 71GWei,
+      skipDryRun: true,
+      networkCheckTimeout: 1e9
+    },
   },
   mocha: {
     reporter: 'eth-gas-reporter',

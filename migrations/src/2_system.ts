@@ -4,7 +4,11 @@
 /// <reference path="../../types/generated/index.d.ts" />
 /// <reference path="../../types/generated/types.d.ts" />
 
-import { conditionalDeploy, conditionalInitialize, printState } from "../state";
+import state from "../state";
+
+const admin1 = '0x94e907f6B903A393E14FE549113137CA6483b5ef';
+const admin2 = '0x78514Eedd8678b8055Ca19b55c2711a6AACc09F8';
+const admin3 = '0xfa82e8Bb8517BE31f64fe517E1E63B87183414Ad';
 
 class BassetIntegrationDetails {
     bAssets: Array<string>;
@@ -20,6 +24,27 @@ async function loadBassetsKovan(artifacts: Truffle.Artifacts): Promise<BassetInt
     return { bAssets: [], factors: [] };
 }
 
+async function loadBassetsRskTestnet(
+    artifacts: Truffle.Artifacts,
+    deployer,
+): Promise<BassetIntegrationDetails> {
+    const c_MockERC20 = artifacts.require("MockERC20");
+
+    //  - Mock bAssets
+    const mockBasset1 = await state.conditionalDeploy(c_MockERC20, "Mock1", () => {
+        return c_MockERC20.new("Mock1", "MK1", 18, deployer, 1000);
+    });
+    //  - Mock bAssets
+    const mockBasset2 = await state.conditionalDeploy(c_MockERC20, "Mock2", () => {
+        return c_MockERC20.new("Mock1", "MK1", 18, deployer, 1000);
+    });
+
+    return {
+        bAssets: [mockBasset1.address, mockBasset2.address],
+        factors: [1, 1]
+    };
+}
+
 async function loadBassetsLocal(
     artifacts: Truffle.Artifacts,
     deployer,
@@ -27,11 +52,11 @@ async function loadBassetsLocal(
     const c_MockERC20 = artifacts.require("MockERC20");
 
     //  - Mock bAssets
-    const mockBasset1 = await conditionalDeploy(c_MockERC20, "Mock1", () => {
+    const mockBasset1 = await state.conditionalDeploy(c_MockERC20, "Mock1", () => {
         return c_MockERC20.new("Mock1", "MK1", 18, deployer, 1000);
     });
     //  - Mock bAssets
-    const mockBasset2 = await conditionalDeploy(c_MockERC20, "Mock2", () => {
+    const mockBasset2 = await state.conditionalDeploy(c_MockERC20, "Mock2", () => {
         return c_MockERC20.new("Mock1", "MK1", 18, deployer, 1000);
     });
 
@@ -47,10 +72,6 @@ export default async (
     network,
     accounts,
 ): Promise<void> => {
-    if (deployer.network === "fork") {
-        // Don't bother running these migrations -- speed up the testing
-        return;
-    }
 
     /***************************************
     0. TYPECHAIN IMPORTS
@@ -86,27 +107,38 @@ export default async (
     } else if (deployer.network === "kovan") {
         console.log("Loading Kovan bAssets and lending platforms");
         bassetDetails = await loadBassetsKovan(artifacts);
+    } else if (deployer.network === "rskTestnet") {
+        console.log("Loading RSK testnet bAssets and lending platforms");
+        bassetDetails = await loadBassetsRskTestnet(artifacts, default_);
     } else {
         console.log(`Generating mock bAssets and lending platforms`);
         bassetDetails = await loadBassetsLocal(artifacts, default_);
     }
 
-    const d_ThresholdProxyAdmin_Masset = await conditionalDeploy(c_ThresholdProxyAdmin, 'ThresholdProxyAdmin_Masset',
+    const d_ThresholdProxyAdmin_Masset = await state.conditionalDeploy(c_ThresholdProxyAdmin, 'ThresholdProxyAdmin_Masset',
         () => deployer.deploy(c_ThresholdProxyAdmin, { from: default_ }));
 
-    const d_ThresholdProxyAdmin_BasketManager = await conditionalDeploy(c_ThresholdProxyAdmin, 'ThresholdProxyAdmin_BridgeManager',
+    const d_ThresholdProxyAdmin_BasketManager = await state.conditionalDeploy(c_ThresholdProxyAdmin, 'ThresholdProxyAdmin_BasketManager',
         () => deployer.deploy(c_ThresholdProxyAdmin, { from: default_ }));
 
-    const d_Masset = await conditionalDeploy(c_Masset, 'Masset',  () => deployer.deploy(c_Masset, { from: default_ }));
+    const d_Masset = await state.conditionalDeploy(c_Masset, 'Masset',  () => deployer.deploy(c_Masset, { from: default_ }));
 
-    const d_MassetProxy = await conditionalDeploy(c_MassetProxy, 'MassetProxy',
+    const d_MassetProxy = await state.conditionalDeploy(c_MassetProxy, 'MassetProxy',
         () => deployer.deploy(c_MassetProxy));
 
-    const d_BasketManager = await conditionalDeploy(c_BasketManager, 'BasketManager',
+    await state.conditionalInitialize('ThresholdProxyAdmin_Masset', async () => {
+        return d_ThresholdProxyAdmin_Masset.initialize(d_MassetProxy.address, [ admin1, admin2, admin3 ], 2);
+    });
+
+    const d_BasketManager = await state.conditionalDeploy(c_BasketManager, 'BasketManager',
         () => deployer.deploy(c_BasketManager) );
 
-    const d_BasketManagerProxy = await conditionalDeploy(c_BasketManagerProxy, 'BasketManagerProxy',
+    const d_BasketManagerProxy = await state.conditionalDeploy(c_BasketManagerProxy, 'BasketManagerProxy',
         () => deployer.deploy(c_BasketManagerProxy));
+
+    await state.conditionalInitialize('ThresholdProxyAdmin_BasketManager', async () => {
+        return d_ThresholdProxyAdmin_BasketManager.initialize(d_BasketManagerProxy.address, [ admin1, admin2, admin3 ], 2);
+    });
 
     const initializationData_mUSD: string = d_Masset.contract.methods
         .initialize(
@@ -115,7 +147,7 @@ export default async (
             d_BasketManagerProxy.address,
         )
         .encodeABI();
-    await conditionalInitialize('MassetProxy', () => {
+    await state.conditionalInitialize('MassetProxy', () => {
         return d_MassetProxy.methods["initialize(address,address,bytes)"](
             d_Masset.address,
             d_ThresholdProxyAdmin_Masset.address,
@@ -130,7 +162,7 @@ export default async (
             bassetDetails.factors
         )
         .encodeABI();
-    await conditionalInitialize('BasketManagerProxy', () => {
+    await state.conditionalInitialize('BasketManagerProxy', () => {
         return d_BasketManagerProxy.methods["initialize(address,address,bytes)"](
             d_BasketManager.address,
             d_ThresholdProxyAdmin_BasketManager.address,
@@ -138,5 +170,5 @@ export default async (
         );
     });
 
-    printState();
+    state.printState();
 };

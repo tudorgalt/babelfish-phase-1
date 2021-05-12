@@ -2,8 +2,19 @@ import fs from 'fs';
 import Truffle from 'truffle';
 
 let state = null;
+let network = 'localhost';
 
-export async function conditionalDeploy(contract: Truffle.Contract, key: string, deployfunc): Promise<any> {
+async function setNetwork(_network: string): Promise<void> {
+    network = _network;
+    return new Promise<void>((resolve, reject) => {
+        fs.exists(`state_${network}.json`, async (exists) => {
+            if (!exists) await writeState({});
+            resolve();
+        });
+    });
+}
+
+async function conditionalDeploy(contract: Truffle.Contract, key: string, deployfunc): Promise<any> {
     if (!state) {
         state = await readState();
     }
@@ -18,7 +29,7 @@ export async function conditionalDeploy(contract: Truffle.Contract, key: string,
     return contract.at(state[key].address);
 }
 
-export async function conditionalInitialize(key: string, initfunc) {
+async function conditionalInitialize(key: string, initfunc) {
     if (!state) {
         state = await readState();
     }
@@ -33,7 +44,7 @@ export async function conditionalInitialize(key: string, initfunc) {
     await writeState(state);
 }
 
-export async function getDeployed(contract: Truffle.Contract, key: string): Truffle.Contract {
+async function getDeployed(contract: Truffle.Contract, key: string): Truffle.Contract {
     if (!state) {
         state = await readState();
     }
@@ -46,19 +57,22 @@ export async function getDeployed(contract: Truffle.Contract, key: string): Truf
 
 async function readState(): Promise<any> {
     return new Promise<any>((resolve, reject) => {
-        fs.readFile('state.json', (err, data) => {
-            if (err) reject(err);
+        fs.readFile(`state_${network}.json`, (err, data) => {
+            if (err) return reject(err);
             resolve(JSON.parse(data.toString('utf-8')));
         });
     });
 }
 
 async function writeState(obj) {
-    fs.writeFile('state.json', JSON.stringify(obj, null, 2), (err) => {
+    fs.writeFile(`state_${network}.json`, JSON.stringify(obj, null, 2), (err) => {
         if (err) throw err;
     });
 }
 
-export async function printState() {
+async function printState() {
     console.log(state);
 }
+
+export default { conditionalDeploy, conditionalInitialize, getDeployed, printState, setNetwork };
+

@@ -2,7 +2,7 @@
 /// <reference path="../../types/generated/index.d.ts" />
 /// <reference path="../../types/generated/types.d.ts" />
 
-import { conditionalDeploy, conditionalInitialize } from "../state";
+import state from "../state";
 
 export default async (
     {
@@ -13,10 +13,7 @@ export default async (
     deployer,
 ): Promise<void> => {
     process.env.NETWORK = deployer.network;
-    if (deployer.network === "fork") {
-        return;
-    }
-
+    await state.setNetwork(deployer.network);
     const cMigrations = artifacts.require("Migrations");
-    await conditionalDeploy(cMigrations, 'Migrations', () => deployer.deploy(cMigrations));
+    await state.conditionalDeploy(cMigrations, 'Migrations', () => deployer.deploy(cMigrations));
 };

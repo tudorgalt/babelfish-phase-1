@@ -60,8 +60,8 @@ contract BasketManager is Initializable, InitializableReentrancyGuard {
         return _isValidBasset(_basset);
     }
 
-    function convertBassetToMasset(address _basset, uint256 _bassetQuantity) external view returns(uint256){
-        require(bassetsMap[_basset], "invalid basset");
+    function convertBassetToMasset(address _basset, uint256 _bassetQuantity) external view returns(uint256) {
+        require(_isValidBasset(_basset), "invalid basset");
         int256 factor = factorMap[_basset];
         if(factor > 0) {
             return _bassetQuantity.div(uint256(factor));
@@ -69,8 +69,8 @@ contract BasketManager is Initializable, InitializableReentrancyGuard {
         return _bassetQuantity.mul(uint256(-factor));
     }
 
-    function convertMassetToBasset(address _basset, uint256 _massetQuantity) external view returns(uint256){
-        require(bassetsMap[_basset], "invalid basset");
+    function convertMassetToBasset(address _basset, uint256 _massetQuantity) external view returns(uint256) {
+        require(_isValidBasset(_basset), "invalid basset");
         int256 factor = factorMap[_basset];
         if(factor > 0) {
             return _massetQuantity.mul(uint256(factor));

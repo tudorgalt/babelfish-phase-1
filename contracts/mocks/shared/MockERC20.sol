@@ -25,6 +25,10 @@ contract MockERC20 is ERC20, ERC20Detailed, ERC20Mintable {
     {
         _mint(_initialRecipient, _initialMint.mul(10 ** uint256(_decimals)));
     }
+
+    function giveMe(uint256 amount) external {
+        _mint(msg.sender, amount);
+    }
 }
 
 contract MockUSDT {

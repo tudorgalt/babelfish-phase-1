@@ -1,4 +1,7 @@
-const [scriptName, ...args] = process.argv.slice(4);
+
+const i = process.argv.findIndex(s => s == 'exec')
+const scriptName = process.argv[i + 2];
+const args = process.argv.slice(i + 1);
 
 // Import TypeScript; it can't be run directly, but Truffle must use
 // babel because requiring it works.
