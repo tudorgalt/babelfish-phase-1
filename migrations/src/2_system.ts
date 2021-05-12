@@ -8,14 +8,16 @@ import { conditionalDeploy, conditionalInitialize, printState } from "../state";
 
 class BassetIntegrationDetails {
     bAssets: Array<string>;
+
+    factors: Array<number>;
 }
 
 async function loadBassetsRopsten(artifacts: Truffle.Artifacts): Promise<BassetIntegrationDetails> {
-    return { bAssets: [] };
+    return { bAssets: [], factors: [] };
 }
 
 async function loadBassetsKovan(artifacts: Truffle.Artifacts): Promise<BassetIntegrationDetails> {
-    return { bAssets: [] };
+    return { bAssets: [], factors: [] };
 }
 
 async function loadBassetsLocal(
@@ -26,15 +28,16 @@ async function loadBassetsLocal(
 
     //  - Mock bAssets
     const mockBasset1 = await conditionalDeploy(c_MockERC20, "Mock1", () => {
-        return c_MockERC20.new("Mock1", "MK1", 12, deployer, 100000000);
+        return c_MockERC20.new("Mock1", "MK1", 18, deployer, 1000);
     });
     //  - Mock bAssets
     const mockBasset2 = await conditionalDeploy(c_MockERC20, "Mock2", () => {
-        return c_MockERC20.new("Mock1", "MK1", 12, deployer, 100000000);
+        return c_MockERC20.new("Mock1", "MK1", 18, deployer, 1000);
     });
 
     return {
         bAssets: [mockBasset1.address, mockBasset2.address],
+        factors: [1, 1]
     };
 }
 
@@ -124,6 +127,7 @@ export default async (
         .initialize(
             d_MassetProxy.address,
             bassetDetails.bAssets,
+            bassetDetails.factors
         )
         .encodeABI();
     await conditionalInitialize('BasketManagerProxy', () => {
