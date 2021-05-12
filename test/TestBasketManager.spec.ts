@@ -35,7 +35,7 @@ contract("BasketManager", async (accounts) => {
     describe("initialize", async () => {
         let masset;
         let mockToken1, mockToken2, mockToken3, mockToken4;
-        let bassets;
+        let bassets, factors;
         before(async () => {
             masset = await Masset.new();
             mockToken1 = await MockERC20.new('', '', 18, sa.dummy1, 1);
@@ -43,30 +43,36 @@ contract("BasketManager", async (accounts) => {
             mockToken3 = await MockERC20.new('', '', 18, sa.dummy1, 1);
             mockToken4 = await MockERC20.new('', '', 18, sa.dummy1, 1);
             bassets = [mockToken1.address, mockToken2.address, mockToken3.address];
+            factors = [1, 1, 1];
         });
         context("should succeed", async () => {
             it("when given all the params", async () => {
                 const inst = await BasketManager.new();
-                await inst.initialize(masset.address, bassets);
+                await inst.initialize(masset.address, bassets, factors);
             });
         });
         context("should fail", async () => {
             it("when masset missing", async () => {
                 const inst = await BasketManager.new();
-                await expectRevert(inst.initialize(ZERO_ADDRESS, bassets),
+                await expectRevert(inst.initialize(ZERO_ADDRESS, bassets, factors),
                     'VM Exception while processing transaction: revert invalid masset address');
             });
             it("when bassets missing", async () => {
                 const inst = await BasketManager.new();
-                await expectRevert(inst.initialize(masset.address, []),
+                await expectRevert(inst.initialize(masset.address, [], factors),
                     'VM Exception while processing transaction: revert some basset required');
+            });
+            it("when factors missing", async () => {
+                const inst = await BasketManager.new();
+                await expectRevert(inst.initialize(masset.address, bassets, []),
+                    'VM Exception while processing transaction: revert factor array length mismatch');
             });
         });
         context("checking if bassets are valid", () => {
             let inst;
             beforeEach(async () => {
                 inst = await BasketManager.new();
-                await inst.initialize(masset.address, bassets);
+                await inst.initialize(masset.address, bassets, factors);
             });
             context("isValidBasset", () => {
                 it("should return false if basset is in the basket", async () => {

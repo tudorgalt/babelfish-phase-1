@@ -23,32 +23,6 @@ contract Masset is
     // state
     address private basketManager;
 
-    // internal
-
-    function _calcOneToOneWithDecimals(address fromToken, uint256 quantity, address toToken) internal view returns(uint256 result) {
-        uint fromDecimals = ERC20Detailed(fromToken).decimals();
-        uint toDecimals = ERC20Detailed(toToken).decimals();
-        if(fromDecimals == toDecimals) {
-            return quantity;
-        }
-        if (fromDecimals > toDecimals) {
-            return quantity.div(10 ** uint256(fromDecimals - toDecimals));
-        }
-        return quantity.mul(10 ** uint256(toDecimals - fromDecimals));
-    }
-
-    function calcOneToOneWithDecimals(address fromToken, uint256 quantity, address toToken) external view returns(uint256 result) {
-        uint fromDecimals = ERC20Detailed(fromToken).decimals();
-        uint toDecimals = ERC20Detailed(toToken).decimals();
-        if(fromDecimals == toDecimals) {
-            return quantity;
-        }
-        if (fromDecimals > toDecimals) {
-            return quantity.div(10 ** uint256(fromDecimals - toDecimals));
-        }
-        return quantity.mul(10 ** uint256(toDecimals - fromDecimals));
-    }
-
     // public
 
     function initialize(string calldata _name, string calldata _symbol, address _basketManager) external initializer {
@@ -120,7 +94,7 @@ contract Masset is
         require(BasketManager(basketManager).isValidBasset(_basset), "invalid basset");
         require(BasketManager(basketManager).checkBasketBalanceForDeposit(_basset, _bassetQuantity));
 
-        uint256 massetQuantity = _calcOneToOneWithDecimals(_basset, _bassetQuantity, address(this));
+        uint256 massetQuantity = BasketManager(basketManager).convertBassetToMasset(_basset, _bassetQuantity);
 
         IERC20(_basset).transferFrom(msg.sender, address(this), _bassetQuantity);
 
@@ -188,7 +162,7 @@ contract Masset is
         require(_massetQuantity > 0, "masset quantity must be greater than 0");
         require(BasketManager(basketManager).isValidBasset(_basset), "invalid basset");
 
-        uint256 bassetQuantity = _calcOneToOneWithDecimals(address(this), _massetQuantity, _basset);
+        uint256 bassetQuantity = BasketManager(basketManager).convertMassetToBasset(_basset, _massetQuantity);
 
         require(BasketManager(basketManager).checkBasketBalanceForWithdrawal(_basset, bassetQuantity));
 
