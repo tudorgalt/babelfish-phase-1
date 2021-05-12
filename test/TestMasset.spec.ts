@@ -76,12 +76,19 @@ contract("Masset", async (accounts) => {
         });
         context("should succeed", () => {
             it("if all params are valid", async () => {
-                const sum = 11;
+                const sum = '1000000000000000000';
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
                 });
-                await masset.mint(basketManagerObj.mockToken1.address, sum, {
+                const tx = await masset.mint(basketManagerObj.mockToken1.address, sum, {
                     from: standardAccounts.dummy1,
+                });
+                await expectEvent(tx.receipt, 'Minted', {
+                    minter: standardAccounts.dummy1,
+                    recipient: standardAccounts.dummy1,
+                    massetQuantity: sum,
+                    bAsset: basketManagerObj.mockToken1.address,
+                    bassetQuantity: sum
                 });
                 const balance = await masset.balanceOf(standardAccounts.dummy1);
                 expect(balance.toString()).to.equal(`${sum}`);
@@ -118,16 +125,23 @@ contract("Masset", async (accounts) => {
         });
         context("should succeed", () => {
             it("if all params are valid", async () => {
-                const sum = 11;
+                const sum = '1000000000000000000';
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
                 });
-                await masset.mintTo(
+                const tx = await masset.mintTo(
                     basketManagerObj.mockToken1.address,
                     sum,
                     standardAccounts.dummy4,
                     { from: standardAccounts.dummy1 },
                 );
+                await expectEvent(tx.receipt, 'Minted', {
+                    minter: standardAccounts.dummy1,
+                    recipient: standardAccounts.dummy4,
+                    massetQuantity: sum,
+                    bAsset: basketManagerObj.mockToken1.address,
+                    bassetQuantity: sum
+                });
                 const balance = await masset.balanceOf(standardAccounts.dummy4);
                 expect(balance.toString()).to.equal(`${sum}`);
             });
@@ -146,7 +160,7 @@ contract("Masset", async (accounts) => {
         });
         context("should succeed", () => {
             it("if all params are valid", async () => {
-                const sum = 11;
+                const sum = '100000000000000000';
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
                 });
@@ -156,9 +170,16 @@ contract("Masset", async (accounts) => {
                 let balance = await masset.balanceOf(standardAccounts.dummy1);
                 expect(balance.toString()).to.equal(`${sum}`);
                 balance = await basketManagerObj.mockToken1.balanceOf(standardAccounts.dummy1);
-                expect(balance.toString()).to.equal("999999999999999989");
-                await masset.redeem(basketManagerObj.mockToken1.address, sum, {
+                expect(balance.toString()).to.equal("900000000000000000");
+                const tx = await masset.redeem(basketManagerObj.mockToken1.address, sum, {
                     from: standardAccounts.dummy1,
+                });
+                await expectEvent(tx.receipt, 'Redeemed', {
+                    redeemer: standardAccounts.dummy1,
+                    recipient: standardAccounts.dummy1,
+                    massetQuantity: sum,
+                    bAsset: basketManagerObj.mockToken1.address,
+                    bassetQuantity: sum
                 });
                 balance = await masset.balanceOf(standardAccounts.dummy1);
                 expect(balance.toString()).to.equal(`0`);
