@@ -6,12 +6,14 @@ let network = 'localhost';
 
 async function setNetwork(_network: string): Promise<void> {
     network = _network;
+    /*
     return new Promise<void>((resolve, reject) => {
         fs.exists(`state_${network}.json`, async (exists) => {
             if (!exists) await writeState({});
             resolve();
         });
     });
+    */
 }
 
 async function conditionalDeploy(contract: Truffle.Contract, key: string, deployfunc): Promise<any> {
@@ -64,9 +66,12 @@ async function readState(): Promise<any> {
     });
 }
 
-async function writeState(obj) {
-    fs.writeFile(`state_${network}.json`, JSON.stringify(obj, null, 2), (err) => {
-        if (err) throw err;
+function writeState(obj): Promise<void> {
+    return new Promise<any>((resolve, reject) => {
+        fs.writeFile(`state_${network}.json`, JSON.stringify(obj, null, 2), (err) => {
+            if (err) return reject(err);
+            resolve();
+        });
     });
 }
 
@@ -75,4 +80,3 @@ async function printState() {
 }
 
 export default { conditionalDeploy, conditionalInitialize, getDeployed, printState, setNetwork };
-

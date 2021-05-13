@@ -2,18 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fda9babd-09e9-4a74-a0e2-3b4ee8fc8059" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/migrations/addresses.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/masset/BasketManager.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/masset/BasketManager.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/mocks/shared/MockERC20.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mocks/shared/MockERC20.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/masset/Masset.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/masset/Masset.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/migrations/1_main.js" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/1_main.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/migrations/src/1_initial_migration.ts" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/src/1_initial_migration.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/migrations/src/2_system.ts" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/src/2_system.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/migrations/state.ts" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/state.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/main.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/scripts/src/mint.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/src/mint.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/state.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/truffle-config.js" beforeDir="false" afterPath="$PROJECT_DIR$/truffle-config.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/state_development.json" beforeDir="false" afterPath="$PROJECT_DIR$/state_development.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/state_rskTestnet.json" beforeDir="false" afterPath="$PROJECT_DIR$/state_rskTestnet.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -88,7 +85,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1620498165169</updated>
-      <workItem from="1620498167444" duration="69567000" />
+      <workItem from="1620498167444" duration="78412000" />
     </task>
     <servers />
   </component>

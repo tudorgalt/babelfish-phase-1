@@ -1,1 +1,33 @@
-{}
+{
+  "Migrations": {
+    "address": "0x028Cb2cBd63506C0565aF36523Fa9833aa29855B"
+  },
+  "Mock1": {
+    "address": "0xc529c9bb833Eb088c01ECcF551DfBCc39A4bAD63"
+  },
+  "Mock2": {
+    "address": "0x29B74Cf59527BdFcEa0E0977b5d28C583e1c9bBb"
+  },
+  "ThresholdProxyAdmin_Masset": {
+    "address": "0x5620cC7d208A082F546dec20402F22e6507E1dc6",
+    "initialized": true
+  },
+  "ThresholdProxyAdmin_BasketManager": {
+    "address": "0x97ABAca4195241735581e129c2CAFade0e2251B2",
+    "initialized": true
+  },
+  "Masset": {
+    "address": "0x5366625DE3cC87D1940f1bfb0386dbEe63f098Ae"
+  },
+  "MassetProxy": {
+    "address": "0xCDd24Ee7b3865CfC376A5EaBFa79eb3163A54637",
+    "initialized": true
+  },
+  "BasketManager": {
+    "address": "0x657E85B4e14fFAa037B73E5503dED491E2db73A1"
+  },
+  "BasketManagerProxy": {
+    "address": "0x4400fC10F15a7e1FD42fab17c53B6b137F53fd23",
+    "initialized": true
+  }
+}

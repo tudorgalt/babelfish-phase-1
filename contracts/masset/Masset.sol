@@ -8,19 +8,31 @@ import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancy
 import { ERC20Detailed } from "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC777Recipient } from "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
+import { IERC1820Registry } from "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
 
 contract Masset is
     Initializable,
     InitializableToken,
-    InitializableReentrancyGuard {
+    InitializableReentrancyGuard,
+    IERC777Recipient {
 
     using SafeMath for uint256;
 
     // Forging Events
     event Minted(address indexed minter, address recipient, uint256 massetQuantity, address bAsset, uint256 bassetQuantity);
     event Redeemed(address indexed redeemer, address recipient, uint256 massetQuantity, address bAsset, uint256 bassetQuantity);
+    event onTokenReceivedCall(
+        address operator,
+        address from,
+        address to,
+        uint amount,
+        bytes userData,
+        bytes operatorData
+    );
 
     // state
+    //IERC1820Registry constant private _erc1820 = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
     address private basketManager;
 
     // public
@@ -30,6 +42,7 @@ contract Masset is
 
         InitializableToken._initialize(_name, _symbol);
         InitializableReentrancyGuard._initialize();
+        //_erc1820.setInterfaceImplementer(address(this), keccak256("ERC777TokensRecipient"), address(this));
 
         basketManager = _basketManager;
     }
@@ -96,7 +109,7 @@ contract Masset is
 
         uint256 massetQuantity = BasketManager(basketManager).convertBassetToMasset(_basset, _bassetQuantity);
 
-        IERC20(_basset).transferFrom(msg.sender, address(this), _bassetQuantity);
+        IERC20(_basset).transferFrom(_recipient, address(this), _bassetQuantity);
 
         _mint(_recipient, massetQuantity);
         emit Minted(msg.sender, _recipient, massetQuantity, _basset, _bassetQuantity);
@@ -172,5 +185,24 @@ contract Masset is
         emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity);
 
         return _massetQuantity;
+    }
+
+    // ERC777 Recipient
+    function tokensReceived(
+        address operator,
+        address from,
+        address to,
+        uint amount,
+        bytes calldata userData,
+        bytes calldata operatorData
+    ) external {
+        emit onTokenReceivedCall(
+            operator,
+            from,
+            to,
+            amount,
+            userData,
+            operatorData
+        );
     }
 }

@@ -1,33 +1,30 @@
 {
   "Migrations": {
-    "address": "0x7813A10301eE70C2DC2F4fb1ACaf6fc0D40DC259"
+    "address": "0xdd619582832aDDc5DE791aA4ECA0C87F607f17B0"
   },
   "Mock1": {
-    "address": "0x04A8093D0B529849c3117aa055555c97a1720c57"
-  },
-  "Mock2": {
-    "address": "0x4f55b3e235389404e3A118583B547Be3f5BEd5fe"
+    "address": "0xe4578D40080893D82b9dDfC3C419c46D1BC2E10A"
   },
   "ThresholdProxyAdmin_Masset": {
-    "address": "0xb498e3284C209E4bdF96cD9695edA74aa2A45264",
+    "address": "0x7000642aE78F4217b6e2D3FFA72DC46cf66179aA",
     "initialized": true
   },
   "ThresholdProxyAdmin_BasketManager": {
-    "address": "0xA49B4A440B18b319F5dB81F13AF484b63391Ec1E",
+    "address": "0xBAe6E2382D2334F5805ba38384F644b9cB78ECf2",
     "initialized": true
   },
   "Masset": {
-    "address": "0x83f10a7a7Ba4B1f2Ede275eaD463Ed06B90B3317"
+    "address": "0xAA4fa2af5BaFED99faE1D6b9F933A090F097494D"
   },
   "MassetProxy": {
-    "address": "0x1327D8e4207Cfa33d8ead45235D24d5b823723cC",
+    "address": "0x90527Db0F9b828dF852820CBEAB84090dD5A9Cc6",
     "initialized": true
   },
   "BasketManager": {
-    "address": "0xEfBa99EcfACa899596FC90207De2C5F5Ac78E457"
+    "address": "0x9CAAA88d37444ED6Ba7638FDd96Cea455E80b8c1"
   },
   "BasketManagerProxy": {
-    "address": "0x265Fd92FF75b55d09A96C78744A660e4d08e3Ab9",
+    "address": "0x71680FBD9759C6Ef63c4A9F1a5000206DA8B3504",
     "initialized": true
   }
 }

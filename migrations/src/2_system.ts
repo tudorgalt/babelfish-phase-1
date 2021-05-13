@@ -5,6 +5,7 @@
 /// <reference path="../../types/generated/types.d.ts" />
 
 import state from "../state";
+import addresses from '../addresses';
 
 const admin1 = '0x94e907f6B903A393E14FE549113137CA6483b5ef';
 const admin2 = '0x78514Eedd8678b8055Ca19b55c2711a6AACc09F8';
@@ -26,28 +27,23 @@ async function loadBassetsKovan(artifacts: Truffle.Artifacts): Promise<BassetInt
 
 async function loadBassetsRskTestnet(
     artifacts: Truffle.Artifacts,
-    deployer,
+    deployerAddress, network: string
 ): Promise<BassetIntegrationDetails> {
     const c_MockERC20 = artifacts.require("MockERC20");
 
     //  - Mock bAssets
     const mockBasset1 = await state.conditionalDeploy(c_MockERC20, "Mock1", () => {
-        return c_MockERC20.new("Mock1", "MK1", 18, deployer, 1000);
+        return c_MockERC20.new("Mock1", "MK1", 18, deployerAddress, 1000);
     });
-    //  - Mock bAssets
-    const mockBasset2 = await state.conditionalDeploy(c_MockERC20, "Mock2", () => {
-        return c_MockERC20.new("Mock1", "MK1", 18, deployer, 1000);
-    });
-
     return {
-        bAssets: [mockBasset1.address, mockBasset2.address],
+        bAssets: [mockBasset1.address, addresses[network].ESETH_ADDRESS],
         factors: [1, 1]
     };
 }
 
 async function loadBassetsLocal(
     artifacts: Truffle.Artifacts,
-    deployer,
+    deployer
 ): Promise<BassetIntegrationDetails> {
     const c_MockERC20 = artifacts.require("MockERC20");
 
@@ -109,7 +105,7 @@ export default async (
         bassetDetails = await loadBassetsKovan(artifacts);
     } else if (deployer.network === "rskTestnet") {
         console.log("Loading RSK testnet bAssets and lending platforms");
-        bassetDetails = await loadBassetsRskTestnet(artifacts, default_);
+        bassetDetails = await loadBassetsRskTestnet(artifacts, default_, deployer.network);
     } else {
         console.log(`Generating mock bAssets and lending platforms`);
         bassetDetails = await loadBassetsLocal(artifacts, default_);
@@ -142,7 +138,7 @@ export default async (
 
     const initializationData_mUSD: string = d_Masset.contract.methods
         .initialize(
-            "BabelFish USD",
+            "BabelfishUSD",
             "xUSD",
             d_BasketManagerProxy.address,
         )
@@ -154,6 +150,8 @@ export default async (
             initializationData_mUSD,
         );
     });
+
+    console.log(bassetDetails);
 
     const initializationData_BasketManager: string = d_BasketManager.contract.methods
         .initialize(
