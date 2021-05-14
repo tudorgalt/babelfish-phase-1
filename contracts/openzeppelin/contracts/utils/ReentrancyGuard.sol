@@ -1,4 +1,4 @@
-pragma solidity 0.5.16;
+pragma solidity ^0.5.0;
 
 /**
  * @dev Contract module that helps prevent reentrant calls to a function.
@@ -19,10 +19,10 @@ pragma solidity 0.5.16;
  * _Since v2.5.0:_ this module is now much more gas efficient, given net gas
  * metering changes introduced in the Istanbul hardfork.
  */
-contract InitializableReentrancyGuard {
+contract ReentrancyGuard {
     bool private _notEntered;
 
-    function _initialize() internal {
+    constructor () internal {
         // Storing an initial non-zero value makes deployment a bit more
         // expensive, but in exchange the refund on every call to nonReentrant
         // will be lower in amount. Since refunds are capped to a percetange of

@@ -46,29 +46,17 @@ contract("BasketManager", async (accounts) => {
         });
         context("should succeed", async () => {
             it("when given all the params", async () => {
-                const inst = await BasketManager.new();
-                await inst.initialize(masset.address, bassets, factors);
+                const inst = await BasketManager.new(bassets, factors);
             });
         });
         context("should fail", async () => {
-            it("when masset missing", async () => {
-                const inst = await BasketManager.new();
-                await expectRevert(
-                    inst.initialize(ZERO_ADDRESS, bassets, factors),
-                    "VM Exception while processing transaction: revert invalid masset address",
-                );
-            });
             it("when bassets missing", async () => {
-                const inst = await BasketManager.new();
-                await expectRevert(
-                    inst.initialize(masset.address, [], factors),
+                await expectRevert(BasketManager.new([], factors),
                     "VM Exception while processing transaction: revert some basset required",
                 );
             });
             it("when factors missing", async () => {
-                const inst = await BasketManager.new();
-                await expectRevert(
-                    inst.initialize(masset.address, bassets, []),
+                await expectRevert(BasketManager.new(bassets, []),
                     "VM Exception while processing transaction: revert factor array length mismatch",
                 );
             });
@@ -76,8 +64,7 @@ contract("BasketManager", async (accounts) => {
         context("checking if bassets are valid", () => {
             let inst;
             beforeEach(async () => {
-                inst = await BasketManager.new();
-                await inst.initialize(masset.address, bassets, factors);
+                inst = await BasketManager.new(bassets, factors);
             });
             context("isValidBasset", () => {
                 it("should return false if basset is in the basket", async () => {

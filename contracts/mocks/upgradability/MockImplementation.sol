@@ -1,8 +1,6 @@
 pragma solidity 0.5.16;
 
-import { Initializable } from "@openzeppelin/upgrades/contracts/Initializable.sol";
-
-contract MockImplementationV1 is Initializable {
+contract MockImplementationV1 {
     string public version = "";
     uint256 public uintVal = 1;
     address private proxyAdmin;
@@ -12,7 +10,7 @@ contract MockImplementationV1 is Initializable {
         _;
     }
 
-    function initialize(address _proxyAdmin) public initializer {
+    function initialize(address _proxyAdmin) public {
         version = "V1";
         uintVal = 2;
         // Initialize the proxy address (DelayedProxyAdmin's address)
@@ -20,7 +18,7 @@ contract MockImplementationV1 is Initializable {
     }
 }
 
-contract MockImplementationV2 is Initializable{
+contract MockImplementationV2 {
     string public version = "";
     uint256 public uintVal = 1;
     address private proxyAdmin;
@@ -37,7 +35,7 @@ contract MockImplementationV2 is Initializable{
     }
 }
 
-contract MockImplementationV3 is Initializable{
+contract MockImplementationV3 {
     string public version = "";
     uint256 public uintVal = 1;
     address private proxyAdmin;

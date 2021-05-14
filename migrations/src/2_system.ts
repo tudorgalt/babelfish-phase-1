@@ -4,6 +4,7 @@
 /// <reference path="../../types/generated/index.d.ts" />
 /// <reference path="../../types/generated/types.d.ts" />
 
+import { ZERO_ADDRESS } from "@utils/constants";
 import state from "../state";
 import addresses from '../addresses';
 
@@ -97,17 +98,14 @@ export default async (
     const [default_, governor] = accounts;
     const newGovernor = governor; // This should be an external multisig
     let bassetDetails;
+    console.log("Generating bAssets..");
     if (deployer.network === "ropsten") {
-        console.log("Loading Ropsten bAssets and lending platforms");
         bassetDetails = await loadBassetsRopsten(artifacts);
     } else if (deployer.network === "kovan") {
-        console.log("Loading Kovan bAssets and lending platforms");
         bassetDetails = await loadBassetsKovan(artifacts);
     } else if (deployer.network === "rskTestnet") {
-        console.log("Loading RSK testnet bAssets and lending platforms");
         bassetDetails = await loadBassetsRskTestnet(artifacts, default_, deployer.network);
     } else {
-        console.log(`Generating mock bAssets and lending platforms`);
         bassetDetails = await loadBassetsLocal(artifacts, default_);
     }
 
@@ -138,9 +136,11 @@ export default async (
 
     const initializationData_mUSD: string = d_Masset.contract.methods
         .initialize(
-            "BabelfishUSD",
-            "xUSD",
+            "BabelfishETH",
+            "ETHx",
             d_BasketManagerProxy.address,
+            addresses[deployer.network].BRIDGE_ADDRESS,
+            addresses[deployer.network].ERC1820_ADDRESS
         )
         .encodeABI();
     await state.conditionalInitialize('MassetProxy', () => {

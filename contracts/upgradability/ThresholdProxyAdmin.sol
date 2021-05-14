@@ -1,12 +1,11 @@
 pragma solidity 0.5.16;
 
-import { Initializable } from "@openzeppelin/upgrades/contracts/Initializable.sol";
-import { BaseAdminUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgradeability/BaseAdminUpgradeabilityProxy.sol";
-import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancyGuard.sol";
+import { BaseAdminUpgradeabilityProxy } from "../openzeppelin/upgrades/contracts/upgradeability/BaseAdminUpgradeabilityProxy.sol";
+import { ReentrancyGuard } from "../openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract ThresholdProxyAdmin is InitializableReentrancyGuard, Initializable {
+contract ThresholdProxyAdmin is ReentrancyGuard {
+
     // events
-
     event Proposed(address admin, Action action, address target, bytes data);
     event Retracted(address admin, Action action, address target, bytes data);
     event Accepted(address admin, Action action, address target, bytes data);
@@ -82,14 +81,12 @@ contract ThresholdProxyAdmin is InitializableReentrancyGuard, Initializable {
 
     // external
 
-    function initialize(address payable _proxy, address[] calldata _admins, uint8 _threshold) external initializer {
+    constructor(address payable _proxy, address[] memory _admins, uint8 _threshold) public  {
         require(adminsArray.length == 0, "already initialized");
         require(proxy == address(0), "already initialized");
         require(_proxy != address(0), "invalid proxy address");
         require(_admins.length >= 3, "at least 3 admins");
         require(_threshold >= 2 && _threshold <= _admins.length, "invalid threshold");
-
-        InitializableReentrancyGuard._initialize();
 
         proxy = _proxy;
         adminsArray = _admins;

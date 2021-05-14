@@ -1,5 +1,7 @@
 export default {
     rskTestnet: {
-        ESETH_ADDRESS: '0x4f2fc8d55c1888a5aca2503e2f3e5d74eef37c33'
+        ESETH_ADDRESS: '0x4f2fc8d55c1888a5aca2503e2f3e5d74eef37c33',
+        ERC1820_ADDRESS: '0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24',
+        BRIDGE_ADDRESS: '0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156'
     }
 };

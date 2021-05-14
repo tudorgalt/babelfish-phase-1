@@ -1,46 +1,29 @@
 pragma solidity 0.5.16;
 
-import { Initializable } from "@openzeppelin/upgrades/contracts/Initializable.sol";
-import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancyGuard.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { ERC20Detailed } from "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
-import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { SafeMath } from "../openzeppelin/contracts/math/SafeMath.sol";
 
-contract BasketManager is Initializable, InitializableReentrancyGuard {
+contract BasketManager {
 
     using SafeMath for uint256;
 
     // state
-    address private masset;
     address[] private bassetsArray;
     mapping(address => bool) private bassetsMap;
     mapping(address => int256) private factorMap;
-
-    // internal
-    modifier massetOnly() {
-        require(msg.sender == masset, "masset only");
-        _;
-    }
 
     function _isValidBasset(address _basset) internal view returns(bool) {
         return _basset != address(0) && bassetsMap[_basset];
     }
 
     // external
-    function initialize(address _masset, address[] calldata _bassets, int256[] calldata _factors) external initializer {
-        require(_masset != address(0), "invalid masset address");
+    constructor(address[] memory _bassets, int256[] memory _factors) public {
         require(_bassets.length > 0, "some basset required");
         require(_bassets.length == _factors.length, "factor array length mismatch");
 
-        InitializableReentrancyGuard._initialize();
-
-        masset = _masset;
         bassetsArray = _bassets;
         for(uint i=0; i<bassetsArray.length; i++) {
             address basset = bassetsArray[i];
             require(basset != address(0), "invalid basset address");
-            require(IERC20(basset).totalSupply() > 0, "invalid basset (1)");
-            require(ERC20Detailed(basset).decimals() > 0, "invalid basset (2)");
             require(!bassetsMap[basset], "basset not unique");
             bassetsMap[basset] = true;
             require(_factors[i] != 0, "invalid factor");
