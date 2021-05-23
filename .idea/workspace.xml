@@ -2,30 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fda9babd-09e9-4a74-a0e2-3b4ee8fc8059" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/contracts/helpers/IOwnable.sol" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/contracts/helpers/InitializableOwnable.sol" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/contracts/helpers/Ownable.sol" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/contracts/masset/Token.sol" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/src/upgradeMasset.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/helpers/IBridge.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/masset/IBridge.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/helpers/InitializableERC20Detailed.sol" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/helpers/InitializableReentrancyGuard.sol" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/helpers/InitializableToken.sol" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/masset/BasketManager.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/masset/BasketManager.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/contracts/masset/Masset.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/masset/Masset.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/mocks/masset/MockMasset.sol" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/mocks/shared/MockERC20.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mocks/shared/MockERC20.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/mocks/shared/MockInitializableToken.sol" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/mocks/shared/MockProxy.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mocks/shared/MockProxy.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/mocks/upgradability/MockImplementation.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mocks/upgradability/MockImplementation.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/upgradability/BasketManagerProxy.sol" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/upgradability/MassetProxy.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/upgradability/MassetProxy.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/upgradability/ThresholdProxyAdmin.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/upgradability/ThresholdProxyAdmin.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/migrations/src/2_system.ts" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/src/2_system.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/src/upgradeMasset.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/src/upgradeMasset.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/state_development.json" beforeDir="false" afterPath="$PROJECT_DIR$/state_development.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/state_rskTestnet.json" beforeDir="false" afterPath="$PROJECT_DIR$/state_rskTestnet.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/TestBasketManager.spec.ts_old" beforeDir="false" afterPath="$PROJECT_DIR$/test/TestBasketManager.spec.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/TestMasset.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/TestMasset.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/TestThresholdProxyAdmin.spec.ts_old" beforeDir="false" afterPath="$PROJECT_DIR$/test/TestThresholdProxyAdmin.spec.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -53,7 +36,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/contracts/helpers" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
@@ -72,11 +55,11 @@
       <recent name="$PROJECT_DIR$/test-utils" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/contracts/helpers" />
       <recent name="$PROJECT_DIR$/scripts/src" />
       <recent name="$PROJECT_DIR$/test" />
       <recent name="$PROJECT_DIR$/contracts/mocks/masset" />
-      <recent name="$PROJECT_DIR$/test-utils" />
     </key>
   </component>
   <component name="RunManager" selected="npm.script:rskTestnet upgradeMasset">
@@ -146,6 +129,10 @@
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
     <state x="304" y="188" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1680.1050@0.0.1680.1050" timestamp="1621597385864" />
+    <state x="508" y="335" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1621713115271">
+      <screen x="0" y="0" width="1680" height="1050" />
+    </state>
+    <state x="508" y="335" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1680.1050@0.0.1680.1050" timestamp="1621713115271" />
     <state x="578" y="280" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1621618283199">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
@@ -154,70 +141,74 @@
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
     <state x="100" y="100" width="1480" height="850" key="DiffContextDialog/0.0.1680.1050@0.0.1680.1050" timestamp="1621692916396" />
-    <state width="1659" height="119" key="GridCell.Tab.0.bottom" timestamp="1621699614832">
+    <state width="1659" height="183" key="GridCell.Tab.0.bottom" timestamp="1621763983904">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.0.bottom/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614832" />
-    <state width="1659" height="119" key="GridCell.Tab.0.center" timestamp="1621699614832">
+    <state width="1659" height="183" key="GridCell.Tab.0.bottom/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983904" />
+    <state width="1659" height="183" key="GridCell.Tab.0.center" timestamp="1621763983903">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.0.center/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614832" />
-    <state width="1659" height="119" key="GridCell.Tab.0.left" timestamp="1621699614831">
+    <state width="1659" height="183" key="GridCell.Tab.0.center/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983903" />
+    <state width="1659" height="183" key="GridCell.Tab.0.left" timestamp="1621763983903">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.0.left/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614831" />
-    <state width="1659" height="119" key="GridCell.Tab.0.right" timestamp="1621699614832">
+    <state width="1659" height="183" key="GridCell.Tab.0.left/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983903" />
+    <state width="1659" height="183" key="GridCell.Tab.0.right" timestamp="1621763983903">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.0.right/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614832" />
-    <state width="1659" height="119" key="GridCell.Tab.1.bottom" timestamp="1621699614834">
+    <state width="1659" height="183" key="GridCell.Tab.0.right/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983903" />
+    <state width="1659" height="183" key="GridCell.Tab.1.bottom" timestamp="1621763983803">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.1.bottom/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614834" />
-    <state width="1659" height="119" key="GridCell.Tab.1.center" timestamp="1621699614833">
+    <state width="1659" height="183" key="GridCell.Tab.1.bottom/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983803" />
+    <state width="1659" height="183" key="GridCell.Tab.1.center" timestamp="1621763983802">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.1.center/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614833" />
-    <state width="1659" height="119" key="GridCell.Tab.1.left" timestamp="1621699614833">
+    <state width="1659" height="183" key="GridCell.Tab.1.center/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983802" />
+    <state width="1659" height="183" key="GridCell.Tab.1.left" timestamp="1621763983802">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.1.left/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614833" />
-    <state width="1659" height="119" key="GridCell.Tab.1.right" timestamp="1621699614834">
+    <state width="1659" height="183" key="GridCell.Tab.1.left/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983802" />
+    <state width="1659" height="183" key="GridCell.Tab.1.right" timestamp="1621763983802">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.1.right/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614834" />
-    <state width="1659" height="119" key="GridCell.Tab.2.bottom" timestamp="1621699614835">
+    <state width="1659" height="183" key="GridCell.Tab.1.right/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983802" />
+    <state width="1659" height="183" key="GridCell.Tab.2.bottom" timestamp="1621763983804">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.2.bottom/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614835" />
-    <state width="1659" height="119" key="GridCell.Tab.2.center" timestamp="1621699614835">
+    <state width="1659" height="183" key="GridCell.Tab.2.bottom/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983804" />
+    <state width="1659" height="183" key="GridCell.Tab.2.center" timestamp="1621763983804">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.2.center/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614835" />
-    <state width="1659" height="119" key="GridCell.Tab.2.left" timestamp="1621699614834">
+    <state width="1659" height="183" key="GridCell.Tab.2.center/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983804" />
+    <state width="1659" height="183" key="GridCell.Tab.2.left" timestamp="1621763983803">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.2.left/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614834" />
-    <state width="1659" height="119" key="GridCell.Tab.2.right" timestamp="1621699614835">
+    <state width="1659" height="183" key="GridCell.Tab.2.left/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983803" />
+    <state width="1659" height="183" key="GridCell.Tab.2.right" timestamp="1621763983804">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.2.right/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614835" />
-    <state width="1659" height="119" key="GridCell.Tab.3.bottom" timestamp="1621699614836">
+    <state width="1659" height="183" key="GridCell.Tab.2.right/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983804" />
+    <state width="1659" height="183" key="GridCell.Tab.3.bottom" timestamp="1621763983805">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.3.bottom/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614836" />
-    <state width="1659" height="119" key="GridCell.Tab.3.center" timestamp="1621699614835">
+    <state width="1659" height="183" key="GridCell.Tab.3.bottom/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983805" />
+    <state width="1659" height="183" key="GridCell.Tab.3.center" timestamp="1621763983805">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.3.center/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614835" />
-    <state width="1659" height="119" key="GridCell.Tab.3.left" timestamp="1621699614835">
+    <state width="1659" height="183" key="GridCell.Tab.3.center/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983805" />
+    <state width="1659" height="183" key="GridCell.Tab.3.left" timestamp="1621763983804">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.3.left/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614835" />
-    <state width="1659" height="119" key="GridCell.Tab.3.right" timestamp="1621699614835">
+    <state width="1659" height="183" key="GridCell.Tab.3.left/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983804" />
+    <state width="1659" height="183" key="GridCell.Tab.3.right" timestamp="1621763983805">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
-    <state width="1659" height="119" key="GridCell.Tab.3.right/0.0.1680.1050@0.0.1680.1050" timestamp="1621699614835" />
+    <state width="1659" height="183" key="GridCell.Tab.3.right/0.0.1680.1050@0.0.1680.1050" timestamp="1621763983805" />
+    <state x="428" y="276" key="IDE.errors.dialog" timestamp="1621762918763">
+      <screen x="0" y="0" width="1680" height="1050" />
+    </state>
+    <state x="428" y="276" key="IDE.errors.dialog/0.0.1680.1050@0.0.1680.1050" timestamp="1621762918763" />
     <state x="349" y="164" key="SettingsEditor" timestamp="1621324041354">
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
@@ -234,29 +225,5 @@
       <screen x="0" y="0" width="1680" height="1050" />
     </state>
     <state x="505" y="176" width="670" height="676" key="search.everywhere.popup/0.0.1680.1050@0.0.1680.1050" timestamp="1621623022603" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="javascript">
-          <url>file://$PROJECT_DIR$/scripts/src/upgradeMasset.ts</url>
-          <line>24</line>
-          <properties lambdaOrdinal="-1" />
-          <option name="timeStamp" value="5" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="javascript">
-          <url>file://$PROJECT_DIR$/scripts/src/upgradeMasset.ts</url>
-          <line>25</line>
-          <properties lambdaOrdinal="-1" />
-          <option name="timeStamp" value="6" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="javascript">
-          <url>file://$PROJECT_DIR$/scripts/src/upgradeMasset.ts</url>
-          <line>27</line>
-          <properties lambdaOrdinal="-1" />
-          <option name="timeStamp" value="7" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

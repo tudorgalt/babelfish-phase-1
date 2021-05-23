@@ -66,6 +66,8 @@ contract Masset is IERC777Recipient, InitializableOwnable {
     Token private token;
     IBridge private bridge;
 
+    bool migrationCompletedV1;
+
     // internal
 
     function registerAsERC777Recipient() internal {
@@ -85,12 +87,9 @@ contract Masset is IERC777Recipient, InitializableOwnable {
 
         InitializableOwnable.initialize();
 
-        setToken(_tokenAddress);
-        setBasketManager(_basketManagerAddress);
-        if(_bridgeAddress != address(0)) {
-            setBridge(_bridgeAddress);
-        }
-
+        basketManager = BasketManager(_basketManagerAddress);
+        token = Token(_tokenAddress);
+        bridge = IBridge(_bridgeAddress);
         if(_registerAsERC777RecipientFlag) {
             registerAsERC777Recipient();
         }
@@ -374,5 +373,22 @@ contract Masset is IERC777Recipient, InitializableOwnable {
         require(_newOwner != token.owner(), "same address");
 
         token.transferOwnership(_newOwner);
+    }
+
+    // Migrations
+    function migrationV1(
+        address _basketManagerAddress,
+        address _tokenAddress,
+        address _bridgeAddress) public {
+        //require(!migrationCompletedV1, "already executed");
+
+        //InitializableOwnable.initialize();
+
+        basketManager = BasketManager(_basketManagerAddress);
+        token = Token(_tokenAddress);
+        bridge = IBridge(_bridgeAddress);
+        registerAsERC777Recipient();
+
+        //migrationCompletedV1 = true;
     }
 }

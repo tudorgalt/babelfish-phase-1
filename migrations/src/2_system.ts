@@ -75,9 +75,11 @@ export default async (
     Imports parallel to folder layout
     ****************************************/
 
+    // Token
+    const c_Token = artifacts.require("Token");
+
     // Masset
     const c_BasketManager = artifacts.require("BasketManager");
-    const c_MockERC20 = artifacts.require("MockERC20"); // Merely used to initialize BM
 
     // - mUSD
     const c_Masset = artifacts.require("Masset");
@@ -88,7 +90,6 @@ export default async (
 
     // - BaseProxies
     const c_MassetProxy = artifacts.require("MassetProxy");
-    const c_BasketManagerProxy = artifacts.require("BasketManagerProxy");
 
     /***************************************
     0. Mock platforms and bAssets
@@ -109,40 +110,34 @@ export default async (
         bassetDetails = await loadBassetsLocal(artifacts, default_);
     }
 
-    const d_ThresholdProxyAdmin_Masset = await state.conditionalDeploy(c_ThresholdProxyAdmin, 'ThresholdProxyAdmin_Masset',
-        () => deployer.deploy(c_ThresholdProxyAdmin, { from: default_ }));
-
-    const d_ThresholdProxyAdmin_BasketManager = await state.conditionalDeploy(c_ThresholdProxyAdmin, 'ThresholdProxyAdmin_BasketManager',
-        () => deployer.deploy(c_ThresholdProxyAdmin, { from: default_ }));
+    const d_Token = await state.conditionalDeploy(c_Token, 'Token',() => c_Token.new('ETHs','ETHs', 18));
 
     const d_Masset = await state.conditionalDeploy(c_Masset, 'Masset',  () => deployer.deploy(c_Masset, { from: default_ }));
 
     const d_MassetProxy = await state.conditionalDeploy(c_MassetProxy, 'MassetProxy',
         () => deployer.deploy(c_MassetProxy));
 
-    await state.conditionalInitialize('ThresholdProxyAdmin_Masset', async () => {
-        return d_ThresholdProxyAdmin_Masset.initialize(d_MassetProxy.address, [ admin1, admin2, admin3 ], 2);
-    });
+    console.log(1);
+
+    if (await d_Token.owner() != d_MassetProxy.address) {
+        await d_Token.transferOwnership(d_MassetProxy.address);
+    }
+
+    console.log(2);
+
+    const d_ThresholdProxyAdmin_Masset = await state.conditionalDeploy(c_ThresholdProxyAdmin, 'ThresholdProxyAdmin_Masset',
+        () => c_ThresholdProxyAdmin.new(d_MassetProxy.address, [ admin1, admin2, admin3 ], 2));
 
     const d_BasketManager = await state.conditionalDeploy(c_BasketManager, 'BasketManager',
-        () => deployer.deploy(c_BasketManager) );
+        () => c_BasketManager.new(bassetDetails.bAssets, bassetDetails.factors));
 
-    const d_BasketManagerProxy = await state.conditionalDeploy(c_BasketManagerProxy, 'BasketManagerProxy',
-        () => deployer.deploy(c_BasketManagerProxy));
-
-    await state.conditionalInitialize('ThresholdProxyAdmin_BasketManager', async () => {
-        return d_ThresholdProxyAdmin_BasketManager.initialize(d_BasketManagerProxy.address, [ admin1, admin2, admin3 ], 2);
-    });
-
+    /*
     const initializationData_mUSD: string = d_Masset.contract.methods
         .initialize(
-            "BabelfishETH",
-            "ETHx",
-            d_BasketManagerProxy.address,
+            d_BasketManager.address,
+            d_Token.address,
             addresses[deployer.network].BRIDGE_ADDRESS,
-            addresses[deployer.network].ERC1820_ADDRESS
-        )
-        .encodeABI();
+            true).encodeABI();
     await state.conditionalInitialize('MassetProxy', () => {
         return d_MassetProxy.methods["initialize(address,address,bytes)"](
             d_Masset.address,
@@ -150,23 +145,7 @@ export default async (
             initializationData_mUSD,
         );
     });
-
-    console.log(bassetDetails);
-
-    const initializationData_BasketManager: string = d_BasketManager.contract.methods
-        .initialize(
-            d_MassetProxy.address,
-            bassetDetails.bAssets,
-            bassetDetails.factors
-        )
-        .encodeABI();
-    await state.conditionalInitialize('BasketManagerProxy', () => {
-        return d_BasketManagerProxy.methods["initialize(address,address,bytes)"](
-            d_BasketManager.address,
-            d_ThresholdProxyAdmin_BasketManager.address,
-            initializationData_BasketManager,
-        );
-    });
+    */
 
     state.printState();
 };

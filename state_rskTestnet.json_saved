@@ -1,0 +1,27 @@
+{
+  "Migrations": {
+    "address": "0xe489a8AEb98635B2ee72D0609Fcc2eA59e9C6820"
+  },
+  "Mock1": {
+    "address": "0x7ABf4f9F53A9b19905f26aac6Acb59cB738C977a"
+  },
+  "ThresholdProxyAdmin_Masset": {
+    "address": "0x20bdB7607092C88b52f6E6ceCD6Dc6F226bAb570",
+    "initialized": true
+  },
+  "ThresholdProxyAdmin_BasketManager": {
+    "address": "0x80C0f02ab972360F2264F99978F2923A4e6bd130",
+    "initialized": true
+  },
+  "MassetProxy": {
+    "address": "0x04D92DaA8f3Ef7bD222195e8D1DbE8D89A8CebD3",
+    "initialized": true
+  },
+  "BasketManager": {
+    "address": "0xf8187FD68bf276D6A66e6eff20fBEfc6B41c7168"
+  },
+  "BasketManagerProxy": {
+    "address": "0xaB4EDD867FEc9511e0Fa759E43c7c6F92D48B2ed",
+    "initialized": true
+  }
+}
