@@ -147,7 +147,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         require(basketManager.isValidBasset(_basset), "invalid basset");
         require(basketManager.checkBasketBalanceForDeposit(_basset, _bassetQuantity));
 
-        uint256 massetQuantity = basketManager.convertBassetToMasset(_basset, _bassetQuantity);
+        uint256 massetQuantity = basketManager.convertBassetToMassetQuantity(_basset, _bassetQuantity);
 
         IERC20(_basset).transferFrom(msg.sender, address(this), _bassetQuantity);
 
@@ -172,7 +172,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _bAsset,
         uint256 _massetQuantity
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, msg.sender);
+        return _redeemTo(_bAsset, _massetQuantity, msg.sender, false);
     }
 
     /**
@@ -188,7 +188,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         uint256 _massetQuantity,
         address _recipient
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, _recipient);
+        return _redeemTo(_bAsset, _massetQuantity, _recipient, false);
     }
 
     /***************************************
@@ -198,17 +198,26 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     function _redeemTo(
         address _basset,
         uint256 _massetQuantity,
-        address _recipient
+        address _recipient,
+        bool bridgeFlag
     ) internal returns (uint256 massetRedeemed) {
         require(_recipient != address(0), "must be a valid recipient");
         require(_massetQuantity > 0, "masset quantity must be greater than 0");
         require(basketManager.isValidBasset(_basset), "invalid basset");
 
-        uint256 bassetQuantity = basketManager.convertMassetToBasset(_basset, _massetQuantity);
+        uint256 bassetQuantity = basketManager.convertMassetToBassetQuantity(_basset, _massetQuantity);
 
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity));
 
-        IERC20(_basset).transfer(_recipient, bassetQuantity);
+        if(bridgeFlag) {
+            require(address(bridge) != address(0), "invalid bridge");
+            IERC20(_basset).approve(address(bridge), bassetQuantity);
+            require(
+                bridge.receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
+                "call to bridge failed");
+        } else {
+            IERC20(_basset).transfer(_recipient, bassetQuantity);
+        }
 
         token.burn(_recipient, _massetQuantity);
         emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity);
@@ -218,45 +227,42 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 
     // For the BRIDGE
 
+    /**
+     * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
+     *      relative Masset quantity from the sender. Sender also incurs a small fee, if any.
+     *      This function is designed to also call the bridge in order to have the basset tokens sent to
+     *      another blockchain.
+     * @param _basset           Address of the bAsset to redeem
+     * @param _massetQuantity   Units of the masset to redeem
+     * @param _recipient        Address to credit with withdrawn bAssets
+     * @param _bridgeAddress    This is ignored and is left here for backward compatibility with the FE
+     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets
+     */
     function redeemToBridge(
         address _basset,
         uint256 _massetQuantity,
         address _recipient,
         address _bridgeAddress // for backward compatibility
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        require(_bridgeAddress == address(bridge), "invalid bridge");
-        return _redeemToBridge(_basset, _massetQuantity, _recipient);
+        return _redeemTo(_basset, _massetQuantity, _recipient, true);
     }
 
+    /**
+     * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
+     *      relative Masset quantity from the sender. Sender also incurs a small fee, if any.
+     *      This function is designed to also call the bridge in order to have the basset tokens sent to
+     *      another blockchain.
+     * @param _basset           Address of the bAsset to redeem
+     * @param _massetQuantity   Units of the masset to redeem
+     * @param _recipient        Address to credit with withdrawn bAssets
+     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets
+     */
     function redeemToBridge(
         address _basset,
         uint256 _massetQuantity,
         address _recipient
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemToBridge(_basset, _massetQuantity, _recipient);
-    }
-
-    function _redeemToBridge(
-        address _basset,
-        uint256 _massetQuantity,
-        address _recipient
-    ) internal returns (uint256 massetRedeemed) {
-        require(_recipient != address(0), "must be a valid recipient");
-        require(_massetQuantity > 0, "masset quantity must be greater than 0");
-        require(basketManager.isValidBasset(_basset), "invalid basset");
-
-        uint256 bassetQuantity = basketManager.convertMassetToBasset(_basset, _massetQuantity);
-        require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "basket out of balance");
-
-        IERC20(_basset).approve(address(bridge), bassetQuantity);
-        require(
-            bridge.receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
-            "call to bridge failed");
-
-        token.burn(_recipient, _massetQuantity);
-        emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity);
-
-        return _massetQuantity;
+        return _redeemTo(_basset, _massetQuantity, _recipient, true);
     }
 
     function _decodeAddress(bytes memory data) private pure returns (address) {
@@ -286,22 +292,15 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
             _userData,
             _operatorData
         );
-
-        // This is probably not needed, because the bridge calls onTokensMinted
-        /*
-        require(_amount > 0, "amount must be > 0");
-
-        address recipient =  _decodeAddress(_userData);
-        address basset = msg.sender;
-        require(BasketManager(basketManager).isValidBasset(basset), "invalid basset");
-        require(BasketManager(basketManager).checkBasketBalanceForDeposit(basset, _amount), "basket out of balance");
-
-        uint256 massetQuantity = BasketManager(basketManager).convertBassetToMasset(basset, _amount);
-        _mint(recipient, massetQuantity);
-        emit Minted(_from, recipient, massetQuantity, basset, _amount, symbol());
-        */
     }
 
+    /**
+     * @dev This is called by the bridge to let us know the user has sent tokens through it and
+     *      into the masset.
+     * @param _orderAmount      Units of the masset to redeem
+     * @param _tokenAddress     Address of the bAsset to redeem
+     * @param _userData         Address of the final recipient as ABI encoded bytes
+     */
     function onTokensMinted(
         uint256 _orderAmount,
         address _tokenAddress,
@@ -318,7 +317,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         require(basketManager.isValidBasset(basset), "invalid basset");
         require(basketManager.checkBasketBalanceForDeposit(basset, _orderAmount), "basket out of balance");
 
-        uint256 massetQuantity = basketManager.convertBassetToMasset(basset, _orderAmount);
+        uint256 massetQuantity = basketManager.convertBassetToMassetQuantity(basset, _orderAmount);
         token.mint(recipient, massetQuantity);
         emit Minted(msg.sender, recipient, massetQuantity, basset, _orderAmount);
     }

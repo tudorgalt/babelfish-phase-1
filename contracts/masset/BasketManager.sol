@@ -43,7 +43,7 @@ contract BasketManager {
         return _isValidBasset(_basset);
     }
 
-    function convertBassetToMasset(address _basset, uint256 _bassetQuantity) external view returns(uint256) {
+    function convertBassetToMassetQuantity(address _basset, uint256 _bassetQuantity) external view returns(uint256) {
         require(_isValidBasset(_basset), "invalid basset");
         int256 factor = factorMap[_basset];
         if(factor > 0) {
@@ -52,7 +52,7 @@ contract BasketManager {
         return _bassetQuantity.mul(uint256(-factor));
     }
 
-    function convertMassetToBasset(address _basset, uint256 _massetQuantity) external view returns(uint256) {
+    function convertMassetToBassetQuantity(address _basset, uint256 _massetQuantity) external view returns(uint256) {
         require(_isValidBasset(_basset), "invalid basset");
         int256 factor = factorMap[_basset];
         if(factor > 0) {
