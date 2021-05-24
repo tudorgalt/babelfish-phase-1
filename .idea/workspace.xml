@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fda9babd-09e9-4a74-a0e2-3b4ee8fc8059" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/contracts/masset/ThresholdMassetAdmin.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/masset/Masset.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/masset/Masset.sol" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -31,7 +31,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/contracts/masset" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
@@ -50,11 +50,11 @@
       <recent name="$PROJECT_DIR$/test-utils" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/contracts/masset" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/contracts/helpers" />
       <recent name="$PROJECT_DIR$/scripts/src" />
       <recent name="$PROJECT_DIR$/test" />
-      <recent name="$PROJECT_DIR$/contracts/mocks/masset" />
     </key>
   </component>
   <component name="RunManager" selected="npm.script:rskTestnet upgradeMasset">
