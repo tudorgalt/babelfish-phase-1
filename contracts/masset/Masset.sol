@@ -57,8 +57,6 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     Token private token;
     IBridge private bridge;
 
-    bool migrationCompletedV1;
-
     // internal
 
     function registerAsERC777Recipient() internal {
