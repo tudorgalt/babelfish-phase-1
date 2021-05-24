@@ -219,7 +219,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
             IERC20(_basset).transfer(_recipient, bassetQuantity);
         }
 
-        token.burn(_recipient, _massetQuantity);
+        token.burn(msg.sender, _massetQuantity);
         emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity);
 
         return _massetQuantity;
