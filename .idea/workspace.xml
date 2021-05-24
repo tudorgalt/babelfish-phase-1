@@ -2,13 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fda9babd-09e9-4a74-a0e2-3b4ee8fc8059" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/contracts/helpers/InitializableReentrancyGuard.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/helpers/InitializableOwnable.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/helpers/InitializableOwnable.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/contracts/masset/Masset.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/masset/Masset.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/upgradability/ThresholdProxyAdmin.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/upgradability/ThresholdProxyAdmin.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/migrations/addresses.ts" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/addresses.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/migrations/src/2_system.ts" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/src/2_system.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/src/upgradeMasset.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/src/upgradeMasset.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/state_development.json" beforeDir="false" afterPath="$PROJECT_DIR$/state_development.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/state_rskTestnet.json" beforeDir="false" afterPath="$PROJECT_DIR$/state_rskTestnet.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/TestThresholdProxyAdmin.spec.ts_old" beforeDir="false" afterPath="$PROJECT_DIR$/test/TestThresholdProxyAdmin.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/TestMasset.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/TestMasset.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/TestThresholdProxyAdmin.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/TestThresholdProxyAdmin.spec.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -49,7 +49,13 @@ contract("Masset", async (accounts) => {
             it("when basket manager missing", async () => {
                 await expectRevert(
                     masset.initialize(ZERO_ADDRESS, token.address, ZERO_ADDRESS, false),
-                    "VM Exception while processing transaction: revert address invalid",
+                    "VM Exception while processing transaction: revert invalid basket manager",
+                );
+            });
+            it("when token missing", async () => {
+                await expectRevert(
+                    masset.initialize(basketManagerObj.basketManager.address, ZERO_ADDRESS, ZERO_ADDRESS, false),
+                    "VM Exception while processing transaction: revert invalid token",
                 );
             });
             it("when already initialized", async () => {

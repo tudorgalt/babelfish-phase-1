@@ -27,58 +27,39 @@ contract("ThresholdProxyAdmin", async (accounts) => {
     before("before all", async () => {});
 
     describe("constructor", async () => {
-        it("should succeed", async () => {
-            const instance = await ThresholdProxyAdmin.new();
-            const tproxy = await instance.getProxy();
-            expect(tproxy).to.equal(ZERO_ADDRESS);
-        });
-    });
-
-    describe("initialize", async () => {
         const proxy = await MassetProxy.new();
         const admins = [sa.dummy1, sa.dummy2, sa.dummy3];
 
         context("should succeed", async () => {
             it("when all parameters given", async () => {
-                const instance = await ThresholdProxyAdmin.new();
-                await instance.initialize.sendTransaction(proxy.address, admins, 2);
+                await ThresholdProxyAdmin.new(proxy.address, admins, 2);
             });
         });
 
         context("should fail", async () => {
             let instance;
-            beforeEach(async () => {
-                instance = await ThresholdProxyAdmin.new();
-            });
             it("when no proxy given", async () => {
                 await expectRevert(
-                    instance.initialize.sendTransaction(ZERO_ADDRESS, admins, 2),
+                    ThresholdProxyAdmin.new(ZERO_ADDRESS, admins, 2),
                     "invalid proxy address",
                 );
             });
             it("when no admins given", async () => {
                 await expectRevert(
-                    instance.initialize.sendTransaction(proxy.address, [], 2),
+                    ThresholdProxyAdmin.new(proxy.address, [], 2),
                     "admins",
                 );
             });
             it("when threshold < 2", async () => {
                 await expectRevert(
-                    instance.initialize.sendTransaction(proxy.address, admins, 1),
+                    ThresholdProxyAdmin.new(proxy.address, admins, 1),
                     "threshold",
                 );
             });
             it("when threshold > admins.length", async () => {
                 await expectRevert(
-                    instance.initialize.sendTransaction(proxy.address, admins, admins.length + 1),
+                    ThresholdProxyAdmin.new(proxy.address, admins, admins.length + 1),
                     "threshold",
-                );
-            });
-            it("when already initialized", async () => {
-                await instance.initialize.sendTransaction(proxy.address, admins, 2);
-                await expectRevert(
-                    instance.initialize.sendTransaction(proxy.address, admins, 2),
-                    "VM Exception while processing transaction: revert Contract instance has already been initialized",
                 );
             });
         });
@@ -94,16 +75,15 @@ contract("ThresholdProxyAdmin", async (accounts) => {
             let mockDummyNew: IMockDummyInstance;
             let castedProxy: IMockDummyInstance;
             beforeEach(async () => {
-                instance = await ThresholdProxyAdmin.new();
                 proxy = await MassetProxy.new();
                 mockDummyOld = await MockDummy1.new();
                 mockDummyNew = await MockDummy2.new();
+                instance = await ThresholdProxyAdmin.new(proxy.address, admins, 2);
                 await proxy.methods["initialize(address,address,bytes)"](
                     mockDummyOld.address,
                     instance.address,
                     "0x",
                 );
-                await instance.initialize(proxy.address, admins, 2);
                 castedProxy = await IMockDummy.at(proxy.address);
             });
             it("on happy flow", async () => {
@@ -140,9 +120,8 @@ contract("ThresholdProxyAdmin", async (accounts) => {
             let instance: ThresholdProxyAdminInstance;
             let proxy: MassetProxyInstance;
             beforeEach(async () => {
-                instance = await ThresholdProxyAdmin.new();
                 proxy = await MassetProxy.new();
-                instance.initialize(proxy.address, admins, 2);
+                instance = await ThresholdProxyAdmin.new(proxy.address, admins, 2);
             });
             it("on threshold not met", async () => {
                 const tx = await instance.propose(ACTION_UPGRADE, sa.dummy4, "0x1234", {

@@ -20,7 +20,7 @@ contract InitializableOwnable is Context, IOwnable {
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
-    function initialize() internal {
+    function _initialize() internal {
         require(_owner == address(0), "already initialized");
         address msgSender = _msgSender();
         _owner = msgSender;

@@ -9,8 +9,9 @@ import { IERC1820Registry } from "../openzeppelin/contracts/introspection/IERC18
 import { IBridge } from "./IBridge.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 import "./Token.sol";
+import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancyGuard.sol";
 
-contract Masset is IERC777Recipient, InitializableOwnable {
+contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard {
 
     using SafeMath for uint256;
 
@@ -46,20 +47,10 @@ contract Masset is IERC777Recipient, InitializableOwnable {
         bytes userData
     );
 
-    // Filler for backward compatibility
-    address bogus1; // for backward compatibility
-    address bogus2; // for backward compatibility
-    address bogus3; // for backward compatibility
-    address bogus4; // for backward compatibility
-
-    // non-reentrancy
-    bool private entryFlag;
-    modifier nonReentrant() {
-        require(!entryFlag);
-        entryFlag = true;
-        _;
-        entryFlag = false;
-    }
+    event onSetBasketManager(address indexed sender, address indexed oldBasketManager, address indexed newBaskManager);
+    event onSetToken(address indexed sender, address indexed oldToken, address indexed newToken);
+    event onSetTokenOwner(address indexed sender, address indexed oldTokenOwner, address indexed newTokenOwner);
+    event onSetBridge(address indexed sender, address indexed oldBridge, address indexed newBridge);
 
     // state
     BasketManager private basketManager;
@@ -84,8 +75,11 @@ contract Masset is IERC777Recipient, InitializableOwnable {
         bool _registerAsERC777RecipientFlag) public {
 
         require(address(basketManager) == address(0) && address(token) == address(0), "already initialized");
+        require(_basketManagerAddress != address(0), "invalid basket manager");
+        require(_tokenAddress != address(0), "invalid token");
 
-        InitializableOwnable.initialize();
+        InitializableOwnable._initialize();
+        InitializableReentrancyGuard._initialize();
 
         basketManager = BasketManager(_basketManagerAddress);
         token = Token(_tokenAddress);
@@ -351,6 +345,7 @@ contract Masset is IERC777Recipient, InitializableOwnable {
         require(_basketManagerAddress != address(0), "address invalid");
         require(_basketManagerAddress != address(basketManager), "same address");
 
+        emit onSetBasketManager(msg.sender, address(basketManager), _basketManagerAddress);
         basketManager = BasketManager(_basketManagerAddress);
     }
 
@@ -358,6 +353,7 @@ contract Masset is IERC777Recipient, InitializableOwnable {
         require(_tokenAddress != address(0), "address invalid");
         require(_tokenAddress != address(token), "same address");
 
+        emit onSetToken(msg.sender, address(token), _tokenAddress);
         token = Token(_tokenAddress);
     }
 
@@ -365,6 +361,7 @@ contract Masset is IERC777Recipient, InitializableOwnable {
         require(_bridgeAddress != address(0), "address invalid");
         require(_bridgeAddress != address(bridge), "same address");
 
+        emit onSetBridge(msg.sender, address(bridge), _bridgeAddress);
         bridge = IBridge(_bridgeAddress);
     }
 
@@ -372,23 +369,7 @@ contract Masset is IERC777Recipient, InitializableOwnable {
         require(_newOwner != address(0), "address invalid");
         require(_newOwner != token.owner(), "same address");
 
+        emit onSetTokenOwner(msg.sender, token.owner(), _newOwner);
         token.transferOwnership(_newOwner);
-    }
-
-    // Migrations
-    function migrationV1(
-        address _basketManagerAddress,
-        address _tokenAddress,
-        address _bridgeAddress) public {
-        //require(!migrationCompletedV1, "already executed");
-
-        //InitializableOwnable.initialize();
-
-        basketManager = BasketManager(_basketManagerAddress);
-        token = Token(_tokenAddress);
-        bridge = IBridge(_bridgeAddress);
-        registerAsERC777Recipient();
-
-        //migrationCompletedV1 = true;
     }
 }

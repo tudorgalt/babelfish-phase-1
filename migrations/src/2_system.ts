@@ -119,7 +119,7 @@ export default async (
 
     console.log(1);
 
-    if (await d_Token.owner() != d_MassetProxy.address) {
+    if (await d_Token.owner() !== d_MassetProxy.address) {
         await d_Token.transferOwnership(d_MassetProxy.address);
     }
 
@@ -131,13 +131,12 @@ export default async (
     const d_BasketManager = await state.conditionalDeploy(c_BasketManager, 'BasketManager',
         () => c_BasketManager.new(bassetDetails.bAssets, bassetDetails.factors));
 
-    /*
     const initializationData_mUSD: string = d_Masset.contract.methods
         .initialize(
             d_BasketManager.address,
             d_Token.address,
             addresses[deployer.network].BRIDGE_ADDRESS,
-            true).encodeABI();
+            deployer.network !== 'development').encodeABI();
     await state.conditionalInitialize('MassetProxy', () => {
         return d_MassetProxy.methods["initialize(address,address,bytes)"](
             d_Masset.address,
@@ -145,7 +144,6 @@ export default async (
             initializationData_mUSD,
         );
     });
-    */
 
     state.printState();
 };

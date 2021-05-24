@@ -6,9 +6,9 @@ import { ReentrancyGuard } from "../openzeppelin/contracts/utils/ReentrancyGuard
 contract ThresholdProxyAdmin is ReentrancyGuard {
 
     // events
-    event Proposed(address admin, Action action, address target, bytes data);
-    event Retracted(address admin, Action action, address target, bytes data);
-    event Accepted(address admin, Action action, address target, bytes data);
+    event Proposed(address indexed admin, Action action, address indexed target, bytes data);
+    event Retracted(address indexed admin, Action action, address indexed target, bytes data);
+    event Accepted(address indexed admin, Action action, address indexed target, bytes data);
 
     // types
 
@@ -82,8 +82,6 @@ contract ThresholdProxyAdmin is ReentrancyGuard {
     // external
 
     constructor(address payable _proxy, address[] memory _admins, uint8 _threshold) public  {
-        require(adminsArray.length == 0, "already initialized");
-        require(proxy == address(0), "already initialized");
         require(_proxy != address(0), "invalid proxy address");
         require(_admins.length >= 3, "at least 3 admins");
         require(_threshold >= 2 && _threshold <= _admins.length, "invalid threshold");
