@@ -5,7 +5,7 @@
 /// <reference path="../../types/generated/types.d.ts" />
 
 import { ZERO_ADDRESS } from "@utils/constants";
-import state from "../state";
+import { conditionalDeploy, conditionalInitialize, printState } from "../state";
 import addresses from '../addresses';
 
 const admin1 = '0x94e907f6B903A393E14FE549113137CA6483b5ef';
@@ -33,7 +33,7 @@ async function loadBassetsRskTestnet(
     const c_MockERC20 = artifacts.require("MockERC20");
 
     //  - Mock bAssets
-    const mockBasset1 = await state.conditionalDeploy(c_MockERC20, "Mock1", () => {
+    const mockBasset1 = await conditionalDeploy(c_MockERC20, "Mock1", () => {
         return c_MockERC20.new("Mock1", "MK1", 18, deployerAddress, 1000);
     });
     return {
@@ -49,11 +49,11 @@ async function loadBassetsLocal(
     const c_MockERC20 = artifacts.require("MockERC20");
 
     //  - Mock bAssets
-    const mockBasset1 = await state.conditionalDeploy(c_MockERC20, "Mock1", () => {
+    const mockBasset1 = await conditionalDeploy(c_MockERC20, "Mock1", () => {
         return c_MockERC20.new("Mock1", "MK1", 18, deployer, 1000);
     });
     //  - Mock bAssets
-    const mockBasset2 = await state.conditionalDeploy(c_MockERC20, "Mock2", () => {
+    const mockBasset2 = await conditionalDeploy(c_MockERC20, "Mock2", () => {
         return c_MockERC20.new("Mock1", "MK1", 18, deployer, 1000);
     });
 
@@ -110,11 +110,11 @@ export default async (
         bassetDetails = await loadBassetsLocal(artifacts, default_);
     }
 
-    const d_Token = await state.conditionalDeploy(c_Token, 'Token',() => c_Token.new('ETHs','ETHs', 18));
+    const d_Token = await conditionalDeploy(c_Token, 'Token',() => c_Token.new('ETHs','ETHs', 18));
 
-    const d_Masset = await state.conditionalDeploy(c_Masset, 'Masset',  () => deployer.deploy(c_Masset, { from: default_ }));
+    const d_Masset = await conditionalDeploy(c_Masset, 'Masset',  () => deployer.deploy(c_Masset, { from: default_ }));
 
-    const d_MassetProxy = await state.conditionalDeploy(c_MassetProxy, 'MassetProxy',
+    const d_MassetProxy = await conditionalDeploy(c_MassetProxy, 'MassetProxy',
         () => deployer.deploy(c_MassetProxy));
 
     console.log(1);
@@ -125,10 +125,10 @@ export default async (
 
     console.log(2);
 
-    const d_ThresholdProxyAdmin_Masset = await state.conditionalDeploy(c_ThresholdProxyAdmin, 'ThresholdProxyAdmin_Masset',
+    const d_ThresholdProxyAdmin_Masset = await conditionalDeploy(c_ThresholdProxyAdmin, 'ThresholdProxyAdmin_Masset',
         () => c_ThresholdProxyAdmin.new(d_MassetProxy.address, [ admin1, admin2, admin3 ], 2));
 
-    const d_BasketManager = await state.conditionalDeploy(c_BasketManager, 'BasketManager',
+    const d_BasketManager = await conditionalDeploy(c_BasketManager, 'BasketManager',
         () => c_BasketManager.new(bassetDetails.bAssets, bassetDetails.factors));
 
     const initializationData_mUSD: string = d_Masset.contract.methods
@@ -137,7 +137,7 @@ export default async (
             d_Token.address,
             addresses[deployer.network].BRIDGE_ADDRESS,
             deployer.network !== 'development').encodeABI();
-    await state.conditionalInitialize('MassetProxy', () => {
+    await conditionalInitialize('MassetProxy', () => {
         return d_MassetProxy.methods["initialize(address,address,bytes)"](
             d_Masset.address,
             d_ThresholdProxyAdmin_Masset.address,
@@ -145,5 +145,5 @@ export default async (
         );
     });
 
-    state.printState();
+    printState();
 };
