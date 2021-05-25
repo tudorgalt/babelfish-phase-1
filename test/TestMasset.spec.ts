@@ -1,21 +1,10 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { expectRevert, expectEvent, time } from "@openzeppelin/test-helpers";
-import * as t from "types/generated";
+import { expectRevert, expectEvent } from "@openzeppelin/test-helpers";
 import { ZERO_ADDRESS } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import envSetup from "@utils/env_setup";
-import {
-    MassetContract,
-    MassetProxyInstance,
-    MockERC20Instance,
-    ThresholdProxyAdminContract,
-    ThresholdProxyAdminInstance,
-    MassetInstance,
-    BasketManagerInstance,
-} from "types/generated";
-import Web3 from "web3";
-import addresses from "../migrations/addresses";
+import { MassetInstance } from "types/generated";
 
 const { expect } = envSetup.configure();
 
@@ -30,7 +19,7 @@ let standardAccounts;
 contract("Masset", async (accounts) => {
     standardAccounts = new StandardAccounts(accounts);
 
-    before("before all", async () => {});
+    before("before all", async () => { });
 
     describe("initialize", async () => {
         let masset;
@@ -162,7 +151,7 @@ contract("Masset", async (accounts) => {
             masset = await Masset.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
-            await masset.initialize(basketManagerObj.basketManager.address, token. address, ZERO_ADDRESS, false);
+            await masset.initialize(basketManagerObj.basketManager.address, token.address, ZERO_ADDRESS, false);
             mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
         });
         context("should succeed", () => {

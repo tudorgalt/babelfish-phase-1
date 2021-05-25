@@ -1,14 +1,11 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { expectRevert, expectEvent, time } from "@openzeppelin/test-helpers";
-import * as t from "types/generated";
-import { ZERO_ADDRESS, TEN_MINS, MAX_UINT256 } from "@utils/constants";
+import { ZERO_ADDRESS } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import envSetup from "@utils/env_setup";
 import {
     MassetProxyInstance,
-    MockERC20Instance,
-    ThresholdProxyAdminContract,
     ThresholdProxyAdminInstance,
     IMockDummyInstance,
 } from "types/generated";
