@@ -66,6 +66,10 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 
     // public
 
+    function getVersion() external returns (string memory) {
+        return "1.0";
+    }
+
     function initialize(
         address _basketManagerAddress,
         address _tokenAddress,
