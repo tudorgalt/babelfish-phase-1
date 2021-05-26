@@ -42,16 +42,10 @@ contract("ThresholdProxyAdmin", async (accounts) => {
                 );
             });
             it("when no admins given", async () => {
-                await expectRevert(
-                    ThresholdProxyAdmin.new(proxy.address, [], 2),
-                    "admins",
-                );
+                await expectRevert(ThresholdProxyAdmin.new(proxy.address, [], 2), "admins");
             });
             it("when threshold < 2", async () => {
-                await expectRevert(
-                    ThresholdProxyAdmin.new(proxy.address, admins, 1),
-                    "threshold",
-                );
+                await expectRevert(ThresholdProxyAdmin.new(proxy.address, admins, 1), "threshold");
             });
             it("when threshold > admins.length", async () => {
                 await expectRevert(

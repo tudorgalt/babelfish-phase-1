@@ -8,7 +8,7 @@ const InitializableOwnableWrapper = artifacts.require("InitializableOwnableWrapp
 const { expect } = envSetup.configure();
 
 contract("InitializableOwnable", async (accounts) => {
-    const [owner, user] = accounts
+    const [owner, user] = accounts;
 
     let initializableOwnableWrapper: InitializableOwnableWrapperInstance;
 
@@ -25,8 +25,8 @@ contract("InitializableOwnable", async (accounts) => {
             it("when it's called first time", async () => {
                 await initializableOwnableWrapper.initialize({ from: owner });
 
-                const currOwner = await initializableOwnableWrapper.owner()
-                expect(currOwner).to.equal(owner)
+                const currOwner = await initializableOwnableWrapper.owner();
+                expect(currOwner).to.equal(owner);
             });
         });
 
@@ -36,26 +36,26 @@ contract("InitializableOwnable", async (accounts) => {
 
                 await expectRevert.unspecified(
                     initializableOwnableWrapper.initialize({ from: user }),
-                    "already initialized"
-                )
-            })
+                    "already initialized",
+                );
+            });
         });
     });
 
     describe("renounceOwnership", async () => {
         beforeEach("before all", async () => {
             initializableOwnableWrapper = await InitializableOwnableWrapper.new();
-        })
+        });
 
         it("should properly clear owner state", async () => {
-            await initializableOwnableWrapper.initialize({ from: owner })
+            await initializableOwnableWrapper.initialize({ from: owner });
 
-            let isCurrOwner = await initializableOwnableWrapper.isOwner({ from: owner })
-            expect(isCurrOwner).to.equal(true)
+            let isCurrOwner = await initializableOwnableWrapper.isOwner({ from: owner });
+            expect(isCurrOwner).to.equal(true);
 
-            await initializableOwnableWrapper.renounceOwnership({ from: owner })
-            isCurrOwner = await initializableOwnableWrapper.isOwner({ from: owner })
-            expect(isCurrOwner).to.equal(false)
+            await initializableOwnableWrapper.renounceOwnership({ from: owner });
+            isCurrOwner = await initializableOwnableWrapper.isOwner({ from: owner });
+            expect(isCurrOwner).to.equal(false);
         });
     });
 
@@ -80,7 +80,7 @@ contract("InitializableOwnable", async (accounts) => {
 
                 await expectRevert(
                     initializableOwnableWrapper.transferOwnership(user, { from: user }),
-                    "caller is not the owner"
+                    "caller is not the owner",
                 );
             });
 
@@ -89,7 +89,7 @@ contract("InitializableOwnable", async (accounts) => {
 
                 await expectRevert(
                     initializableOwnableWrapper.transferOwnership(ZERO_ADDRESS, { from: owner }),
-                    "new owner is the zero address"
+                    "new owner is the zero address",
                 );
             });
         });

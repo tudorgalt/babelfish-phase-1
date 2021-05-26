@@ -6,9 +6,8 @@ const ReentrantMock = artifacts.require("ReentrantMock");
 const NonReentrantMock = artifacts.require("NonReentrantMock");
 const InitializableReentrancyMock = artifacts.require("InitializableReentrancyMock");
 
-
 contract("InitializableReentrancyGuard", async (accounts) => {
-    const [owner] = accounts
+    const [owner] = accounts;
 
     let initializableReentrancyMock: InitializableReentrancyMockInstance;
 
@@ -22,7 +21,9 @@ contract("InitializableReentrancyGuard", async (accounts) => {
                 const nonReentrantMock = await NonReentrantMock.new();
                 await initializableReentrancyMock.initialize({ from: owner });
 
-                await initializableReentrancyMock.runClientMethod(nonReentrantMock.address, { from: owner });
+                await initializableReentrancyMock.runClientMethod(nonReentrantMock.address, {
+                    from: owner,
+                });
             });
         });
 
@@ -30,14 +31,16 @@ contract("InitializableReentrancyGuard", async (accounts) => {
             beforeEach("before", async () => {
                 initializableReentrancyMock = await InitializableReentrancyMock.new();
             });
-            
+
             it("in case of reentrancy", async () => {
                 const reentrantMock = await ReentrantMock.new(initializableReentrancyMock.address);
 
                 await initializableReentrancyMock.initialize({ from: owner });
                 await expectRevert(
-                    initializableReentrancyMock.runClientMethod(reentrantMock.address, { from: owner }),
-                    "reentrant call"
+                    initializableReentrancyMock.runClientMethod(reentrantMock.address, {
+                        from: owner,
+                    }),
+                    "reentrant call",
                 );
             });
 
@@ -45,8 +48,10 @@ contract("InitializableReentrancyGuard", async (accounts) => {
                 const nonReentrantMock = await NonReentrantMock.new();
 
                 await expectRevert(
-                    initializableReentrancyMock.runClientMethod(nonReentrantMock.address, { from: owner }),
-                    "reentrant call"
+                    initializableReentrancyMock.runClientMethod(nonReentrantMock.address, {
+                        from: owner,
+                    }),
+                    "reentrant call",
                 );
             });
         });

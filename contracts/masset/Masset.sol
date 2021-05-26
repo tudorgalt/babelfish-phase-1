@@ -22,14 +22,16 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address indexed recipient,
         uint256 massetQuantity,
         address bAsset,
-        uint256 bassetQuantity);
+        uint256 bassetQuantity
+    );
 
     event Redeemed(
         address indexed redeemer,
         address indexed recipient,
         uint256 massetQuantity,
         address bAsset,
-        uint256 bassetQuantity);
+        uint256 bassetQuantity
+    );
 
     event onTokensReceivedCalled(
         address operator,
@@ -145,7 +147,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         require(_bassetQuantity > 0, "quantity must not be 0");
 
         require(basketManager.isValidBasset(_basset), "invalid basset");
-        require(basketManager.checkBasketBalanceForDeposit(_basset, _bassetQuantity));
+        require(basketManager.checkBasketBalanceForDeposit(_basset, _bassetQuantity), "invalid basket");
 
         uint256 massetQuantity = basketManager.convertBassetToMasset(_basset, _bassetQuantity);
 
@@ -206,7 +208,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 
         uint256 bassetQuantity = basketManager.convertMassetToBasset(_basset, _massetQuantity);
 
-        require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity));
+        require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
 
         IERC20(_basset).transfer(_recipient, bassetQuantity);
 

@@ -34,6 +34,6 @@ contract InitializableReentrancyMock is InitializableReentrancyGuard {
 
     function runClientMethod (address reentrantMockAddress) public nonReentrant {
         IReentrantMock reentrantMock = IReentrantMock(reentrantMockAddress);
-        require(reentrantMock.clientMethod());
+        require(reentrantMock.clientMethod(), "");
     }
 }

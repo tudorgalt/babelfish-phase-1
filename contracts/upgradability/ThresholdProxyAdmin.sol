@@ -44,8 +44,10 @@ contract ThresholdProxyAdmin is ReentrancyGuard {
     function _proposalsIdentical(Proposal memory a, Proposal memory b) internal pure returns (bool) {
         return a.target == b.target &&
             a.action == b.action &&
-            ( (a.data.length == 0 && b.data.length == 0) ||
-                keccak256(abi.encodePacked(a.data)) == keccak256(abi.encodePacked(b.data)) );
+            (
+                (a.data.length == 0 && b.data.length == 0) ||
+                keccak256(abi.encodePacked(a.data)) == keccak256(abi.encodePacked(b.data))
+            );
     }
 
     function _countInstances(Proposal memory newProp) internal view returns(uint) {
