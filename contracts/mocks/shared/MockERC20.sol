@@ -7,7 +7,7 @@ import { IERC777Recipient } from "../../openzeppelin/contracts/token/ERC777/IERC
 
 contract MockERC20 is ERC20, ERC20Detailed, ERC20Mintable {
 
-    function fallback() external payable {
+    function () external payable {
     }
 
     constructor (
