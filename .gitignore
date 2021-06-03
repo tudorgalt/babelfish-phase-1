@@ -59,3 +59,7 @@ cache
 # sol-merger
 flat/
 _flat/
+
+.idea
+.idea/
+.idea*

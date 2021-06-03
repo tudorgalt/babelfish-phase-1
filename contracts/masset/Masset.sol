@@ -50,11 +50,12 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     event onSetBasketManager(address indexed sender, address indexed oldBasketManager, address indexed newBaskManager);
     event onSetToken(address indexed sender, address indexed oldToken, address indexed newToken);
     event onSetTokenOwner(address indexed sender, address indexed oldTokenOwner, address indexed newTokenOwner);
-    event onSetBridge(address indexed sender, address indexed oldBridge, address indexed newBridge);
 
     // state
     BasketManager private basketManager;
     Token private token;
+
+    // Deprecated, must be address(0)
     IBridge private bridge;
 
     // internal
@@ -66,14 +67,9 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 
     // public
 
-    function getVersion() external returns (string memory) {
-        return "1.0";
-    }
-
     function initialize(
         address _basketManagerAddress,
         address _tokenAddress,
-        address _bridgeAddress,
         bool _registerAsERC777RecipientFlag) public {
 
         require(address(basketManager) == address(0) && address(token) == address(0), "already initialized");
@@ -85,7 +81,6 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 
         basketManager = BasketManager(_basketManagerAddress);
         token = Token(_tokenAddress);
-        bridge = IBridge(_bridgeAddress);
         if(_registerAsERC777RecipientFlag) {
             registerAsERC777Recipient();
         }
@@ -106,9 +101,9 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _bAsset,
         uint256 _bAssetQuantity
     )
-        external
-        nonReentrant
-        returns (uint256 massetMinted)
+    external
+    nonReentrant
+    returns (uint256 massetMinted)
     {
         return _mintTo(_bAsset, _bAssetQuantity, msg.sender);
     }
@@ -126,9 +121,9 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         uint256 _bAssetQuantity,
         address _recipient
     )
-        external
-        nonReentrant
-        returns (uint256 massetMinted)
+    external
+    nonReentrant
+    returns (uint256 massetMinted)
     {
         return _mintTo(_bAsset, _bAssetQuantity, _recipient);
     }
@@ -142,8 +137,8 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         uint256 _bassetQuantity,
         address _recipient
     )
-        internal
-        returns (uint256 massetMinted)
+    internal
+    returns (uint256 massetMinted)
     {
         require(_recipient != address(0), "must be a valid recipient");
         require(_bassetQuantity > 0, "quantity must not be 0");
@@ -214,10 +209,11 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity));
 
         if(bridgeFlag) {
-            require(address(bridge) != address(0), "invalid bridge");
-            IERC20(_basset).approve(address(bridge), bassetQuantity);
+            address bridgeAddress = basketManager.getBridge(_basset);
+            require(bridgeAddress != address(0), "invalid bridge");
+            IERC20(_basset).approve(bridgeAddress, bassetQuantity);
             require(
-                bridge.receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
+                IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
                 "call to bridge failed");
         } else {
             IERC20(_basset).transfer(_recipient, bassetQuantity);
@@ -246,7 +242,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _basset,
         uint256 _massetQuantity,
         address _recipient,
-        address _bridgeAddress // for backward compatibility
+        address _bridgeAddress // IGNORED! for backward compatibility
     ) external nonReentrant returns (uint256 massetRedeemed) {
         return _redeemTo(_basset, _massetQuantity, _recipient, true);
     }
@@ -313,10 +309,12 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         emit onTokensMintedCalled(msg.sender, _orderAmount, _tokenAddress, _userData);
 
         require(_orderAmount > 0, "amount must be > 0");
-        require(msg.sender == address(bridge), "only bridge may call");
 
         address recipient =  _decodeAddress(_userData);
         address basset = _tokenAddress;
+
+        address bridgeAddress = basketManager.getBridge(basset);
+        require(msg.sender == bridgeAddress, "only bridge may call");
 
         require(basketManager.isValidBasset(basset), "invalid basset");
         require(basketManager.checkBasketBalanceForDeposit(basset, _orderAmount), "basket out of balance");
@@ -334,10 +332,6 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 
     function geBasketManager() external view returns (address) {
         return address(basketManager);
-    }
-
-    function geBridge() external view returns (address) {
-        return address(bridge);
     }
 
     // Admin functions
@@ -358,19 +352,49 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         token = Token(_tokenAddress);
     }
 
-    function setBridge(address _bridgeAddress) public onlyOwner {
-        require(_bridgeAddress != address(0), "address invalid");
-        require(_bridgeAddress != address(bridge), "same address");
-
-        emit onSetBridge(msg.sender, address(bridge), _bridgeAddress);
-        bridge = IBridge(_bridgeAddress);
-    }
-
     function setTokenOwner(address _newOwner) public onlyOwner {
         require(_newOwner != address(0), "address invalid");
         require(_newOwner != token.owner(), "same address");
 
         emit onSetTokenOwner(msg.sender, token.owner(), _newOwner);
         token.transferOwnership(_newOwner);
+    }
+
+    // MIGRATIONS
+
+    function getVersion() external returns (string memory) {
+        return "2.0";
+    }
+
+    function migrateFromV1ToV2() external {
+        require(address(bridge) != address(0), "invalid state 1");
+        bridge = IBridge(address(0));
+
+        require(address(basketManager) == address(0x2DefFcd9Af4eA0AAB098A949106dAa752bC1B27c) /* TESTNET */ ||
+        address(basketManager) == address(0xb97cEC56b4A33a3bE341277dfDf5a0af57a425d1) /* MAINNET */, "invalid state 2");
+
+        if(address(basketManager) == 0x2DefFcd9Af4eA0AAB098A949106dAa752bC1B27c /* TESTNET */ ) {
+            address[] memory bassets = new address[](2);
+            bassets[0] = 0x4F2fc8D55C1888A5ACa2503E2f3E5D74EEF37C33;
+            bassets[1] = 0x793cE6F95912d5b43532C2116e1B68993D902272;
+            int256[] memory factors = new int256[](2);
+            factors[0] = 1;
+            factors[1] = 1;
+            address[] memory bridges = new address[](2);
+            bridges[0] = 0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156;
+            bridges[1] = 0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8;
+            basketManager = new BasketManager(bassets, factors, bridges);
+        } else if(address(basketManager) == 0xb97cEC56b4A33a3bE341277dfDf5a0af57a425d1 /* MAINNET */) {
+            address[] memory bassets = new address[](2);
+            bassets[0] = 0xfE878227c8F334038dAB20a99FC3B373FfE0a755;
+            bassets[1] = 0x30D1b36924C2c0Cd1C03eC257D7fff31Bd8C3007;
+            int256[] memory factors = new int256[](2);
+            factors[0] = 1;
+            factors[1] = 1;
+            address[] memory bridges = new address[](2);
+            bridges[0] = 0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581;
+            bridges[1] = 0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350;
+            basketManager = new BasketManager(bassets, factors, bridges);
+        }
     }
 }
