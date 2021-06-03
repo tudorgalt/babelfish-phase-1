@@ -51,6 +51,13 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     event onSetToken(address indexed sender, address indexed oldToken, address indexed newToken);
     event onSetTokenOwner(address indexed sender, address indexed oldTokenOwner, address indexed newTokenOwner);
 
+    /*
+    address bogus1; // for backward compatibility
+    address bogus2; // for backward compatibility
+    address bogus3; // for backward compatibility
+    address bogus4; // for backward compatibility
+    */
+
     // state
     BasketManager private basketManager;
     Token private token;
@@ -370,10 +377,10 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         require(address(bridge) != address(0), "invalid state 1");
         bridge = IBridge(address(0));
 
-        require(address(basketManager) == address(0x2DefFcd9Af4eA0AAB098A949106dAa752bC1B27c) /* TESTNET */ ||
+        require(address(basketManager) == address(0xaC148e5D164Ce1164e14913b329feA8e4dA0b699) /* TESTNET */ ||
         address(basketManager) == address(0xb97cEC56b4A33a3bE341277dfDf5a0af57a425d1) /* MAINNET */, "invalid state 2");
 
-        if(address(basketManager) == 0x2DefFcd9Af4eA0AAB098A949106dAa752bC1B27c /* TESTNET */ ) {
+        if(address(basketManager) == 0xaC148e5D164Ce1164e14913b329feA8e4dA0b699 /* TESTNET */ ) {
             address[] memory bassets = new address[](2);
             bassets[0] = 0x4F2fc8D55C1888A5ACa2503E2f3E5D74EEF37C33;
             bassets[1] = 0x793cE6F95912d5b43532C2116e1B68993D902272;
