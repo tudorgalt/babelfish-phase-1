@@ -51,12 +51,10 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     event onSetToken(address indexed sender, address indexed oldToken, address indexed newToken);
     event onSetTokenOwner(address indexed sender, address indexed oldTokenOwner, address indexed newTokenOwner);
 
-    /*
     address bogus1; // for backward compatibility
     address bogus2; // for backward compatibility
     address bogus3; // for backward compatibility
     address bogus4; // for backward compatibility
-    */
 
     // state
     BasketManager private basketManager;
@@ -369,7 +367,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 
     // MIGRATIONS
 
-    function getVersion() external pure returns (string memory) {
+    function getVersion() external returns (string memory) {
         return "2.0";
     }
 
