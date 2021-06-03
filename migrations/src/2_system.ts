@@ -22,7 +22,7 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
     const c_MassetProxy = artifacts.require("MassetProxy");
     const c_TokenProxy = artifacts.require("TokenProxy");
 
-    const [default_] = accounts;
+    const [default_, admin] = accounts;
     const addresses = ADDRESSES[network];
 
     console.log(1);
@@ -33,7 +33,7 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
     console.log(2);
 
     const d_TokenProxy = await state.conditionalDeploy(c_TokenProxy, 'TokenProxy',
-        () => c_Token.new(d_Token.address, default_));
+        () => c_TokenProxy.new(d_Token.address, {from: admin}));
 
     console.log(3);
 
@@ -47,8 +47,9 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
 
     console.log(5);
 
-    if (await d_TokenProxy.owner() !== d_MassetProxy.address) {
-        await d_TokenProxy.transferOwnership(d_MassetProxy.address);
+    const token = await c_Token.at(d_TokenProxy.address);
+    if (await token.owner() !== d_MassetProxy.address) {
+        await token.transferOwnership(d_MassetProxy.address);
     }
 
     console.log(6);
@@ -66,7 +67,7 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
     await state.conditionalInitialize('MassetProxy', () => {
         return d_MassetProxy.methods["initialize(address,address,bytes)"](
             d_Masset.address,
-            default_,
+            admin,
             initData,
         );
     });

@@ -27,5 +27,12 @@ export default {
         factors: [1, 1, 1, 1, 1, 1, 1]
     },
     development: {
+        bassets: [
+            '0xc064a7d5741dfDdAe7C6792972a5337845e180E3' // bogus
+        ],
+        bridges: [
+            '0x0000000000000000000000000000000000000000',
+        ],
+        factors: [1]
     }
 };
