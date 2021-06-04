@@ -1,8 +1,6 @@
 pragma solidity 0.5.16;
 
-import { AdminUpgradeabilityProxy } from "../openzeppelin/upgrades/contracts/upgradeability/AdminUpgradeabilityProxy.sol";
+import { InitializableAdminUpgradeabilityProxy } from "../openzeppelin/upgrades/contracts/upgradeability/InitializableAdminUpgradeabilityProxy.sol";
 
-contract TokenProxy is AdminUpgradeabilityProxy {
-    constructor(address _logic) AdminUpgradeabilityProxy(_logic, msg.sender, "") public payable {
-    }
+contract TokenProxy is InitializableAdminUpgradeabilityProxy {
 }

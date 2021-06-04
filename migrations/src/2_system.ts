@@ -28,12 +28,12 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
     console.log(1);
 
     const d_Token = await state.conditionalDeploy(c_Token, 'Token',
-        () => c_Token.new('XUSD','XUSD', 18));
+        () => c_Token.new());
 
     console.log(2);
 
     const d_TokenProxy = await state.conditionalDeploy(c_TokenProxy, 'TokenProxy',
-        () => c_TokenProxy.new(d_Token.address, {from: admin}));
+        () => c_TokenProxy.new());
 
     console.log(3);
 
@@ -47,11 +47,6 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
 
     console.log(5);
 
-    const token = await c_Token.at(d_TokenProxy.address);
-    if (await token.owner() !== d_MassetProxy.address) {
-        await token.transferOwnership(d_MassetProxy.address);
-    }
-
     console.log(6);
 
     const d_BasketManager = await state.conditionalDeploy(c_BasketManager, 'BasketManager',
@@ -59,7 +54,28 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
 
     console.log(7);
 
-    const initData: string = d_Masset.contract.methods
+    const initData1: string = d_Token.contract.methods
+        .initialize('XUSD', 'XUSD', 18).encodeABI();
+    await state.conditionalInitialize('TokenProxy', () => {
+        return d_TokenProxy.methods["initialize(address,address,bytes)"](
+            d_Token.address,
+            admin,
+            initData1,
+        );
+    });
+
+    console.log(8);
+
+    const token = await c_Token.at(d_TokenProxy.address);
+    const tokenOwner = await token.owner();
+    console.log('token owner: ', tokenOwner)
+    if (tokenOwner !== d_MassetProxy.address) {
+        await token.transferOwnership(d_MassetProxy.address);
+    }
+
+    console.log(9);
+
+    const initData2: string = d_Masset.contract.methods
         .initialize(
             d_BasketManager.address,
             d_TokenProxy.address,
@@ -68,7 +84,7 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
         return d_MassetProxy.methods["initialize(address,address,bytes)"](
             d_Masset.address,
             admin,
-            initData,
+            initData2,
         );
     });
 

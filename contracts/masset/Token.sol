@@ -1,19 +1,22 @@
 pragma solidity 0.5.16;
 
-import "../openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "../openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../helpers/Ownable.sol";
+import "../helpers/InitializableOwnable.sol";
+import "../helpers/InitializableERC20Detailed.sol";
 
-contract Token is ERC20, ERC20Detailed, Ownable {
+contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable {
 
     /**
-     * @notice Constructor called on deployment, initiates the contract.
+     * @notice initialize called on deployment, initiates the contract.
      * @param _name The name of the token.
      * @param _symbol The symbol of the token.
      * @param _decimals The decimals of the token.
      * */
-    constructor(string memory _name, string memory _symbol, uint8 _decimals) public
-        ERC20Detailed(_name, _symbol, _decimals) {}
+
+    function initialize(string memory _name, string memory _symbol, uint8 _decimals) public {
+        InitializableOwnable._initialize();
+        InitializableERC20Detailed.initialize(_name, _symbol, _decimals);
+    }
 
     /**
      * @notice Creates new tokens and sends them to the recipient.
