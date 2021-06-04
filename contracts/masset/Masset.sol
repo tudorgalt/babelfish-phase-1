@@ -335,7 +335,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         return address(token);
     }
 
-    function geBasketManager() external view returns (address) {
+    function getBasketManager() external view returns (address) {
         return address(basketManager);
     }
 
@@ -367,8 +367,14 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 
     // MIGRATIONS
 
-    function getVersion() external returns (string memory) {
+    function getVersion() external pure returns (string memory) {
         return "2.0";
+    }
+
+    // DONT LEAVE HERE!!!!
+
+    function resetReentrancyGuard() external {
+        InitializableReentrancyGuard._initialize();
     }
 
     function migrateFromV1ToV2() external {
