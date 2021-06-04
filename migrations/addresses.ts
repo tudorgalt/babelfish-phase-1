@@ -2,9 +2,9 @@ export default {
     rskTestnet: {
         bassets: [
             // ETH->RSK
-            '0xcb92C8D49Ec01b92F2A766C7c3C9C501C45271E0', // DAIes
-            '0xcc8Eec21ae75F1A2dE4aC7b32A7de888a45cF859', // USDCes
-            '0x10C5A7930fC417e728574E334b1488b7895c4B81', // USDTes
+            '0xcb92c8d49ec01b92f2a766c7c3c9c501c45271e0', // DAIes
+            '0xcc8eec21ae75f1a2de4ac7b32a7de888a45cf859', // USDCes
+            '0x10c5a7930fc417e728574e334b1488b7895c4b81', // USDTes
 
             // BSC->RSK
             '0x407ff7d4760d3a81b4740d268eb04490c7dfe7f2', // bsDAI
@@ -14,9 +14,9 @@ export default {
         ],
         bridges: [
             // ETH->RSK
-            '0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156',
-            '0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156',
-            '0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156',
+            '0xc0e7a7fff4aba5e7286d5d67dd016b719dcc9156',
+            '0xc0e7a7fff4aba5e7286d5d67dd016b719dcc9156',
+            '0xc0e7a7fff4aba5e7286d5d67dd016b719dcc9156',
 
             // BSC->RSK
             '0x2b2bcad081fa773dc655361d1bb30577caa556f8',

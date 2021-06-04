@@ -1,6 +1,7 @@
 pragma solidity 0.5.16;
 
 import "../openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "../helpers/InitializableOwnable.sol";
 import "../helpers/InitializableERC20Detailed.sol";
 
@@ -14,8 +15,8 @@ contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable {
      * */
 
     function initialize(string memory _name, string memory _symbol, uint8 _decimals) public {
-        InitializableOwnable._initialize();
         InitializableERC20Detailed.initialize(_name, _symbol, _decimals);
+        InitializableOwnable._initialize();
     }
 
     /**

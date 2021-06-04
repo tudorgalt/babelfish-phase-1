@@ -1,1 +1,16 @@
-{}
+{
+  "Token": {
+    "address": "0x849D38abD3962cb40d4887E4279ad0e4E5958e34",
+    "initialized": true
+  },
+  "Masset": {
+    "address": "0x0B0Bb5F6b4201Bf60b21FE1780ff59308C8a1cb8"
+  },
+  "MassetProxy": {
+    "address": "0x8d85F8E33cC720206b9A968f3A3A75029be5eb06",
+    "initialized": true
+  },
+  "BasketManager": {
+    "address": "0xfd5904E8748F35006Aa55bbf72C424B0a48bd84F"
+  }
+}
