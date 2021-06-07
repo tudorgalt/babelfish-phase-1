@@ -29,24 +29,24 @@ export default {
     rsk: {
         bassets: [
             // ETH->RSK
-            '0x1A37c482465e78E6DAbE1Ec77B9a24D4236D2A11', // DAIes
-            '0x8D1f7CbC6391D95E2774380e80A666FEbf655D6b', // USDCes
-            '0xD9665EA8F5fF70Cf97E1b1Cd1B4Cd0317b0976e8', // USDTes
+            '0x1a37c482465e78e6dabe1ec77b9a24d4236d2a11', // DAIes
+            '0x8d1f7cbc6391d95e2774380e80a666febf655d6b', // USDCes
+            '0xd9665ea8f5ff70cf97e1b1cd1b4cd0317b0976e8', // USDTes
 
             // BSC->RSK
-            '0x6A42Ff12215a90f50866A5cE43A9c9C870116e76', // DAIbs
-            '0x91EDceE9567cd5612c9DEDeaAE24D5e574820af1', // USDCbs
-            '0xFf4299bCA0313C20A61dc5eD597739743BEf3f6d', // USDTbs
-            '0x61e9604e31a736129d7f5C58964c75935b2d80D6', // BUSDbs
+            '0x6a42ff12215a90f50866a5ce43a9c9c870116e76', // DAIbs
+            '0x91edcee9567cd5612c9dedeaae24d5e574820af1', // USDCbs
+            '0xff4299bca0313c20a61dc5ed597739743bef3f6d', // USDTbs
+            '0x61e9604e31a736129d7f5c58964c75935b2d80d6', // BUSDbs
 
             // non bridge
-            '0xEf213441a85DF4d7acBdAe0Cf78004E1e486BB96' // RUSDT
+            '0xef213441a85df4d7acbdae0cf78004e1e486bb96' // RUSDT
         ],
         bridges: [
             // ETH->RSK
-            '0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581',
-            '0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581',
-            '0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581',
+            '0x1ccad820b6d031b41c54f1f3da11c0d48b399581',
+            '0x1ccad820b6d031b41c54f1f3da11c0d48b399581',
+            '0x1ccad820b6d031b41c54f1f3da11c0d48b399581',
 
             // BSC->RSK
             '0x971b97c8cc82e7d27bc467c2dc3f219c6ee2e350',
@@ -58,7 +58,7 @@ export default {
             '0x0000000000000000000000000000000000000000'
         ],
         factors: [1, 1, 1, 1, 1, 1, 1, 1],
-        multisig: '0x37A706259F5201C03f6Cb556A960F30F86842d01'
+        multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01'
     },
     development: {
         bassets: [
