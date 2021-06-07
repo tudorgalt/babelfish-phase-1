@@ -344,4 +344,10 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         emit onSetTokenOwner(msg.sender, token.owner(), _newOwner);
         token.transferOwnership(_newOwner);
     }
+
+    // Temporary migration code
+
+    function migrateV1ToV2() public {
+        version = "2.0";
+    }
 }
