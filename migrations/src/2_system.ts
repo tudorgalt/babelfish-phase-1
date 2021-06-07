@@ -20,7 +20,7 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
     const c_BasketManager = artifacts.require("BasketManager");
     const c_Masset = artifacts.require("Masset");
     const c_MassetProxy = artifacts.require("MassetProxy");
-    const c_TokenProxy = artifacts.require("TokenProxy");
+    //const c_TokenProxy = artifacts.require("TokenProxy");
 
     const [default_, admin] = accounts;
     const addresses = ADDRESSES[network];
