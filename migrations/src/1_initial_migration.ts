@@ -14,4 +14,6 @@ export default async (
 ): Promise<void> => {
     process.env.NETWORK = deployer.network;
     await state.setNetwork(deployer.network);
+    const cMigrations = artifacts.require("Migrations");
+    await state.conditionalDeploy(cMigrations, 'Migrations', () => deployer.deploy(cMigrations));
 };
