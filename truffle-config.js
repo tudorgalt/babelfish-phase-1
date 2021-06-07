@@ -68,10 +68,10 @@ module.exports = {
     rsk: {
       provider() {
         return new HDWalletProvider('',
-            'https://mainnet.sovryn.app/rpc', 0, 31)
+            'wss://mainnet.sovryn.app/ws', 0, 31)
       },
       network_id: 30,
-      gasPrice: 1000000, // 1GWei,
+      gasPrice: 100000000,
       skipDryRun: true,
       networkCheckTimeout: 1e9
     },
