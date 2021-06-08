@@ -346,8 +346,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     function migrateFromV1ToV2() external {
         require(address(bridge) != address(0), "invalid state 1");
         bridge = IBridge(address(0));
-
-        require(version != "2.0", "wrong version");
+        require(keccak256(bytes(version)) != keccak256(bytes("2.0")), "wrong version");
         version = "2.0";
 
         InitializableReentrancyGuard._initialize();
