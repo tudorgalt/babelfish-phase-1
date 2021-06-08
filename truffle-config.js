@@ -65,6 +65,16 @@ module.exports = {
       skipDryRun: true,
       networkCheckTimeout: 1e9
     },
+    rsk: {
+      provider() {
+        return new HDWalletProvider('',
+            'wss://mainnet.sovryn.app/ws', 0, 31)
+      },
+      network_id: 30,
+      gasPrice: 140000000, // 140GWei,
+      skipDryRun: true,
+      networkCheckTimeout: 1e9
+    },
   },
   mocha: {
     reporter: 'eth-gas-reporter',

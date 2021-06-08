@@ -51,17 +51,15 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     event onSetToken(address indexed sender, address indexed oldToken, address indexed newToken);
     event onSetTokenOwner(address indexed sender, address indexed oldTokenOwner, address indexed newTokenOwner);
 
-    address bogus1; // for backward compatibility
-    address bogus2; // for backward compatibility
-    address bogus3; // for backward compatibility
-    address bogus4; // for backward compatibility
-
     // state
     BasketManager private basketManager;
     Token private token;
 
     // Deprecated, must be address(0)
     IBridge private bridge;
+
+    // for migrations
+    string private version;
 
     // internal
 
@@ -339,47 +337,18 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         return address(basketManager);
     }
 
-    // Admin functions
-
-    function setBasketManager(address _basketManagerAddress) public onlyOwner {
-        require(_basketManagerAddress != address(0), "address invalid");
-        require(_basketManagerAddress != address(basketManager), "same address");
-
-        emit onSetBasketManager(msg.sender, address(basketManager), _basketManagerAddress);
-        basketManager = BasketManager(_basketManagerAddress);
-    }
-
-    function setToken(address _tokenAddress) public onlyOwner {
-        require(_tokenAddress != address(0), "address invalid");
-        require(_tokenAddress != address(token), "same address");
-
-        emit onSetToken(msg.sender, address(token), _tokenAddress);
-        token = Token(_tokenAddress);
-    }
-
-    function setTokenOwner(address _newOwner) public onlyOwner {
-        require(_newOwner != address(0), "address invalid");
-        require(_newOwner != token.owner(), "same address");
-
-        emit onSetTokenOwner(msg.sender, token.owner(), _newOwner);
-        token.transferOwnership(_newOwner);
-    }
-
     // MIGRATIONS
 
-    function getVersion() external pure returns (string memory) {
-        return "2.0";
-    }
-
-    // DONT LEAVE HERE!!!!
-
-    function resetReentrancyGuard() external {
-        InitializableReentrancyGuard._initialize();
+    function getVersion() external view returns (string memory) {
+        return version;
     }
 
     function migrateFromV1ToV2() external {
         require(address(bridge) != address(0), "invalid state 1");
         bridge = IBridge(address(0));
+
+        require(version != "2.0", "wrong version");
+        version = "2.0";
 
         require(address(basketManager) == address(0xaC148e5D164Ce1164e14913b329feA8e4dA0b699) /* TESTNET */ ||
         address(basketManager) == address(0xb97cEC56b4A33a3bE341277dfDf5a0af57a425d1) /* MAINNET */, "invalid state 2");
