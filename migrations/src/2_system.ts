@@ -32,7 +32,7 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
 
     console.log(2);
 
-    await state.conditionalInitialize('Token', () => d_Token.initialize('XUSD', 'XUSD', 18));
+    await state.conditionalInitialize('Token', () => d_Token.initialize('BNBs', 'BNBs', 18));
 
     /*
     const d_TokenProxy = await state.conditionalDeploy(c_TokenProxy, 'TokenProxy',
@@ -69,7 +69,9 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
 
     console.log(8);
 
-    await d_Token.transferOwnership(d_MassetProxy.address);
+    if(await d_Token.owner() !== d_MassetProxy.address) {
+        await d_Token.transferOwnership(d_MassetProxy.address);
+    }
 
     console.log(9);
 

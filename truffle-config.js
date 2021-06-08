@@ -61,7 +61,7 @@ module.exports = {
             'https://testnet.sovryn.app/rpc', 0, 31)
       },
       network_id: 31,
-      gasPrice: 71680400, // 71GWei,
+      gasPrice: 140000000, // 140GWei,
       skipDryRun: true,
       networkCheckTimeout: 1e9
     },
