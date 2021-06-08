@@ -350,6 +350,8 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         require(version != "2.0", "wrong version");
         version = "2.0";
 
+        InitializableReentrancyGuard._initialize();
+
         require(address(basketManager) == address(0xaC148e5D164Ce1164e14913b329feA8e4dA0b699) /* TESTNET */ ||
         address(basketManager) == address(0xb97cEC56b4A33a3bE341277dfDf5a0af57a425d1) /* MAINNET */, "invalid state 2");
 
