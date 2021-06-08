@@ -318,36 +318,4 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     function getBasketManager() external view returns (address) {
         return address(basketManager);
     }
-
-    // Admin functions
-
-    function setBasketManager(address _basketManagerAddress) public onlyOwner {
-        require(_basketManagerAddress != address(0), "address invalid");
-        require(_basketManagerAddress != address(basketManager), "same address");
-
-        emit onSetBasketManager(msg.sender, address(basketManager), _basketManagerAddress);
-        basketManager = BasketManager(_basketManagerAddress);
-    }
-
-    function setToken(address _tokenAddress) public onlyOwner {
-        require(_tokenAddress != address(0), "address invalid");
-        require(_tokenAddress != address(token), "same address");
-
-        emit onSetToken(msg.sender, address(token), _tokenAddress);
-        token = Token(_tokenAddress);
-    }
-
-    function setTokenOwner(address _newOwner) public onlyOwner {
-        require(_newOwner != address(0), "address invalid");
-        require(_newOwner != token.owner(), "same address");
-
-        emit onSetTokenOwner(msg.sender, token.owner(), _newOwner);
-        token.transferOwnership(_newOwner);
-    }
-
-    // Temporary migration code
-
-    function migrateV1ToV2() public {
-        version = "2.0";
-    }
 }
