@@ -1,17 +1,9 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { expectRevert, expectEvent, time } from "@openzeppelin/test-helpers";
-import * as t from "types/generated";
-import { ZERO_ADDRESS, TEN_MINS, MAX_UINT256 } from "@utils/constants";
+import { expectRevert } from "@openzeppelin/test-helpers";
+import { ZERO_ADDRESS } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import envSetup from "@utils/env_setup";
-import {
-    MassetProxyInstance,
-    MockERC20Instance,
-    ThresholdProxyAdminContract,
-    ThresholdProxyAdminInstance,
-    IMockDummyInstance,
-} from "types/generated";
 
 const { expect } = envSetup.configure();
 
@@ -33,8 +25,11 @@ contract("BasketManager", async (accounts) => {
 
     describe("initialize", async () => {
         let masset;
-        let mockToken1, mockToken2, mockToken3, mockToken4;
-        let bassets, factors;
+        let mockToken1;
+        let mockToken2;
+        let mockToken3;
+        let mockToken4;
+        let bassets, factors, bridges;
         before(async () => {
             masset = await Masset.new();
             mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, 1);
@@ -42,21 +37,24 @@ contract("BasketManager", async (accounts) => {
             mockToken3 = await MockERC20.new("", "", 18, sa.dummy1, 1);
             mockToken4 = await MockERC20.new("", "", 18, sa.dummy1, 1);
             bassets = [mockToken1.address, mockToken2.address, mockToken3.address];
+            bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
             factors = [1, 1, 1];
         });
         context("should succeed", async () => {
             it("when given all the params", async () => {
-                const inst = await BasketManager.new(bassets, factors);
+                const inst = await BasketManager.new(bassets, factors, bridges);
             });
         });
         context("should fail", async () => {
             it("when bassets missing", async () => {
-                await expectRevert(BasketManager.new([], factors),
+                await expectRevert(
+                    BasketManager.new([], factors, bridges),
                     "VM Exception while processing transaction: revert some basset required",
                 );
             });
             it("when factors missing", async () => {
-                await expectRevert(BasketManager.new(bassets, []),
+                await expectRevert(
+                    BasketManager.new(bassets, [], bridges),
                     "VM Exception while processing transaction: revert factor array length mismatch",
                 );
             });
@@ -64,7 +62,7 @@ contract("BasketManager", async (accounts) => {
         context("checking if bassets are valid", () => {
             let inst;
             beforeEach(async () => {
-                inst = await BasketManager.new(bassets, factors);
+                inst = await BasketManager.new(bassets, factors, bridges);
             });
             context("isValidBasset", () => {
                 it("should return false if basset is in the basket", async () => {
