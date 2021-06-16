@@ -1,7 +1,6 @@
 import HDWalletProvider from '@truffle/hdwallet-provider';
 
-import { conditionalDeploy, conditionalInitialize, getDeployed } from "../../migrations/state";
-import { MassetContract } from "../../types/generated";
+import { getDeployed } from "../../migrations/state";
 import Truffle from 'truffle';
 
 const deployerAddress = '0xe486c81D296A91740A58fCdE157c52f4b808dD73';

@@ -13,7 +13,7 @@ contract Token is ERC20, ERC20Detailed, Ownable {
      * @param _decimals The decimals of the token.
      * */
     constructor(string memory _name, string memory _symbol, uint8 _decimals) public
-        ERC20Detailed(_name, _symbol, _decimals) {}
+    ERC20Detailed(_name, _symbol, _decimals) {}
 
     /**
      * @notice Creates new tokens and sends them to the recipient.

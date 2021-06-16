@@ -6,12 +6,12 @@ contract IMockDummy {
 
 contract MockDummy1 is IMockDummy {
     function getVersion() external pure returns (string memory) {
-        return '1';
+        return "1";
     }
 }
 
 contract MockDummy2 is IMockDummy {
     function getVersion() external pure returns (string memory) {
-        return '2';
+        return "2";
     }
 }
