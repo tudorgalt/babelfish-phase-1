@@ -44,17 +44,17 @@ export default {
         ETHs: {
             bassets: [
                 // ETH->RSK
-                '0x4F2fc8D55C1888A5ACa2503E2f3E5D74EEF37C33', // ETHes
+                '0x4f2fc8d55c1888a5aca2503e2f3e5d74eef37c33', // ETHes
 
                 // BSC->RSK
-                '0x793cE6F95912d5b43532C2116e1B68993D902272' // ETHbs
+                '0x793ce6f95912d5b43532c2116e1b68993d902272' // ETHbs
             ],
             bridges: [
                 // ETH->RSK
-                '0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156',
+                '0xc0e7a7fff4aba5e7286d5d67dd016b719dcc9156',
 
                 // BSC->RSK
-                '0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8'
+                '0x2b2bcad081fa773dc655361d1bb30577caa556f8'
             ],
             factors: [1, 1]
         },
@@ -103,25 +103,25 @@ export default {
                 '0x0000000000000000000000000000000000000000'
             ],
             factors: [1, 1, 1, 1, 1, 1, 1, 1],
-            multisig: '0x37A706259F5201C03f6Cb556A960F30F86842d01'
+            multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01'
         },
         ETHs: {
             bassets: [
                 // ETH->RSK
-                '0xfE878227c8F334038dAB20a99FC3B373FfE0a755', // ETHes
+                '0xfe878227c8f334038dab20a99fc3b373ffe0a755', // ETHes
 
                 // BSC->RSK
-                '0x30D1b36924C2c0Cd1C03eC257D7fff31Bd8C3007' // ETHbs
+                '0x30d1b36924c2c0cd1c03ec257d7fff31bd8c3007' // ETHbs
             ],
             bridges: [
                 // ETH->RSK
-                '0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581',
+                '0x1ccad820b6d031b41c54f1f3da11c0d48b399581',
 
                 // BSC->RSK
-                '0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350'
+                '0x971b97c8cc82e7d27bc467c2dc3f219c6ee2e350'
             ],
             factors: [1, 1],
-            multisig: '0x37A706259F5201C03f6Cb556A960F30F86842d01'
+            multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01'
         },
         BNBs: {
             bassets: [
@@ -133,7 +133,7 @@ export default {
                 '0x971b97c8cc82e7d27bc467c2dc3f219c6ee2e350', // BNBs
             ],
             factors: [1],
-            multisig: '0x37A706259F5201C03f6Cb556A960F30F86842d01'
+            multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01'
         }
     }
 };
