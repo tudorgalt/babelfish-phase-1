@@ -67,7 +67,7 @@ async function readState(): Promise<any> {
 }
 
 function writeState(obj): Promise<void> {
-    return new Promise<any>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         fs.writeFile(`state_${network}.json`, JSON.stringify(obj, null, 2), (err) => {
             if (err) return reject(err);
             resolve();
@@ -79,4 +79,4 @@ async function printState() {
     console.log(state);
 }
 
-export default { conditionalDeploy, conditionalInitialize, getDeployed, printState, setNetwork };
+export { conditionalDeploy, conditionalInitialize, getDeployed, printState, setNetwork };
