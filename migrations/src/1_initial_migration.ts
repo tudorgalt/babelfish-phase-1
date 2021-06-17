@@ -4,14 +4,7 @@
 
 import { setNetwork, conditionalDeploy } from "../state";
 
-export default async (
-    {
-        artifacts,
-    }: {
-        artifacts: Truffle.Artifacts;
-    },
-    deployer,
-): Promise<void> => {
+export default async ({ artifacts}: { artifacts: Truffle.Artifacts; }, deployer): Promise<void> => {
     process.env.NETWORK = deployer.network;
     await setNetwork(deployer.network);
     const cMigrations = artifacts.require("Migrations");

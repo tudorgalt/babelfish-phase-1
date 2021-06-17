@@ -35,7 +35,6 @@ contract("Masset", async (accounts) => {
                 await masset.initialize(
                     basketManagerObj.basketManager.address,
                     token.address,
-                    ZERO_ADDRESS,
                     false,
                 );
             });
@@ -43,7 +42,7 @@ contract("Masset", async (accounts) => {
         context("should fail", async () => {
             it("when basket manager missing", async () => {
                 await expectRevert(
-                    masset.initialize(ZERO_ADDRESS, token.address, ZERO_ADDRESS, false),
+                    masset.initialize(ZERO_ADDRESS, token.address, false),
                     "VM Exception while processing transaction: revert invalid basket manager",
                 );
             });
@@ -51,7 +50,6 @@ contract("Masset", async (accounts) => {
                 await expectRevert(
                     masset.initialize(
                         basketManagerObj.basketManager.address,
-                        ZERO_ADDRESS,
                         ZERO_ADDRESS,
                         false,
                     ),
@@ -62,14 +60,12 @@ contract("Masset", async (accounts) => {
                 await masset.initialize(
                     basketManagerObj.basketManager.address,
                     token.address,
-                    ZERO_ADDRESS,
                     false,
                 );
                 await expectRevert(
                     masset.initialize(
                         basketManagerObj.basketManager.address,
                         token.address,
-                        ZERO_ADDRESS,
                         false,
                     ),
                     "VM Exception while processing transaction: revert already initialized",
@@ -90,7 +86,6 @@ contract("Masset", async (accounts) => {
             await masset.initialize(
                 basketManagerObj.basketManager.address,
                 token.address,
-                ZERO_ADDRESS,
                 false,
             );
             mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
@@ -147,7 +142,6 @@ contract("Masset", async (accounts) => {
             await masset.initialize(
                 basketManagerObj.basketManager.address,
                 token.address,
-                ZERO_ADDRESS,
                 false,
             );
         });
@@ -188,7 +182,6 @@ contract("Masset", async (accounts) => {
             await masset.initialize(
                 basketManagerObj.basketManager.address,
                 token.address,
-                ZERO_ADDRESS,
                 false,
             );
             mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
@@ -255,7 +248,6 @@ contract("Masset", async (accounts) => {
             await masset.initialize(
                 basketManagerObj.basketManager.address,
                 token.address,
-                ZERO_ADDRESS,
                 false,
             );
         });
@@ -316,7 +308,8 @@ async function createBasketManager(
     const mockToken1 = await MockERC20.new("", "", decimals[0], standardAccounts.dummy1, 1);
     const mockToken2 = await MockERC20.new("", "", decimals[1], standardAccounts.dummy1, 1);
     const bassets = [mockToken1.address, mockToken2.address];
-    const basketManager = await BasketManager.new(bassets, factors);
+    const bridges = [ZERO_ADDRESS, ZERO_ADDRESS];
+    const basketManager = await BasketManager.new(bassets, factors, bridges);
     return {
         mockToken1,
         mockToken2,

@@ -2,11 +2,8 @@ import HDWalletProvider from '@truffle/hdwallet-provider';
 import Truffle from 'truffle';
 
 const massetProxyAddress = '0x04D92DaA8f3Ef7bD222195e8D1DbE8D89A8CebD3';
+// const thresholdProxyAdminAddress = '0x1300F936e46bd4d318feE9fF45AF8d5DFE7220d5';
 const thresholdProxyAdminAddress = '0x20bdB7607092C88b52f6E6ceCD6Dc6F226bAb570';
-const basketManagerAddress ='0xaC148e5D164Ce1164e14913b329feA8e4dA0b699';
-const tokenAddress = '0x0fd0D8D78CE9299eE0e5676A8D51f938c234162c';
-const bridgeAddress = '0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156';
-const newMassetAddress = '0x175A264f3808cFb2EFDa7D861a09b4EeBEF339EF';
 
 const admin1 = '0x94e907f6B903A393E14FE549113137CA6483b5ef';
 const admin2 = '0x78514Eedd8678b8055Ca19b55c2711a6AACc09F8';
@@ -17,40 +14,75 @@ export default async function mint(truffle): Promise<any> {
     const artifacts: Truffle.Artifacts = truffle.artifacts;
 
     const Masset = artifacts.require("Masset");
-
-    //const Token = artifacts.require("Token");
-    //const token = await Token.at(tokenAddress);
-    //console.log('token owner: ', await token.owner());
-
-    //const newMasset = await Masset.at(newMassetAddress);
-
+    const MassetProxy = artifacts.require("MassetProxy");
     const ThresholdProxyAdmin = artifacts.require("ThresholdProxyAdmin");
-    const thresholdProxyAdmin = await ThresholdProxyAdmin.at(thresholdProxyAdminAddress);
-/*
-    try {
-        await thresholdProxyAdmin.retract({ from: admin1 });
-    } catch(ex) {
-        // console.log(ex);
-    }
-    try {
-        await thresholdProxyAdmin.retract({ from: admin2 });
-    } catch(ex) {
-        // console.log(ex);
-    }
-*/
-/*
-    console.log(1);
-    await thresholdProxyAdmin.propose(1, newMassetAddress, '0x', { from: admin1 });
-    console.log(2);
-    await thresholdProxyAdmin.propose(1, newMassetAddress, '0x', { from: admin2 });
-    console.log(3);
-    await thresholdProxyAdmin.accept({ from: admin1 });
-    console.log(4);
-*/
-    const fake = await Masset.at(massetProxyAddress);
-    console.log('token ', await fake.getToken());
-    console.log('basket manager ', await fake.geBasketManager());
-    console.log('bridge ', await fake.geBridge());
 
-    //await fake.migrationV1(basketManagerAddress, tokenAddress, bridgeAddress);
+    const fake = await Masset.at(massetProxyAddress);
+
+    /*
+    let abi = masset.contract.methods['migrateFromV1ToV2()'].encodeABI();
+    console.log('abi for upgrade: ', abi);
+
+    abi = masset.contract.methods['migrateFromV1ToV2()'].encodeABI();
+    console.log('abi for migrate: ', abi);
+*/
+    console.log(1);
+
+    const masset = await Masset.new();
+    // const masset = await Masset.at('0x4AAEF06E9ED7FC42Cf86e5029ca742fd01f39F98');
+    // const masset = await Masset.at('0x175A264f3808cFb2EFDa7D861a09b4EeBEF339EF'); // old on testnet
+    console.log("new masset: ", masset.address);
+
+
+    //console.log('current version: ', await fake.getVersion());
+
+    console.log(2);
+
+    const thresholdProxyAdmin = await ThresholdProxyAdmin.at(thresholdProxyAdminAddress);
+
+    console.log(3);
+
+    try {
+        //await thresholdProxyAdmin.retract({ from: admin1 });
+    } catch (ex) {
+        console.log(ex);
+    }
+
+    console.log(4);
+
+    try {
+        await thresholdProxyAdmin.propose(1, masset.address, '0x', { from: admin1 });
+    } catch (ex) {
+        console.log(ex);
+    }
+
+    console.log(5);
+
+    try {
+        //await thresholdProxyAdmin.retract({ from: admin2 });
+    } catch (ex) {
+        console.log(ex);
+    }
+
+    console.log(6);
+
+    try {
+        await thresholdProxyAdmin.propose(1, masset.address, '0x', { from: admin2 });
+    } catch (ex) {
+        console.log(ex);
+    }
+
+    console.log(7);
+
+    await thresholdProxyAdmin.accept({ from: admin1 });
+
+    console.log('current version: ', await fake.getVersion());
+
+    console.log(await fake.geBasketManager());
+    console.log(await fake.getToken());
+
+    await fake.migrateFromV1ToV2();
+
+    console.log(await fake.geBasketManager());
+    console.log(await fake.getToken());
 }

@@ -10,15 +10,17 @@ contract BasketManager {
     address[] private bassetsArray;
     mapping(address => bool) private bassetsMap;
     mapping(address => int256) private factorMap;
+    mapping(address => address) private bridgeMap;
 
     function _isValidBasset(address _basset) internal view returns(bool) {
         return _basset != address(0) && bassetsMap[_basset];
     }
 
     // external
-    constructor(address[] memory _bassets, int256[] memory _factors) public {
+    constructor(address[] memory _bassets, int256[] memory _factors, address[] memory _bridges) public {
         require(_bassets.length > 0, "some basset required");
         require(_bassets.length == _factors.length, "factor array length mismatch");
+        require(_bridges.length == _factors.length, "bridge array length mismatch");
 
         bassetsArray = _bassets;
         for(uint i=0; i<bassetsArray.length; i++) {
@@ -28,6 +30,9 @@ contract BasketManager {
             bassetsMap[basset] = true;
             require(_factors[i] != 0, "invalid factor");
             factorMap[basset] = _factors[i];
+            if(_bridges[i] != address(0)) {
+                bridgeMap[basset] = _bridges[i];
+            }
         }
     }
 
@@ -59,5 +64,13 @@ contract BasketManager {
             return _massetQuantity.mul(uint256(factor));
         }
         return _massetQuantity.div(uint256(-factor));
+    }
+
+    function getBridge(address _basset) external view returns(address) {
+        return bridgeMap[_basset];
+    }
+
+    function getVersion() external pure returns(string memory) {
+        return "2.0";
     }
 }
