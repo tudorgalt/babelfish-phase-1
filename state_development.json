@@ -1,27 +1,44 @@
 {
   "Migrations": {
-    "address": "0xc37C0998634f2e699FdCBbFbdcdDfbA3D3AA7A31"
+    "address": "0x4A331b4E445be1255215B709D0cf7D5418164b02"
   },
-  "Mock1": {
-    "address": "0xc064a7d5741dfDdAe7C6792972a5337845e180E3"
+  "ETHs_Token": {
+    "address": "0x093fD6b661527977230b2F27A19130d38B7B82Bc"
   },
-  "Mock2": {
-    "address": "0x4bb90adB24d6Bc012Cf72A4C7ddc09E173B579f0"
+  "ETHs_Masset": {
+    "address": "0x6b4E79e1C77A0bcbC7F5de1A6F6b7887e6AAA8a2"
   },
-  "Token": {
-    "address": "0x9505999Fe4AAF8a6C278e96A5EC4BFEdE1d68f53"
-  },
-  "Masset": {
-    "address": "0xCb2275aBa2B3Ce7be27967369Fb356F65988bF1E"
-  },
-  "MassetProxy": {
-    "address": "0x0B77089ce39A2a7a143c5108745c014aA269174c",
+  "ETHs_MassetProxy": {
+    "address": "0xeE8DE5C6442d7f09454FD9b41300eE45fe65623D",
     "initialized": true
   },
-  "ThresholdProxyAdmin_Masset": {
-    "address": "0x72E34aD7c6661B5b88687f019F830D27B0f456C2"
+  "ETHs_BasketManager": {
+    "address": "0xdf857D9cf9293f885439a00270CfA642Ed54736b"
   },
-  "BasketManager": {
-    "address": "0x4d2E6CA6AaE2479Bc83b6c3dA37684684e92bAb3"
+  "XUSD_Token": {
+    "address": "0x7487BBFa978d2c4d134Fc7c53E3b9b118939240B"
+  },
+  "XUSD_Masset": {
+    "address": "0x965A70efaF6B97b738b86D23eAdea53c70CF350E"
+  },
+  "XUSD_MassetProxy": {
+    "address": "0x956378706c97259CA43b25ed1317345d7D04C20F",
+    "initialized": true
+  },
+  "XUSD_BasketManager": {
+    "address": "0x540a2913CDd1ce2bF87D55F1CBFB61C7d068355f"
+  },
+  "BNBs_Token": {
+    "address": "0x31562375a79ebB33eA0B0Cc44078829e2762407e"
+  },
+  "BNBs_Masset": {
+    "address": "0x74EBd4036527aA23292aDc41940E7B6ecf6B05CD"
+  },
+  "BNBs_MassetProxy": {
+    "address": "0xb61bf6E2878071bD8Cc120756628458139bA9CBF",
+    "initialized": true
+  },
+  "BNBs_BasketManager": {
+    "address": "0xDBDc069a5b43FC754dbc1D65A71777bf763E31f1"
   }
 }

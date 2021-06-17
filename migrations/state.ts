@@ -4,7 +4,7 @@ import Truffle from 'truffle';
 let state = null;
 let network = 'localhost';
 
-async function setNetwork(_network: string): Promise<void> {
+export async function setNetwork(_network: string): Promise<void> {
     network = _network;
     /*
     return new Promise<void>((resolve, reject) => {
@@ -16,7 +16,7 @@ async function setNetwork(_network: string): Promise<void> {
     */
 }
 
-async function conditionalDeploy(contract: Truffle.Contract, key: string, deployfunc): Promise<any> {
+export async function conditionalDeploy(contract: Truffle.Contract, key: string, deployfunc): Promise<any> {
     if (!state) {
         state = await readState();
     }
@@ -31,7 +31,7 @@ async function conditionalDeploy(contract: Truffle.Contract, key: string, deploy
     return contract.at(state[key].address);
 }
 
-async function conditionalInitialize(key: string, initfunc) {
+export async function conditionalInitialize(key: string, initfunc) {
     if (!state) {
         state = await readState();
     }
@@ -46,7 +46,7 @@ async function conditionalInitialize(key: string, initfunc) {
     await writeState(state);
 }
 
-async function getDeployed(contract: Truffle.Contract, key: string): Truffle.Contract {
+export async function getDeployed(contract: Truffle.Contract, key: string): Truffle.Contract {
     if (!state) {
         state = await readState();
     }
@@ -57,7 +57,7 @@ async function getDeployed(contract: Truffle.Contract, key: string): Truffle.Con
     return contract.at(state[key].address);
 }
 
-async function readState(): Promise<any> {
+export async function readState(): Promise<any> {
     return new Promise<any>((resolve, reject) => {
         fs.readFile(`state_${network}.json`, (err, data) => {
             if (err) return reject(err);
@@ -66,7 +66,7 @@ async function readState(): Promise<any> {
     });
 }
 
-function writeState(obj): Promise<void> {
+export function writeState(obj): Promise<void> {
     return new Promise((resolve, reject) => {
         fs.writeFile(`state_${network}.json`, JSON.stringify(obj, null, 2), (err) => {
             if (err) return reject(err);
@@ -75,7 +75,7 @@ function writeState(obj): Promise<void> {
     });
 }
 
-async function printState() {
+export async function printState() {
     console.log(state);
 }
 

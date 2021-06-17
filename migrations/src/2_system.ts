@@ -1,10 +1,4 @@
-/* eslint-disable @typescript-eslint/camelcase */
-/* eslint-disable spaced-comment */
-/* eslint-disable @typescript-eslint/triple-slash-reference,spaced-comment */
-/// <reference path="../../types/generated/index.d.ts" />
-/// <reference path="../../types/generated/types.d.ts" />
-
-import state from "../state";
+import { conditionalDeploy, conditionalInitialize, printState } from "../state";
 import addresses from '../addresses';
 
 class BassetInstanceDetails {
@@ -18,41 +12,48 @@ export default async (
     { artifacts }: { artifacts: Truffle.Artifacts },
     deployer, network, accounts): Promise<void> => {
 
-    const c_Token = artifacts.require("Token");
-    const c_BasketManager = artifacts.require("BasketManager");
-    const c_Masset = artifacts.require("Masset");
-    const c_MassetProxy = artifacts.require("MassetProxy");
+    const cToken = artifacts.require("Token");
+    const cBasketManager = artifacts.require("BasketManager");
+    const cMasset = artifacts.require("Masset");
+    const cMassetProxy = artifacts.require("MassetProxy");
 
-    const [default_] = accounts;
+    const [default_, _admin] = accounts;
     const addressesForNetwork = addresses[deployer.network];
 
     async function deployInstance(symbol: string, addressesForInstance: BassetInstanceDetails) {
 
-        const d_Token = await state.conditionalDeploy(c_Token, `${symbol}_Token`,
-            () => deployer.deploy(c_Token, symbol, symbol, 18));
+        const dToken = await conditionalDeploy(cToken, `${symbol}_Token`,
+            () => deployer.deploy(cToken, symbol, symbol, 18));
 
-        const d_Masset = await state.conditionalDeploy(c_Masset, `${symbol}_Masset`,
-            () => deployer.deploy(c_Masset, { from: default_ }));
+        const dMasset = await conditionalDeploy(cMasset, `${symbol}_Masset`,
+            () => deployer.deploy(cMasset, { from: default_ }));
 
-        const d_MassetProxy = await state.conditionalDeploy(c_MassetProxy, `${symbol}_MassetProxy`,
-            () => deployer.deploy(c_MassetProxy));
+        const dMassetProxy = await conditionalDeploy(cMassetProxy, `${symbol}_MassetProxy`,
+            () => deployer.deploy(cMassetProxy));
 
-        if (await d_Token.owner() !== d_MassetProxy.address) {
-            await d_Token.transferOwnership(d_MassetProxy.address);
+        if (await dToken.owner() !== dMassetProxy.address) {
+            await dToken.transferOwnership(dMassetProxy.address);
         }
 
-        const d_BasketManager = await state.conditionalDeploy(c_BasketManager, `${symbol}_BasketManager`,
-            () => deployer.deploy(c_BasketManager, addressesForInstance.bassets, addressesForInstance.factors, addressesForInstance.bridges));
+        if(deployer.network === 'development') {
+            const mockToken = await deployer.deploy(cToken, 'MOCK', 'MOCK', 18);
+            addressesForInstance.bassets = [ mockToken.address ];
+            addressesForInstance.factors = [ 1 ];
+            addressesForInstance.bridges = [ '0x0000000000000000000000000000000000000000' ];
+        }
 
-        const initdata: string = d_Masset.contract.methods
+        const dBasketManager = await conditionalDeploy(cBasketManager, `${symbol}_BasketManager`,
+            () => deployer.deploy(cBasketManager, addressesForInstance.bassets, addressesForInstance.factors, addressesForInstance.bridges));
+
+        const initdata: string = dMasset.contract.methods
             .initialize(
-                d_BasketManager.address,
-                d_Token.address,
+                dBasketManager.address,
+                dToken.address,
                 deployer.network !== 'development').encodeABI();
-        await state.conditionalInitialize('MassetProxy', () => {
-            return d_MassetProxy.methods["initialize(address,address,bytes)"](
-                d_Masset.address,
-                addressesForInstance.multisig,
+        await conditionalInitialize(`${symbol}_MassetProxy`, () => {
+            return dMassetProxy.methods["initialize(address,address,bytes)"](
+                dMasset.address,
+                deployer.network !== 'development' ? addressesForInstance.multisig : _admin,
                 initdata,
             );
         });
@@ -62,5 +63,5 @@ export default async (
     await deployInstance('XUSD', addressesForNetwork.XUSD);
     await deployInstance('BNBs', addressesForNetwork.BNBs);
 
-    state.printState();
+    printState();
 };
