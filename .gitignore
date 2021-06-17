@@ -63,3 +63,5 @@ _flat/
 .idea
 .idea/
 .idea*
+
+.DS_Store

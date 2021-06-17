@@ -49,23 +49,10 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         bytes userData
     );
 
-    event onSetBasketManager(address indexed sender, address indexed oldBasketManager, address indexed newBaskManager);
-    event onSetToken(address indexed sender, address indexed oldToken, address indexed newToken);
-    event onSetTokenOwner(address indexed sender, address indexed oldTokenOwner, address indexed newTokenOwner);
-
-    /*
-    address bogus1; // for backward compatibility
-    address bogus2; // for backward compatibility
-    address bogus3; // for backward compatibility
-    address bogus4; // for backward compatibility
-    */
-
     // state
+    string private version;
     BasketManager private basketManager;
     Token private token;
-
-    // Deprecated, must be address(0)
-    IBridge private bridge;
 
     // internal
 
@@ -93,6 +80,8 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         if(_registerAsERC777RecipientFlag) {
             registerAsERC777Recipient();
         }
+
+        version = "1.0";
     }
 
     /***************************************
@@ -335,75 +324,15 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 
     // Getters
 
+    function getVersion() external view returns (string) {
+        return version;
+    }
+
     function getToken() external view returns (address) {
         return address(token);
     }
 
-    function geBasketManager() external view returns (address) {
+    function getBasketManager() external view returns (address) {
         return address(basketManager);
-    }
-
-    // Admin functions
-
-    function setBasketManager(address _basketManagerAddress) public onlyOwner {
-        require(_basketManagerAddress != address(0), "address invalid");
-        require(_basketManagerAddress != address(basketManager), "same address");
-
-        emit onSetBasketManager(msg.sender, address(basketManager), _basketManagerAddress);
-        basketManager = BasketManager(_basketManagerAddress);
-    }
-
-    function setToken(address _tokenAddress) public onlyOwner {
-        require(_tokenAddress != address(0), "address invalid");
-        require(_tokenAddress != address(token), "same address");
-
-        emit onSetToken(msg.sender, address(token), _tokenAddress);
-        token = Token(_tokenAddress);
-    }
-
-    function setTokenOwner(address _newOwner) public onlyOwner {
-        require(_newOwner != address(0), "address invalid");
-        require(_newOwner != token.owner(), "same address");
-
-        emit onSetTokenOwner(msg.sender, token.owner(), _newOwner);
-        token.transferOwnership(_newOwner);
-    }
-
-    // MIGRATIONS
-
-    function getVersion() external pure returns (string memory) {
-        return "2.0";
-    }
-
-    function migrateFromV1ToV2() external {
-        require(address(bridge) != address(0), "invalid state 1");
-        bridge = IBridge(address(0));
-
-        require(address(basketManager) == address(0xaC148e5D164Ce1164e14913b329feA8e4dA0b699) /* TESTNET */ ||
-        address(basketManager) == address(0xb97cEC56b4A33a3bE341277dfDf5a0af57a425d1) /* MAINNET */, "invalid state 2");
-
-        if(address(basketManager) == 0xaC148e5D164Ce1164e14913b329feA8e4dA0b699 /* TESTNET */ ) {
-            address[] memory bassets = new address[](2);
-            bassets[0] = 0x4F2fc8D55C1888A5ACa2503E2f3E5D74EEF37C33;
-            bassets[1] = 0x793cE6F95912d5b43532C2116e1B68993D902272;
-            int256[] memory factors = new int256[](2);
-            factors[0] = 1;
-            factors[1] = 1;
-            address[] memory bridges = new address[](2);
-            bridges[0] = 0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156;
-            bridges[1] = 0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8;
-            basketManager = new BasketManager(bassets, factors, bridges);
-        } else if(address(basketManager) == 0xb97cEC56b4A33a3bE341277dfDf5a0af57a425d1 /* MAINNET */) {
-            address[] memory bassets = new address[](2);
-            bassets[0] = 0xfE878227c8F334038dAB20a99FC3B373FfE0a755;
-            bassets[1] = 0x30D1b36924C2c0Cd1C03eC257D7fff31Bd8C3007;
-            int256[] memory factors = new int256[](2);
-            factors[0] = 1;
-            factors[1] = 1;
-            address[] memory bridges = new address[](2);
-            bridges[0] = 0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581;
-            bridges[1] = 0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350;
-            basketManager = new BasketManager(bassets, factors, bridges);
-        }
     }
 }
