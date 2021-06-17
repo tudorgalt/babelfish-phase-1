@@ -324,7 +324,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 
     // Getters
 
-    function getVersion() external view returns (string) {
+    function getVersion() external view returns (string memory) {
         return version;
     }
 

@@ -58,9 +58,9 @@ export default async (
         });
     }
 
-    await deployInstance('ETHs', addressesForNetwork['ETHs']);
-    await deployInstance('XUSD', addressesForNetwork['XUSD']);
-    await deployInstance('BNBs', addressesForNetwork['BNBs']);
+    await deployInstance('ETHs', addressesForNetwork.ETHs);
+    await deployInstance('XUSD', addressesForNetwork.XUSD);
+    await deployInstance('BNBs', addressesForNetwork.BNBs);
 
     state.printState();
 };

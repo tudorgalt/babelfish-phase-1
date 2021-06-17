@@ -49,13 +49,13 @@ contract("BasketManager", async (accounts) => {
             it("when bassets missing", async () => {
                 await expectRevert(
                     BasketManager.new([], factors, bridges),
-                    "VM Exception while processing transaction: revert some basset required",
+                    "VM Exception while processing transaction: reverted with reason string 'some basset required'",
                 );
             });
             it("when factors missing", async () => {
                 await expectRevert(
                     BasketManager.new(bassets, [], bridges),
-                    "VM Exception while processing transaction: revert factor array length mismatch",
+                    "VM Exception while processing transaction: reverted with reason string 'factor array length mismatch'",
                 );
             });
         });

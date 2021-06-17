@@ -79,4 +79,4 @@ async function printState() {
     console.log(state);
 }
 
-export { conditionalDeploy, conditionalInitialize, getDeployed, printState, setNetwork };
+export default { conditionalDeploy, conditionalInitialize, getDeployed, printState, setNetwork };

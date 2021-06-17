@@ -43,7 +43,7 @@ contract("Masset", async (accounts) => {
             it("when basket manager missing", async () => {
                 await expectRevert(
                     masset.initialize(ZERO_ADDRESS, token.address, false),
-                    "VM Exception while processing transaction: revert invalid basket manager",
+                    "VM Exception while processing transaction: reverted with reason string 'invalid basket manager'",
                 );
             });
             it("when token missing", async () => {
@@ -53,7 +53,7 @@ contract("Masset", async (accounts) => {
                         ZERO_ADDRESS,
                         false,
                     ),
-                    "VM Exception while processing transaction: revert invalid token",
+                    "VM Exception while processing transaction: reverted with reason string 'invalid token'",
                 );
             });
             it("when already initialized", async () => {
@@ -68,7 +68,7 @@ contract("Masset", async (accounts) => {
                         token.address,
                         false,
                     ),
-                    "VM Exception while processing transaction: revert already initialized",
+                    "VM Exception while processing transaction: reverted with reason string 'already initialized'",
                 );
             });
         });
@@ -114,19 +114,19 @@ contract("Masset", async (accounts) => {
             it("if basset is invalid", async () => {
                 await expectRevert(
                     masset.mint(ZERO_ADDRESS, 10),
-                    "VM Exception while processing transaction: revert invalid basset",
+                    "VM Exception while processing transaction: reverted with reason string 'invalid basset'",
                 );
             });
             it("if basset is not in the basket", async () => {
                 await expectRevert(
                     masset.mint(mockTokenDummy.address, 10),
-                    "VM Exception while processing transaction: revert invalid basset",
+                    "VM Exception while processing transaction: reverted with reason string 'invalid basset'",
                 );
             });
             it("if amount is greater than the balance", async () => {
                 await expectRevert(
                     masset.mint(basketManagerObj.mockToken1.address, 100000),
-                    "VM Exception while processing transaction: revert ERC20: transfer amount exceeds balance",
+                    "VM Exception while processing transaction: reverted with reason string 'ERC20: transfer amount exceeds balance'",
                 );
             });
         });
@@ -219,19 +219,19 @@ contract("Masset", async (accounts) => {
             it("if basset is invalid", async () => {
                 await expectRevert(
                     masset.redeem(ZERO_ADDRESS, 10),
-                    "VM Exception while processing transaction: revert invalid basset",
+                    "VM Exception while processing transaction: reverted with reason string 'invalid basset'",
                 );
             });
             it("if basset is not in the basket", async () => {
                 await expectRevert(
                     masset.redeem(mockTokenDummy.address, 10),
-                    "VM Exception while processing transaction: revert invalid basset",
+                    "VM Exception while processing transaction: reverted with reason string 'invalid basset'",
                 );
             });
             it("if amount is greater than the balance", async () => {
                 await expectRevert(
                     masset.redeem(basketManagerObj.mockToken1.address, 100000),
-                    "VM Exception while processing transaction: revert ERC20: transfer amount exceeds balance",
+                    "VM Exception while processing transaction: reverted with reason string 'ERC20: transfer amount exceeds balance'",
                 );
             });
         });
