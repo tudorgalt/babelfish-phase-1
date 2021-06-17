@@ -1,14 +1,11 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { expectRevert, expectEvent, time } from "@openzeppelin/test-helpers";
-import * as t from "types/generated";
-import { ZERO_ADDRESS, TEN_MINS, MAX_UINT256 } from "@utils/constants";
+import { ZERO_ADDRESS } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import envSetup from "@utils/env_setup";
 import {
     MassetProxyInstance,
-    MockERC20Instance,
-    ThresholdProxyAdminContract,
     ThresholdProxyAdminInstance,
     IMockDummyInstance,
 } from "types/generated";
@@ -45,16 +42,10 @@ contract("ThresholdProxyAdmin", async (accounts) => {
                 );
             });
             it("when no admins given", async () => {
-                await expectRevert(
-                    ThresholdProxyAdmin.new(proxy.address, [], 2),
-                    "admins",
-                );
+                await expectRevert(ThresholdProxyAdmin.new(proxy.address, [], 2), "admins");
             });
             it("when threshold < 2", async () => {
-                await expectRevert(
-                    ThresholdProxyAdmin.new(proxy.address, admins, 1),
-                    "threshold",
-                );
+                await expectRevert(ThresholdProxyAdmin.new(proxy.address, admins, 1), "threshold");
             });
             it("when threshold > admins.length", async () => {
                 await expectRevert(

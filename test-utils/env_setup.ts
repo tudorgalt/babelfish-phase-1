@@ -16,6 +16,8 @@ class TestEnvironmentSetup {
     }
 
     public configure(): Chai.ChaiStatic {
+        require("chai-core");
+
         if (this.isConfigured) {
             return chai;
         }

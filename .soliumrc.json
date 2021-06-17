@@ -16,6 +16,10 @@
     "linebreak-style": [
       "error",
       "unix"
-    ]
+    ],
+    "no-empty-blocks": ["off"],
+    "security/no-inline-assembly": ["off"],
+    "security/no-call-value": ["off"],
+    "security/no-assign-params": ["off"]
   }
 }

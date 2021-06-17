@@ -1,17 +1,9 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { expectRevert, expectEvent, time } from "@openzeppelin/test-helpers";
-import * as t from "types/generated";
-import { ZERO_ADDRESS, TEN_MINS, MAX_UINT256 } from "@utils/constants";
+import { expectRevert } from "@openzeppelin/test-helpers";
+import { ZERO_ADDRESS } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import envSetup from "@utils/env_setup";
-import {
-    MassetProxyInstance,
-    MockERC20Instance,
-    ThresholdProxyAdminContract,
-    ThresholdProxyAdminInstance,
-    IMockDummyInstance,
-} from "types/generated";
 
 const { expect } = envSetup.configure();
 
@@ -33,8 +25,12 @@ contract("BasketManager", async (accounts) => {
 
     describe("initialize", async () => {
         let masset;
-        let mockToken1, mockToken2, mockToken3, mockToken4;
-        let bassets, factors;
+        let mockToken1;
+        let mockToken2;
+        let mockToken3;
+        let mockToken4;
+        let bassets;
+        let factors;
         before(async () => {
             masset = await Masset.new();
             mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, 1);
@@ -51,12 +47,14 @@ contract("BasketManager", async (accounts) => {
         });
         context("should fail", async () => {
             it("when bassets missing", async () => {
-                await expectRevert(BasketManager.new([], factors),
+                await expectRevert(
+                    BasketManager.new([], factors),
                     "VM Exception while processing transaction: revert some basset required",
                 );
             });
             it("when factors missing", async () => {
-                await expectRevert(BasketManager.new(bassets, []),
+                await expectRevert(
+                    BasketManager.new(bassets, []),
                     "VM Exception while processing transaction: revert factor array length mismatch",
                 );
             });
