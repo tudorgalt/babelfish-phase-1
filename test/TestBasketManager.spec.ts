@@ -7,7 +7,6 @@ import envSetup from "@utils/env_setup";
 
 const { expect } = envSetup.configure();
 
-const ThresholdProxyAdmin = artifacts.require("ThresholdProxyAdmin");
 const BasketManager = artifacts.require("BasketManager");
 const Masset = artifacts.require("Masset");
 const MockERC20 = artifacts.require("MockERC20");

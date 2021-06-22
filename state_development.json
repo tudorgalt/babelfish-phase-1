@@ -1,44 +1,51 @@
 {
   "Migrations": {
-    "address": "0x4A331b4E445be1255215B709D0cf7D5418164b02"
+    "address": "0x6cF914f6Fd27DEcDC203E824CB52041a22F93d15"
   },
   "ETHs_Token": {
-    "address": "0x093fD6b661527977230b2F27A19130d38B7B82Bc"
+    "address": "0x483Ebf27a5cBF0D3F484c063D6F4412cc5aBB829"
   },
   "ETHs_Masset": {
-    "address": "0x6b4E79e1C77A0bcbC7F5de1A6F6b7887e6AAA8a2"
+    "address": "0x6CF75638A13E47B771fF758531179708961CEdD1"
   },
   "ETHs_MassetProxy": {
-    "address": "0xeE8DE5C6442d7f09454FD9b41300eE45fe65623D",
+    "address": "0xA626e48665903815AFeF44a61B8ad4b73078Da61",
     "initialized": true
   },
   "ETHs_BasketManager": {
-    "address": "0xdf857D9cf9293f885439a00270CfA642Ed54736b"
+    "address": "0x41FC7C67cf94a5054A5A36e3483B40E1baB58Bc5"
   },
   "XUSD_Token": {
-    "address": "0x7487BBFa978d2c4d134Fc7c53E3b9b118939240B"
+    "address": "0xE9a5e817C2CE31d05db83a06C280Cc4C56d46247"
   },
   "XUSD_Masset": {
-    "address": "0x965A70efaF6B97b738b86D23eAdea53c70CF350E"
+    "address": "0x21fdF1ad1DC2503080898b59a5D42C522A7b8b30"
   },
   "XUSD_MassetProxy": {
-    "address": "0x956378706c97259CA43b25ed1317345d7D04C20F",
+    "address": "0xA315a6938e75719fDF987F5c1665590438091250",
     "initialized": true
   },
   "XUSD_BasketManager": {
-    "address": "0x540a2913CDd1ce2bF87D55F1CBFB61C7d068355f"
+    "address": "0x6aA8759137fd8E894b5bA98A31941D49c6f7dfeD"
   },
   "BNBs_Token": {
-    "address": "0x31562375a79ebB33eA0B0Cc44078829e2762407e"
+    "address": "0x48415021A1Ce16401231F9C1d705D94FD8ceEDef"
   },
   "BNBs_Masset": {
-    "address": "0x74EBd4036527aA23292aDc41940E7B6ecf6B05CD"
+    "address": "0x5Cb5D8C3A68D8A111301Bee70A8195d7D624D4Bd"
   },
   "BNBs_MassetProxy": {
-    "address": "0xb61bf6E2878071bD8Cc120756628458139bA9CBF",
+    "address": "0xdb2C16Ad2EdC079Fc57791C4AC57c615c7000170",
     "initialized": true
   },
   "BNBs_BasketManager": {
-    "address": "0xDBDc069a5b43FC754dbc1D65A71777bf763E31f1"
+    "address": "0xD0E55Fc83B4Fff70052babeA9B2460086b19628E"
+  },
+  "ETHs_BasketManagerV3": {
+    "address": "0xb0Bc3803DA65c9a64CF511Da75EF21a4C1C31f1b"
+  },
+  "ETHs_BasketManagerProxy": {
+    "address": "0x94a570cEeE67CE8719d5706f9541aE70B6E84B3B",
+    "initialized": true
   }
 }

@@ -4,7 +4,7 @@ import { SafeMath } from "../openzeppelin/contracts/math/SafeMath.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 import "../openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract BasketManager_V3 is InitializableOwnable {
+contract BasketManagerV3 is InitializableOwnable {
 
     using SafeMath for uint256;
 
@@ -19,7 +19,7 @@ contract BasketManager_V3 is InitializableOwnable {
     mapping(address => uint256) private minMap;
     mapping(address => uint256) private maxMap;
 
-    function intialize(address _masset) external {
+    function initialize(address _masset) external {
         require(masset == address(0), "already initialized");
         masset = _masset;
     }
@@ -32,7 +32,7 @@ contract BasketManager_V3 is InitializableOwnable {
         return _basset != address(0) && bassetsMap[_basset];
     }
 
-    function getTotalMassetBalance() public returns (uint256 total) {
+    function getTotalMassetBalance() public view returns (uint256 total) {
         for(uint i=0; i<bassetsArray.length; i++) {
             address basset = bassetsArray[i];
             uint256 balance = IERC20(basset).balanceOf(masset);
@@ -41,7 +41,7 @@ contract BasketManager_V3 is InitializableOwnable {
     }
 
     function getBassetBalance(address _basset) public returns (uint256) {
-        return IERC20(basset).balanceOf(masset);
+        return IERC20(_basset).balanceOf(masset);
     }
 
     function checkBasketBalanceForDeposit(address _basset, uint256 _bassetQuantity) public view returns(bool) {
@@ -50,7 +50,7 @@ contract BasketManager_V3 is InitializableOwnable {
         uint256 balance = IERC20(_basset).balanceOf(masset).add(massetQuantity);
         uint256 total = getTotalMassetBalance().add(massetQuantity);
         uint256 ratio = balance.mul(MAX_VALUE).div(total);
-        uint256 (, max) = getRange(_basset);
+        uint256 max = maxMap[_basset];
         return ratio <= max;
     }
 
@@ -60,7 +60,7 @@ contract BasketManager_V3 is InitializableOwnable {
         uint256 balance = IERC20(_basset).balanceOf(masset).sub(massetQuantity);
         uint256 total = getTotalMassetBalance().sub(massetQuantity);
         uint256 ratio = balance.mul(MAX_VALUE).div(total);
-        uint256 (min) = getRange(_basset);
+        uint256 min = minMap[_basset];
         return ratio >= min;
     }
 
@@ -84,11 +84,11 @@ contract BasketManager_V3 is InitializableOwnable {
 
     // Getters
 
-    function getBassets() public view returns(address[]) {
+    function getBassets() public view returns(address[] memory) {
         return bassetsArray;
     }
 
-    function getFactor(address _basset) public view returns(uint256) {
+    function getFactor(address _basset) public view returns(int256) {
         require(isValidBasset(_basset), "invalid basset");
         return factorMap[_basset];
     }
@@ -106,10 +106,10 @@ contract BasketManager_V3 is InitializableOwnable {
 
     // Admin methods
 
-    function addBasset(address _basset, uint256 _factor, address _bridge, uint256 _min, uint256 _max) external ownerOnly {
+    function addBasset(address _basset, int256 _factor, address _bridge, uint256 _min, uint256 _max) external onlyOwner {
         require(_basset != address(0), "invalid basset address");
         require(!isValidBasset(_basset), "basset already exists");
-        require(_factors[i] != 0, "invalid factor");
+        require(_factor != 0, "invalid factor");
         bassetsMap[_basset] = true;
         factorMap[_basset] = _factor;
         bridgeMap[_basset] = _bridge;
@@ -118,7 +118,7 @@ contract BasketManager_V3 is InitializableOwnable {
         bassetsArray.push(_basset);
     }
 
-    function setRange(address _basset, uint256 _min, uint256 _max) external ownerOnly {
+    function setRange(address _basset, uint256 _min, uint256 _max) external onlyOwner {
         require(isValidBasset(_basset), "invalid basset");
         require(_min <= MAX_VALUE, "invalid minimum");
         require(_max <= MAX_VALUE, "invalid maximum");
@@ -127,18 +127,18 @@ contract BasketManager_V3 is InitializableOwnable {
         maxMap[_basset] = _max;
     }
 
-    function setFactor(address _basset, int256 _factor) external ownerOnly {
+    function setFactor(address _basset, int256 _factor) external onlyOwner {
         require(isValidBasset(_basset), "invalid basset");
         require(_factor != 0, "invalid factor");
         factorMap[_basset] = _factor;
     }
 
-    function setBridge(address _basset, address _bridge) external ownerOnly {
+    function setBridge(address _basset, address _bridge) external onlyOwner {
         require(isValidBasset(_basset), "invalid basset");
         bridgeMap[_basset] = _bridge;
     }
 
-    function removeBasset(address _basset) external ownerOnly {
+    function removeBasset(address _basset) external onlyOwner {
         require(isValidBasset(_basset), "invalid basset");
         require(getBassetBalance(_basset) == 0, "balance exists");
         bassetsMap[_basset] = false;

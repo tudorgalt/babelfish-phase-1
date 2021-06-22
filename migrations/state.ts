@@ -4,16 +4,8 @@ import Truffle from 'truffle';
 let state = null;
 let network = 'localhost';
 
-export async function setNetwork(_network: string): Promise<void> {
+export function setNetwork(_network: string) {
     network = _network;
-    /*
-    return new Promise<void>((resolve, reject) => {
-        fs.exists(`state_${network}.json`, async (exists) => {
-            if (!exists) await writeState({});
-            resolve();
-        });
-    });
-    */
 }
 
 export async function conditionalDeploy(contract: Truffle.Contract, key: string, deployfunc): Promise<any> {
@@ -57,6 +49,14 @@ export async function getDeployed(contract: Truffle.Contract, key: string): Truf
     return contract.at(state[key].address);
 }
 
+export async function setAddress(key: string, address: string) {
+    if (!state) {
+        state = await readState();
+    }
+    state[key].address = address;
+    await writeState(state);
+}
+
 export async function readState(): Promise<any> {
     return new Promise<any>((resolve, reject) => {
         fs.readFile(`state_${network}.json`, (err, data) => {
@@ -79,4 +79,4 @@ export async function printState() {
     console.log(state);
 }
 
-export default { conditionalDeploy, conditionalInitialize, getDeployed, printState, setNetwork };
+export default { conditionalDeploy, conditionalInitialize, getDeployed, printState, setNetwork, setAddress };

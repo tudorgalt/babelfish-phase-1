@@ -8,7 +8,6 @@ import { MassetInstance } from "types/generated";
 
 const { expect } = envSetup.configure();
 
-const ThresholdProxyAdmin = artifacts.require("ThresholdProxyAdmin");
 const BasketManager = artifacts.require("BasketManager");
 const Masset = artifacts.require("Masset");
 const Token = artifacts.require("Token");
