@@ -1,9 +1,9 @@
 pragma solidity 0.5.16;
 
-import "../../openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
-import "../../openzeppelin/contracts/token/ERC20/ERC20Mintable.sol";
-import "../../openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { IERC777Recipient } from "../../openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Mintable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { IERC777Recipient } from "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 
 contract MockERC20 is ERC20, ERC20Detailed, ERC20Mintable {
 

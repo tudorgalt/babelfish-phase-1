@@ -8,7 +8,7 @@ import { IERC1820Registry } from "@openzeppelin/contracts/introspection/IERC1820
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancyGuard.sol";
 import { IBridge } from "./IBridge.sol";
-import { BasketManager } from "./BasketManager.sol";
+import { BasketManagerV3 } from "./BasketManagerV3.sol";
 import "./Token.sol";
 
 contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard {

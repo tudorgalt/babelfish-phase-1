@@ -55,12 +55,8 @@ export default async (
             addressesForInstance.bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
         }
 
-        let currentAdmin;
-        try {
-            currentAdmin = await basketManagerProxy.admin.call({ from: _admin });
-        } catch(e) { console.log(e) }
         let promises: Array<Promise<any>> = [];
-        if (currentAdmin === _admin) {
+        if (await basketManagerProxy.admin() === _admin) {
             const existingAssets = await basketManagerFake.getBassets();
             const addAsset = (index) => {
                 console.log('adding asset: ',
@@ -70,7 +66,7 @@ export default async (
                 promises.push(basketManagerFake.addBasset(
                     addressesForInstance.bassets[index],
                     addressesForInstance.factors[index],
-                    addressesForInstance.bridges[index], 0, MAX_VALUE));
+                    addressesForInstance.bridges[index], 0, MAX_VALUE, false));
             };
 
             for(let i=0; i<addressesForInstance.bassets.length; i++) {
@@ -82,7 +78,7 @@ export default async (
             await Promise.all(promises);
 
             if (network !== 'development') {
-                if (await basketManagerFake.isOwner()) {
+                if (await basketManagerFake.owner() == default_) {
                     await basketManagerFake.transferOwnership(addressesForInstance.multisig);
                 }
                 await basketManagerProxy.changeAdmin(addressesForInstance.multisig, { from: _admin });

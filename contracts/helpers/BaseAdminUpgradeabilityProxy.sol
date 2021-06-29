@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import "@openzeppelin/upgrades/contracts/upgradeability/UpgradeabilityProxy.sol";
 
-// This is copied from @openzeppelin with a single modification
+// This is copied from @openzeppelin with some modifications
 // to _willFallback() to allow fall-through when caller is admin.
 // Without this modification it will be imp[ossible to use a single multisig wallet
 // or governance contract to both upgrade a contract and call ownerOnly functions on it.
@@ -44,17 +44,20 @@ contract BaseAdminUpgradeabilityProxy is BaseUpgradeabilityProxy {
     }
   }
 
+  // dharkamttr: removed ifAdmin modifier, because these getters are needed
+  // to make deployment sacripts idempotent and there's no risk in exposing this information.
+
   /**
    * @return The address of the proxy admin.
    */
-  function admin() external ifAdmin returns (address) {
+  function admin() external returns (address) {
     return _admin();
   }
 
   /**
    * @return The address of the implementation.
    */
-  function implementation() external ifAdmin returns (address) {
+  function implementation() external returns (address) {
     return _implementation();
   }
 

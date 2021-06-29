@@ -28,7 +28,7 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     modifier validBasset(address _basset) {
-        require(isValidBasset(_basset), "invalid basset");
+        require(bassetsMap[_basset], "invalid basset");
         _;
     }
 
@@ -41,9 +41,13 @@ contract BasketManagerV3 is InitializableOwnable {
 
     // Methods for Masset logic
 
+    function isValidBasset(address _basset) public returns(bool) {
+        return bassetsMap[_basset];
+    }
+
     function checkBasketBalanceForDeposit(
         address _basset,
-        uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_bassset) returns(bool) {
+        uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
         uint256 massetQuantity = convertBassetToMassetQuantity(_basset, _bassetQuantity);
         uint256 balance = IERC20(_basset).balanceOf(masset).add(massetQuantity);
@@ -55,7 +59,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     function checkBasketBalanceForWithdrawal(
         address _basset,
-        uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_bassset) returns(bool) {
+        uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
         uint256 massetQuantity = convertBassetToMassetQuantity(_basset, _bassetQuantity);
         uint256 balance = IERC20(_basset).balanceOf(masset).sub(massetQuantity);
@@ -130,7 +134,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     function addBasset(address _basset, int256 _factor, address _bridge, uint256 _min, uint256 _max, bool _paused) public onlyOwner {
         require(_basset != address(0), "invalid basset address");
-        require(!isValidBasset(_basset), "basset already exists");
+        require(!bassetsMap[_basset], "basset already exists");
 
         bassetsArray.push(_basset);
         bassetsMap[_basset] = true;
@@ -142,8 +146,8 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     function addBassets(
-        address[] _bassets, int256[] _factors, address[] _bridges, uint256[] _mins, uint256[] _maxs, bool[] _pausedFlags)
-            public onlyOwner {
+        address[] memory _bassets, int256[] memory _factors, address[] memory _bridges,
+        uint256[] memory _mins, uint256[] memory _maxs, bool[] memory _pausedFlags) public onlyOwner {
 
         uint length = _bassets.length;
         require(
