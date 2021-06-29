@@ -1,15 +1,15 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { BasketManager } from "./BasketManager.sol";
-import { SafeMath } from "../openzeppelin/contracts/math/SafeMath.sol";
-import { IERC20 } from "../openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IERC777Recipient } from "../openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
-import { IERC1820Registry } from "../openzeppelin/contracts/introspection/IERC1820Registry.sol";
-import { IBridge } from "./IBridge.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC777Recipient } from "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
+import { IERC1820Registry } from "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
-import "./Token.sol";
 import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancyGuard.sol";
+import { IBridge } from "./IBridge.sol";
+import { BasketManager } from "./BasketManager.sol";
+import "./Token.sol";
 
 contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard {
 

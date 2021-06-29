@@ -1,6 +1,11 @@
 pragma solidity ^0.5.0;
 
-import "./UpgradeabilityProxy.sol";
+import "@openzeppelin/upgrades/contracts/upgradeability/UpgradeabilityProxy.sol";
+
+// This is copied from @openzeppelin with a single modification
+// to _willFallback() to allow fall-through when caller is admin.
+// Without this modification it will be imp[ossible to use a single multisig wallet
+// or governance contract to both upgrade a contract and call ownerOnly functions on it.
 
 /**
  * @title BaseAdminUpgradeabilityProxy
@@ -114,7 +119,8 @@ contract BaseAdminUpgradeabilityProxy is BaseUpgradeabilityProxy {
    * @dev Only fall back when the sender is not the admin.
    */
   function _willFallback() internal {
-    require(msg.sender != _admin(), "Cannot call fallback function from the proxy admin");
+    // dharkmattr:
+    //require(msg.sender != _admin(), "Cannot call fallback function from the proxy admin");
     super._willFallback();
   }
 }
