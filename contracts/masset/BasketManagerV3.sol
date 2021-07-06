@@ -11,6 +11,7 @@ contract BasketManagerV3 is InitializableOwnable {
     uint256 constant MAX_VALUE = 1000;
 
     // state
+    string version;
     address masset;
     address[] private bassetsArray;
     mapping(address => bool) private bassetsMap;
@@ -37,6 +38,7 @@ contract BasketManagerV3 is InitializableOwnable {
     function initialize(address _masset) external {
         require(masset == address(0), "already initialized");
         masset = _masset;
+        version = "3.0";
     }
 
     // Methods for Masset logic
@@ -101,12 +103,12 @@ contract BasketManagerV3 is InitializableOwnable {
         }
     }
 
-    function getBassetBalance(address _basset) public returns (uint256) {
+    function getBassetBalance(address _basset) public view returns (uint256) {
         return IERC20(_basset).balanceOf(masset);
     }
 
-    function getVersion() external pure returns(string memory) {
-        return "3.0";
+    function getVersion() external view returns(string memory) {
+        return version;
     }
 
     function getBassets() public view returns(address[] memory) {

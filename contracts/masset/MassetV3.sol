@@ -340,10 +340,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     function upgradeToV3(address _basketManagerAddress, address _tokenAddress) external {
         require(
             keccak256(bytes(version)) == keccak256(bytes("1.0")) ||
-            keccak256(bytes(version)) == keccak256(bytes("2.0")), "wrong version 1");
-        require(keccak256(bytes(BasketManagerV3(_basketManagerAddress).getVersion())) == keccak256(bytes("3.0")), "wrong version 2");
+            keccak256(bytes(version)) == keccak256(bytes("2.0")), "wrong version (1)");
+        require(keccak256(bytes(BasketManagerV3(_basketManagerAddress).getVersion())) == keccak256(bytes("3.0")), "wrong version (2)");
         basketManager = BasketManagerV3(_basketManagerAddress);
         token = Token(_tokenAddress);
         version = "3.0";
+        InitializableReentrancyGuard._initialize();
     }
 }
