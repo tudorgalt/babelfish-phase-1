@@ -52,7 +52,11 @@ contract BasketManagerV3 is InitializableOwnable {
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
         uint256 massetQuantity = convertBassetToMassetQuantity(_basset, _bassetQuantity);
-        uint256 balance = IERC20(_basset).balanceOf(masset).add(massetQuantity);
+        uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
+
+        uint256 totalBassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
+
+        uint256 balance = totalBassetBalanceInMasset.add(massetQuantity);
         uint256 total = getTotalMassetBalance().add(massetQuantity);
         uint256 ratio = balance.mul(MAX_VALUE).div(total);
         uint256 max = maxMap[_basset];
@@ -64,7 +68,12 @@ contract BasketManagerV3 is InitializableOwnable {
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
         uint256 massetQuantity = convertBassetToMassetQuantity(_basset, _bassetQuantity);
+        uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
+        uint256 totalBassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
+
         uint256 balance = IERC20(_basset).balanceOf(masset).sub(massetQuantity);
+
+        uint256 balance = totalBassetBalanceInMasset.sub(massetQuantity);
         uint256 total = getTotalMassetBalance().sub(massetQuantity);
         uint256 ratio = balance.mul(MAX_VALUE).div(total);
         uint256 min = minMap[_basset];
