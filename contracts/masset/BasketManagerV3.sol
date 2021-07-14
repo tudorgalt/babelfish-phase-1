@@ -43,7 +43,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     // Methods for Masset logic
 
-    function isValidBasset(address _basset) public returns(bool) {
+    function isValidBasset(address _basset) public view returns(bool) {
         return bassetsMap[_basset];
     }
 
@@ -182,7 +182,7 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     function setPaused(address _basset, bool _flag) public validBasset(_basset) onlyOwner {
-        pausedMap[_basset] == _flag;
+        pausedMap[_basset] = _flag;
     }
 
     function removeBasset(address _basset) public validBasset(_basset) onlyOwner {
