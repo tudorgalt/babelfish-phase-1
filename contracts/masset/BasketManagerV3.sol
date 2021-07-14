@@ -187,6 +187,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     function setFactor(address _basset, int256 _factor) public validBasset(_basset) onlyOwner {
         require(_factor != 0, "invalid factor");
+        require(_factor == 1 || _factor % 10 == 0, "factor must be power of 10");
         factorMap[_basset] = _factor;
     }
 
