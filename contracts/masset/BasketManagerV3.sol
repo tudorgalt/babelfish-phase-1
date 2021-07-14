@@ -72,7 +72,7 @@ contract BasketManagerV3 is InitializableOwnable {
         uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
         uint256 totalBassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
 
-        uint256 balance = IERC20(_basset).balanceOf(masset).sub(massetQuantity);
+        require(totalBassetBalanceInMasset >= massetQuantity, "basset balance is not sufficient");
 
         uint256 balance = totalBassetBalanceInMasset.sub(massetQuantity);
         uint256 total = getTotalMassetBalance().sub(massetQuantity);
