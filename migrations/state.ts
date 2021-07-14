@@ -59,9 +59,16 @@ export async function setAddress(key: string, address: string) {
 
 export async function readState(): Promise<any> {
     return new Promise<any>((resolve, reject) => {
-        fs.readFile(`state_${network}.json`, (err, data) => {
-            if (err) return reject(err);
-            resolve(JSON.parse(data.toString('utf-8')));
+        const filePath = `state_${network}.json`;
+        const emptyState = {};
+
+        fs.readFile(filePath, (readErr, data) => {
+            if (!readErr) resolve(JSON.parse(data.toString('utf-8')));
+ 
+            fs.writeFile(filePath, JSON.stringify(emptyState), (writeErr) => {
+                if(writeErr) reject(writeErr);
+                resolve(emptyState);
+            });
         });
     });
 }
