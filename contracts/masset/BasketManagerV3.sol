@@ -37,13 +37,14 @@ contract BasketManagerV3 is InitializableOwnable {
 
     function initialize(address _masset) external {
         require(masset == address(0), "already initialized");
+        _initialize();
         masset = _masset;
         version = "3.0";
     }
 
     // Methods for Masset logic
 
-    function isValidBasset(address _basset) public returns(bool) {
+    function isValidBasset(address _basset) public view returns(bool) {
         return bassetsMap[_basset];
     }
 
@@ -52,7 +53,11 @@ contract BasketManagerV3 is InitializableOwnable {
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
         uint256 massetQuantity = convertBassetToMassetQuantity(_basset, _bassetQuantity);
-        uint256 balance = IERC20(_basset).balanceOf(masset).add(massetQuantity);
+        uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
+
+        uint256 totalBassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
+
+        uint256 balance = totalBassetBalanceInMasset.add(massetQuantity);
         uint256 total = getTotalMassetBalance().add(massetQuantity);
         uint256 ratio = balance.mul(MAX_VALUE).div(total);
         uint256 max = maxMap[_basset];
@@ -64,10 +69,18 @@ contract BasketManagerV3 is InitializableOwnable {
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
         uint256 massetQuantity = convertBassetToMassetQuantity(_basset, _bassetQuantity);
-        uint256 balance = IERC20(_basset).balanceOf(masset).sub(massetQuantity);
+        uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
+        uint256 totalBassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
+
+        require(totalBassetBalanceInMasset >= massetQuantity, "basset balance is not sufficient");
+
+        uint256 balance = totalBassetBalanceInMasset.sub(massetQuantity);
         uint256 total = getTotalMassetBalance().sub(massetQuantity);
-        uint256 ratio = balance.mul(MAX_VALUE).div(total);
+
         uint256 min = minMap[_basset];
+        if (total == 0) return min == 0;
+
+        uint256 ratio = balance.mul(MAX_VALUE).div(total);
         return ratio >= min;
     }
 
@@ -174,6 +187,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     function setFactor(address _basset, int256 _factor) public validBasset(_basset) onlyOwner {
         require(_factor != 0, "invalid factor");
+        require(_factor == 1 || _factor % 10 == 0, "factor must be power of 10");
         factorMap[_basset] = _factor;
     }
 
@@ -182,7 +196,7 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     function setPaused(address _basset, bool _flag) public validBasset(_basset) onlyOwner {
-        pausedMap[_basset] == _flag;
+        pausedMap[_basset] = _flag;
     }
 
     function removeBasset(address _basset) public validBasset(_basset) onlyOwner {
