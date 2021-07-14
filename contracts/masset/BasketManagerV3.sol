@@ -76,8 +76,11 @@ contract BasketManagerV3 is InitializableOwnable {
 
         uint256 balance = totalBassetBalanceInMasset.sub(massetQuantity);
         uint256 total = getTotalMassetBalance().sub(massetQuantity);
-        uint256 ratio = balance.mul(MAX_VALUE).div(total);
+
         uint256 min = minMap[_basset];
+        if (total == 0) return min == 0;
+
+        uint256 ratio = balance.mul(MAX_VALUE).div(total);
         return ratio >= min;
     }
 
