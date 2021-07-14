@@ -37,6 +37,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     function initialize(address _masset) external {
         require(masset == address(0), "already initialized");
+        _initialize();
         masset = _masset;
         version = "3.0";
     }
