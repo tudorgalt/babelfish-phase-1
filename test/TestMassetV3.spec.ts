@@ -44,6 +44,15 @@ contract("MassetV3", async (accounts) => {
                     token.address,
                     false,
                 );
+
+                const version = await masset.getVersion();
+                expect(version).to.eq("1.0");
+
+                const setToken = await masset.getToken();
+                expect(setToken).to.eq(token.address);
+
+                const setBasketManager = await masset.getBasketManager();
+                expect(setBasketManager).to.eq(basketManagerObj.basketManager.address);
             });
         });
         context("should fail", async () => {
