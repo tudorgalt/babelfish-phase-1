@@ -382,6 +382,11 @@ contract("BasketManagerV3", async (accounts) => {
                     basketManager.setFactor(mockToken1.address, 2, { from: owner }),
                     "VM Exception while processing transaction: reverted with reason string 'factor must be power of 10'"
                 );
+
+                await expectRevert(
+                    basketManager.setFactor(mockToken1.address, 110, { from: owner }),
+                    "VM Exception while processing transaction: reverted with reason string 'factor must be power of 10'"
+                );
             });
         });
 
@@ -396,6 +401,14 @@ contract("BasketManagerV3", async (accounts) => {
 
             it("when factor is a power of 10", async () => {
                 const factor = new BN('1000');
+                await basketManager.setFactor(mockToken1.address, factor, { from: owner });
+                const setFactor = await basketManager.getFactor(mockToken1.address);
+
+                expect(setFactor.eq(factor)).to.equal(true);
+            });
+
+            it("when factor is negative", async () => {
+                const factor = new BN('-100000');
                 await basketManager.setFactor(mockToken1.address, factor, { from: owner });
                 const setFactor = await basketManager.getFactor(mockToken1.address);
 
