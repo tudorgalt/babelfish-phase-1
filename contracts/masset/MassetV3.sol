@@ -9,6 +9,7 @@ import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancyGuard.sol";
 import { IBridge } from "./IBridge.sol";
 import { BasketManagerV3 } from "./BasketManagerV3.sol";
+import { Vault } from "./Vault.sol";
 import "./Token.sol";
 
 contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard {
@@ -50,7 +51,12 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     );
 
     // state
+
+    uint256 constant FEE_PRECISION = 1000;
+
     string private version;
+    uint256 private feeAmount;
+    address private vaultAddress;
     BasketManagerV3 private basketManager;
     Token private token;
 
@@ -61,20 +67,35 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         ERC1820.setInterfaceImplementer(address(this), keccak256("ERC777TokensRecipient"), address(this));
     }
 
+    /**
+     * @dev Calculate and return fee amount based on massetAmount
+     * @param massetAmount  amount of masset to deposit / withdraw
+     * @return fee          calculated   amount of fee
+     */
+    function calculateFee(uint256 massetAmount) internal view returns(uint256 fee) {
+        return (massetAmount * feeAmount) / FEE_PRECISION;
+    }
+
     // public
 
     function initialize(
         address _basketManagerAddress,
         address _tokenAddress,
-        bool _registerAsERC777RecipientFlag) public {
-
+        bool _registerAsERC777RecipientFlag,
+        uint256 _feeAmount,
+        address _vaultAddress
+    ) public {
         require(address(basketManager) == address(0) && address(token) == address(0), "already initialized");
         require(_basketManagerAddress != address(0), "invalid basket manager");
         require(_tokenAddress != address(0), "invalid token");
+        require(_vaultAddress != address(0), "invalid vault address");
 
         InitializableOwnable._initialize();
         InitializableReentrancyGuard._initialize();
 
+        setFeeAmount(_feeAmount);
+
+        vaultAddress = _vaultAddress;
         basketManager = BasketManagerV3(_basketManagerAddress);
         token = Token(_tokenAddress);
         if(_registerAsERC777RecipientFlag) {
@@ -148,10 +169,26 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         IERC20(_basset).transferFrom(msg.sender, address(this), _bassetQuantity);
 
-        token.mint(_recipient, massetQuantity);
-        emit Minted(msg.sender, _recipient, massetQuantity, _basset, _bassetQuantity);
+        uint256 massetsToMint = _mintFee(massetQuantity);
+        token.mint(_recipient, massetsToMint);
+
+        emit Minted(msg.sender, _recipient, massetsToMint, _basset, _bassetQuantity);
 
         return massetQuantity;
+    }
+
+    /**
+     * @dev mint calculated fee
+     * @param massetQuantity    amount of massets
+     * @return massetsToMint    amount of massets that is left to mint for user
+     */
+    function _mintFee(uint256 massetQuantity) internal returns (uint256 massetsToMint) {
+        uint256 fee = calculateFee(massetQuantity);
+        massetsToMint = massetQuantity.sub(fee);
+
+        token.mint(vaultAddress, fee);
+
+        return massetsToMint;
     }
 
     /***************************************
@@ -202,7 +239,8 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(_massetQuantity > 0, "masset quantity must be greater than 0");
         require(basketManager.isValidBasset(_basset), "invalid basset");
 
-        uint256 bassetQuantity = basketManager.convertMassetToBassetQuantity(_basset, _massetQuantity);
+        uint256 massetsToBurn = _transferFee(_massetQuantity, msg.sender);
+        uint256 bassetQuantity = basketManager.convertMassetToBassetQuantity(_basset, massetsToBurn);
 
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
 
@@ -217,10 +255,26 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
             IERC20(_basset).transfer(_recipient, bassetQuantity);
         }
 
-        token.burn(msg.sender, _massetQuantity);
-        emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity);
+        token.burn(msg.sender, massetsToBurn);
+        emit Redeemed(msg.sender, _recipient, massetsToBurn, _basset, bassetQuantity);
 
         return _massetQuantity;
+    }
+
+    /**
+     * @dev transfers calculated fee
+     *      must have approval to spend the senders Masset
+     * @param massetQuantity        amount of massets to withdraw
+     * @param sender                owner of massets
+     * @return massetsToBurn        amount of massets that is left to burn
+     */
+    function _transferFee(uint256 massetQuantity, address sender) internal returns (uint256 massetsToBurn) {
+        uint256 fee = calculateFee(massetQuantity);
+        massetsToBurn = massetQuantity.sub(fee);
+
+        require(token.transferFrom(sender, vaultAddress, fee), "fee transfer failed");
+
+        return massetsToBurn;
     }
 
     // For the BRIDGE
@@ -318,8 +372,10 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(basketManager.checkBasketBalanceForDeposit(basset, _orderAmount), "basket out of balance");
 
         uint256 massetQuantity = basketManager.convertBassetToMassetQuantity(basset, _orderAmount);
-        token.mint(recipient, massetQuantity);
-        emit Minted(msg.sender, recipient, massetQuantity, basset, _orderAmount);
+        uint256 massetsToMint = _mintFee(massetQuantity);
+        token.mint(recipient, massetsToMint);
+
+        emit Minted(msg.sender, recipient, massetsToMint, basset, _orderAmount);
     }
 
     // Getters
@@ -334,6 +390,17 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     function getBasketManager() external view returns (address) {
         return address(basketManager);
+    }
+
+    function getFeeAmount () external view returns(uint256) {
+        return feeAmount;
+    }
+
+    // Admin methods
+
+    function setFeeAmount (uint256 amount) public onlyOwner {
+        require(amount > 0, "fee amount should be greater than zero"); // czy na pewno?
+        feeAmount = amount;
     }
 
     // Temporary migration
