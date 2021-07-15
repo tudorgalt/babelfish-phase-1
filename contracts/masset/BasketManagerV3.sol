@@ -185,9 +185,22 @@ contract BasketManagerV3 is InitializableOwnable {
         maxMap[_basset] = _max;
     }
 
+    function isPowerOfTen(int256 x) public pure returns (bool result) {
+        uint256 number;
+
+        if (x < 0) number = uint256(-x);
+        else number = uint256(x);
+
+        while (number >= 10 && number % 10 == 0) {
+            number /= 10;
+        }
+
+        result = number == 1;
+    }
+
     function setFactor(address _basset, int256 _factor) public validBasset(_basset) onlyOwner {
         require(_factor != 0, "invalid factor");
-        require(_factor == 1 || _factor % 10 == 0, "factor must be power of 10");
+        require(_factor == 1 || isPowerOfTen(_factor), "factor must be power of 10");
         factorMap[_basset] = _factor;
     }
 
