@@ -16,6 +16,8 @@ export const fullScale: BN = new BN(10).pow(new BN(18));
 export const DEAD_ADDRESS = "0x0000000000000000000000000000000000000001";
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+export const FEE_PRECISION = new BN(1000);
+
 export const MAX_UINT256 = new BN(2).pow(new BN(256)).sub(new BN(1));
 export const MAX_INT128 = new BN(2).pow(new BN(127)).sub(new BN(1));
 export const MIN_INT128 = new BN(2).pow(new BN(127)).mul(new BN(-1));
