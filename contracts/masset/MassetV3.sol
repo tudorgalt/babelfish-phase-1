@@ -169,7 +169,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         IERC20(_basset).transferFrom(msg.sender, address(this), _bassetQuantity);
 
-        uint256 massetsToMint = _mintFee(massetQuantity);
+        uint256 massetsToMint = _mintAndCalulateFee(massetQuantity);
         token.mint(_recipient, massetsToMint);
 
         emit Minted(msg.sender, _recipient, massetsToMint, _basset, _bassetQuantity);
@@ -182,7 +182,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param massetQuantity    amount of massets
      * @return massetsToMint    amount of massets that is left to mint for user
      */
-    function _mintFee(uint256 massetQuantity) internal returns (uint256 massetsToMint) {
+    function _mintAndCalulateFee(uint256 massetQuantity) internal returns (uint256 massetsToMint) {
         uint256 fee = calculateFee(massetQuantity);
         massetsToMint = massetQuantity.sub(fee);
 
@@ -239,7 +239,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(_massetQuantity > 0, "masset quantity must be greater than 0");
         require(basketManager.isValidBasset(_basset), "invalid basset");
 
-        uint256 massetsToBurn = _transferFee(_massetQuantity, msg.sender);
+        uint256 massetsToBurn = _transferAndCalulateFee(_massetQuantity, msg.sender);
         uint256 bassetQuantity = basketManager.convertMassetToBassetQuantity(_basset, massetsToBurn);
 
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
@@ -268,7 +268,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param sender                owner of massets
      * @return massetsToBurn        amount of massets that is left to burn
      */
-    function _transferFee(uint256 massetQuantity, address sender) internal returns (uint256 massetsToBurn) {
+    function _transferAndCalulateFee(uint256 massetQuantity, address sender) internal returns (uint256 massetsToBurn) {
         uint256 fee = calculateFee(massetQuantity);
         massetsToBurn = massetQuantity.sub(fee);
 
@@ -372,7 +372,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(basketManager.checkBasketBalanceForDeposit(basset, _orderAmount), "basket out of balance");
 
         uint256 massetQuantity = basketManager.convertBassetToMassetQuantity(basset, _orderAmount);
-        uint256 massetsToMint = _mintFee(massetQuantity);
+        uint256 massetsToMint = _mintAndCalulateFee(massetQuantity);
         token.mint(recipient, massetsToMint);
 
         emit Minted(msg.sender, recipient, massetsToMint, basset, _orderAmount);
@@ -399,7 +399,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     // Admin methods
 
     function setFeeAmount (uint256 amount) public onlyOwner {
-        require(amount > 0, "fee amount should be greater than zero"); // czy na pewno?
+        require(amount > 0, "fee amount should be greater than zero");
         feeAmount = amount;
     }
 
