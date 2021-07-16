@@ -81,21 +81,15 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     function initialize(
         address _basketManagerAddress,
         address _tokenAddress,
-        bool _registerAsERC777RecipientFlag,
-        uint256 _feeAmount,
-        address _vaultAddress
-    ) public {
+        bool _registerAsERC777RecipientFlag) public {
+
         require(address(basketManager) == address(0) && address(token) == address(0), "already initialized");
         require(_basketManagerAddress != address(0), "invalid basket manager");
         require(_tokenAddress != address(0), "invalid token");
-        require(_vaultAddress != address(0), "invalid vault address");
 
         InitializableOwnable._initialize();
         InitializableReentrancyGuard._initialize();
 
-        setFeeAmount(_feeAmount);
-
-        vaultAddress = _vaultAddress;
         basketManager = BasketManagerV3(_basketManagerAddress);
         token = Token(_tokenAddress);
         if(_registerAsERC777RecipientFlag) {
@@ -404,14 +398,25 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     }
 
     // Temporary migration
-    function upgradeToV3(address _basketManagerAddress, address _tokenAddress) external {
+    function upgradeToV3(
+        address _basketManagerAddress,
+        address _tokenAddress,
+        uint256 _feeAmount,
+        address _vaultAddress
+    ) external {
         require(
             keccak256(bytes(version)) == keccak256(bytes("1.0")) ||
             keccak256(bytes(version)) == keccak256(bytes("2.0")), "wrong version (1)");
         require(keccak256(bytes(BasketManagerV3(_basketManagerAddress).getVersion())) == keccak256(bytes("3.0")), "wrong version (2)");
+        require(_vaultAddress != address(0), "invalid vault address");
+
+        InitializableReentrancyGuard._initialize();
+
+        setFeeAmount(_feeAmount);
+
+        vaultAddress = _vaultAddress;
         basketManager = BasketManagerV3(_basketManagerAddress);
         token = Token(_tokenAddress);
         version = "3.0";
-        InitializableReentrancyGuard._initialize();
     }
 }

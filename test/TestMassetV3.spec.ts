@@ -45,12 +45,10 @@ contract("MassetV3", async (accounts) => {
                 await masset.initialize(
                     basketManagerObj.basketManager.address,
                     token.address,
-                    false,
-                    1,
-                    vault.address
+                    false
                 );
 
-                const version = await masset.getVersion();
+                let version = await masset.getVersion();
                 expect(version).to.eq("1.0");
 
                 const setToken = await masset.getToken();
@@ -59,21 +57,26 @@ contract("MassetV3", async (accounts) => {
                 const setBasketManager = await masset.getBasketManager();
                 expect(setBasketManager).to.eq(basketManagerObj.basketManager.address);
 
+                // migrate to V3
+                await masset.upgradeToV3(
+                    basketManagerObj.basketManager.address,
+                    token.address,
+                    2,
+                    vault.address
+                );
+
+                version = await masset.getVersion();
+                expect(version).to.eq("3.0");
+
                 const setFeeAmount = await masset.getFeeAmount();
-                expect(setFeeAmount).bignumber.to.eq(new BN(1));
+                expect(setFeeAmount).bignumber.to.eq(new BN(2));
             });
         });
         context("should fail", async () => {
             it("when basket manager missing", async () => {
                 await expectRevert(
-                    masset.initialize(ZERO_ADDRESS, token.address, false, 1, vault.address),
+                    masset.initialize(ZERO_ADDRESS, token.address, false),
                     "VM Exception while processing transaction: reverted with reason string 'invalid basket manager'",
-                );
-            });
-            it("when vault address missing", async () => {
-                await expectRevert(
-                    masset.initialize(basketManagerObj.basketManager.address, token.address, false, 1, ZERO_ADDRESS),
-                    "VM Exception while processing transaction: reverted with reason string 'invalid vault address'",    
                 );
             });
             it("when token missing", async () => {
@@ -81,9 +84,7 @@ contract("MassetV3", async (accounts) => {
                     masset.initialize(
                         basketManagerObj.basketManager.address,
                         ZERO_ADDRESS,
-                        false,
-                        1,
-                        vault.address
+                        false
                     ),
                     "VM Exception while processing transaction: reverted with reason string 'invalid token'",
                 );
@@ -92,17 +93,13 @@ contract("MassetV3", async (accounts) => {
                 await masset.initialize(
                     basketManagerObj.basketManager.address,
                     token.address,
-                    false,
-                    1,
-                    vault.address
+                    false
                 );
                 await expectRevert(
                     masset.initialize(
                         basketManagerObj.basketManager.address,
                         token.address,
-                        false,
-                        1,
-                        vault.address
+                        false
                     ),
                     "VM Exception while processing transaction: reverted with reason string 'already initialized'",
                 );
@@ -124,13 +121,14 @@ contract("MassetV3", async (accounts) => {
             vault = await Vault.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
-            await masset.initialize(
+            await initMassetV3(
+                masset,
                 basketManagerObj.basketManager.address,
                 token.address,
-                false,
                 feeAmount,
                 vault.address
             );
+
             mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
         });
 
@@ -197,10 +195,11 @@ contract("MassetV3", async (accounts) => {
             masset = await MassetV3.new();
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
             token = await createToken(masset);
-            await masset.initialize(
+
+            await initMassetV3(
+                masset,
                 basketManagerObj.basketManager.address,
                 token.address,
-                false,
                 feeAmount,
                 vault.address
             );
@@ -250,13 +249,15 @@ contract("MassetV3", async (accounts) => {
             masset = await MassetV3.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
-            await masset.initialize(
+
+            await initMassetV3(
+                masset,
                 basketManagerObj.basketManager.address,
                 token.address,
-                false,
                 10,
                 vault.address
             );
+
             mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
         });
 
@@ -359,7 +360,7 @@ contract("MassetV3", async (accounts) => {
             masset = await MassetV3.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
-            await masset.initialize(basketManagerObj.basketManager.address, token.address, false, feeAmount, vault.address);
+            await initMassetV3(masset,basketManagerObj.basketManager.address, token.address, feeAmount, vault.address);
         });
 
         context("should fail", () => {
@@ -419,7 +420,8 @@ contract("MassetV3", async (accounts) => {
                 [1, 1],
                 [mockBridge.address, mockBridge.address]
             );
-            await masset.initialize(basketManagerObj.basketManager.address, token.address, false, feeAmount, vault.address, { from: standardAccounts.default });
+
+            await initMassetV3(masset, basketManagerObj.basketManager.address, token.address, feeAmount, vault.address, { from: standardAccounts.default });
 
             await basketManagerObj.mockToken1.approve(masset.address, mintAmount, { from: standardAccounts.dummy1 });
             await masset.mint(basketManagerObj.mockToken1.address, mintAmount, { from: standardAccounts.dummy1 });
@@ -488,11 +490,11 @@ contract("MassetV3", async (accounts) => {
                 [mockBridge.address, mockBridge.address]
             );
 
-            await masset.initialize(
+            await initMassetV3(
+                masset,
                 basketManagerObj.basketManager.address,
                 token.address,
-                false,
-                1,
+                feeAmount,
                 vault.address
             );
         });
@@ -602,17 +604,20 @@ contract("MassetV3", async (accounts) => {
     describe("setFeeAmount", async () => {
         let masset: MassetV3Instance;
         let admin: string;
+        let basketManagerObj: BasketManagerObj;
 
         beforeEach(async () => {
             masset = await MassetV3.new();
             admin = standardAccounts.default;
-            
-            await masset.initialize(
-                standardAccounts.dummy1,
+
+            basketManagerObj = await createBasketManager(masset,[18, 18], [1, 1]);
+
+            await initMassetV3(
+                masset,
+                basketManagerObj.basketManager.address,
                 standardAccounts.dummy2,
-                false,
                 1,
-                standardAccounts.dummy3,
+                standardAccounts.dummy2,
                 { from: admin }
             );
         });
@@ -659,10 +664,11 @@ contract("MassetV3", async (accounts) => {
             masset = await MassetV3.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [20, 12], [basset1Factor, basset2Factor]);
-            await masset.initialize(
+
+            await initMassetV3(
+                masset,
                 basketManagerObj.basketManager.address,
                 token.address,
-                false,
                 feeAmount,
                 vault.address
             );
@@ -728,6 +734,30 @@ type BasketManagerObj = {
 };
 
 const zeroBridges = [ZERO_ADDRESS, ZERO_ADDRESS];
+
+async function initMassetV3(
+    masset: MassetV3Instance,
+    basketManagerAddress: string,
+    tokenAddress: string,
+    feeAmount: number | BN,
+    vaultAddress: string,
+    txDetails: Truffle.TransactionDetails = { from: standardAccounts.default }
+): Promise<void> {
+    await masset.initialize(
+        basketManagerAddress,
+        tokenAddress,
+        false,
+        txDetails
+    );
+
+    await masset.upgradeToV3(
+        basketManagerAddress,
+        tokenAddress,
+        feeAmount,
+        vaultAddress,
+        txDetails
+    );
+}
 
 async function createBasketManager(
     masset: MassetV3Instance,
