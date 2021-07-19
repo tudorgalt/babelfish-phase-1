@@ -115,9 +115,9 @@ export default async (
         );
     }
 
-    await upgradeInstance('ETHs', addressesForNetwork.ETHs, 1); // SET PROPER AMOUNT OF FEE
-    await upgradeInstance('XUSD', addressesForNetwork.XUSD, 1); // SET PROPER AMOUNT OF FEE
-    await upgradeInstance('BNBs', addressesForNetwork.BNBs, 1); // SET PROPER AMOUNT OF FEE
+    await upgradeInstance('ETHs', addressesForNetwork.ETHs, 1);
+    await upgradeInstance('XUSD', addressesForNetwork.XUSD, 1);
+    await upgradeInstance('BNBs', addressesForNetwork.BNBs, 1);
 
     printState();
 };
