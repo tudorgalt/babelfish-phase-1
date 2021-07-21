@@ -29,17 +29,18 @@ const standardFees: Fees = {
 };
 
 contract("MassetV3", async (accounts) => {
+    let masset: MassetV3Instance;
+    let basketManagerObj: BasketManagerObj;
+    let token: TokenInstance;
+    let vault: VaultInstance;
+    let mockTokenDummy: MockERC20Instance;
+    let mockBridge: MockBridgeInstance;
 
     standardAccounts = new StandardAccounts(accounts);
 
     before("before all", async () => { });
 
     describe("initialize", async () => {
-        let masset: MassetV3Instance;
-        let basketManagerObj: BasketManagerObj;
-        let token: TokenInstance;
-        let vault: VaultInstance;
-
         beforeEach(async () => {
             vault = await Vault.new();
             masset = await MassetV3.new();
@@ -120,12 +121,6 @@ contract("MassetV3", async (accounts) => {
     });
 
     describe("mint", async () => {
-        let masset: MassetV3Instance;
-        let basketManagerObj: BasketManagerObj;
-        let token: TokenInstance;
-        let mockTokenDummy: MockERC20Instance;
-        let vault: VaultInstance;
-
         beforeEach(async () => {
             masset = await MassetV3.new();
             vault = await Vault.new();
@@ -193,11 +188,6 @@ contract("MassetV3", async (accounts) => {
         });
     });
     describe("mintTo", async () => {
-        let masset: MassetV3Instance;
-        let basketManagerObj: BasketManagerObj;
-        let token: TokenInstance;
-        let vault: VaultInstance;
-
         beforeEach(async () => {
             vault = await Vault.new();
             masset = await MassetV3.new();
@@ -236,7 +226,7 @@ contract("MassetV3", async (accounts) => {
                 });
                 const balance = await token.balanceOf(standardAccounts.dummy4);
                 expect(balance).bignumber.to.eq(expectedMassetQuantity);
-                
+
                 const vaultBalance = await token.balanceOf(vault.address);
                 expect(vaultBalance).bignumber.to.eq(expectedFee, "fee should be transfered to vault contract");
             });
@@ -244,12 +234,6 @@ contract("MassetV3", async (accounts) => {
     });
 
     describe("redeem", async () => {
-        let masset: MassetV3Instance;
-        let basketManagerObj: BasketManagerObj;
-        let token: TokenInstance;
-        let vault: VaultInstance;
-        let mockTokenDummy: MockERC20Instance;
-
         beforeEach(async () => {
             vault = await Vault.new();
             masset = await MassetV3.new();
@@ -272,7 +256,7 @@ contract("MassetV3", async (accounts) => {
                 const initialBalance = tokens(1);
                 const sum = new BN(10).pow(new BN(2));
                 const mintFee = sum.mul(standardFees.deposit).div(FEE_PRECISION);
-                
+
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
                 });
@@ -356,17 +340,12 @@ contract("MassetV3", async (accounts) => {
     });
 
     describe("redeemTo", async () => {
-        let masset: MassetV3Instance;
-        let basketManagerObj: BasketManagerObj;
-        let token: TokenInstance;
-        let vault: VaultInstance;
-
         beforeEach(async () => {
             vault = await Vault.new();
             masset = await MassetV3.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
-            await initMassetV3(masset,basketManagerObj.basketManager.address, token.address, vault.address, standardFees);
+            await initMassetV3(masset, basketManagerObj.basketManager.address, token.address, vault.address, standardFees);
         });
 
         context("should fail", () => {
@@ -403,12 +382,6 @@ contract("MassetV3", async (accounts) => {
     });
 
     describe("redeemToBridge", async () => {
-        let masset: MassetV3Instance;
-        let basketManagerObj: BasketManagerObj;
-        let token: TokenInstance;
-        let vault: VaultInstance;
-        let mockBridge: MockBridgeInstance;
-
         const mintAmount = tokens(1);
         const mintFee = mintAmount.mul(standardFees.deposit).div(FEE_PRECISION);
         const mintedMassets = mintAmount.sub(mintFee);
@@ -474,12 +447,6 @@ contract("MassetV3", async (accounts) => {
     });
 
     describe("onTokensMinted", async () => {
-        let masset: MassetV3Instance;
-        let basketManagerObj: BasketManagerObj;
-        let token: TokenInstance;
-        let vault: VaultInstance;
-        let mockBridge: MockBridgeInstance;
-
         beforeEach(async () => {
             vault = await Vault.new();
             masset = await MassetV3.new();
@@ -605,15 +572,13 @@ contract("MassetV3", async (accounts) => {
     });
 
     describe("setFeeAmount", async () => {
-        let masset: MassetV3Instance;
         let admin: string;
-        let basketManagerObj: BasketManagerObj;
 
         beforeEach(async () => {
             masset = await MassetV3.new();
             admin = standardAccounts.default;
 
-            basketManagerObj = await createBasketManager(masset,[18, 18], [1, 1]);
+            basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
 
             await initMassetV3(
                 masset,
@@ -627,41 +592,21 @@ contract("MassetV3", async (accounts) => {
 
         context("should fail", async () => {
             it("when it's not called by admin", async () => {
-                await expectRevert(
-                    masset.setDepositFee(2, { from: standardAccounts.other }),
-                    "VM Exception while processing transaction: reverted with reason string 'InitializableOwnable: caller is not the owner'"
-                );
-                await expectRevert(
-                    masset.setDepositBridgeFee(2, { from: standardAccounts.other }),
-                    "VM Exception while processing transaction: reverted with reason string 'InitializableOwnable: caller is not the owner'"
-                );
-                await expectRevert(
-                    masset.setWithdrawFee(2, { from: standardAccounts.other }),
-                    "VM Exception while processing transaction: reverted with reason string 'InitializableOwnable: caller is not the owner'"
-                );
-                await expectRevert(
-                    masset.setWithdrawBridgeFee(2, { from: standardAccounts.other }),
-                    "VM Exception while processing transaction: reverted with reason string 'InitializableOwnable: caller is not the owner'"
-                );
+                const revertMessage = "VM Exception while processing transaction: reverted with reason string 'InitializableOwnable: caller is not the owner'";
+
+                await expectRevert(masset.setDepositFee(2, { from: standardAccounts.other }), revertMessage);
+                await expectRevert(masset.setDepositBridgeFee(2, { from: standardAccounts.other }), revertMessage);
+                await expectRevert(masset.setWithdrawFee(2, { from: standardAccounts.other }), revertMessage);
+                await expectRevert(masset.setWithdrawBridgeFee(2, { from: standardAccounts.other }), revertMessage);
             });
 
             it("when amount is less than zero", async () => {
-                await expectRevert(
-                    masset.setDepositFee(0, { from: admin }),
-                    "VM Exception while processing transaction: reverted with reason string 'fee amount should be greater than zero'"
-                );
-                await expectRevert(
-                    masset.setDepositBridgeFee(0, { from: admin }),
-                    "VM Exception while processing transaction: reverted with reason string 'fee amount should be greater than zero'"
-                );
-                await expectRevert(
-                    masset.setWithdrawFee(0, { from: admin }),
-                    "VM Exception while processing transaction: reverted with reason string 'fee amount should be greater than zero'"
-                );
-                await expectRevert(
-                    masset.setWithdrawBridgeFee(0, { from: admin }),
-                    "VM Exception while processing transaction: reverted with reason string 'fee amount should be greater than zero'"
-                );
+                const revertMessage = "VM Exception while processing transaction: reverted with reason string 'fee amount should be greater than zero'";
+
+                await expectRevert(masset.setDepositFee(0, { from: admin }), revertMessage);
+                await expectRevert(masset.setDepositBridgeFee(0, { from: admin }), revertMessage);
+                await expectRevert(masset.setWithdrawFee(0, { from: admin }), revertMessage);
+                await expectRevert(masset.setWithdrawBridgeFee(0, { from: admin }), revertMessage);
             });
         });
 
@@ -681,11 +626,6 @@ contract("MassetV3", async (accounts) => {
     });
 
     describe("precision conversion", async () => {
-        let vault: VaultInstance;
-        let masset: MassetV3Instance;
-        let basketManagerObj: BasketManagerObj;
-        let token: TokenInstance;
-
         const basset1Factor = new BN(100);
         const basset2Factor = new BN(-1000000);
 
@@ -752,7 +692,7 @@ contract("MassetV3", async (accounts) => {
 
             const totalFee = fee.mul(new BN(2)).add(withdrawFee); // 2 mints and one redeem
             const vaultBalance = await token.balanceOf(vault.address);
-            expect(vaultBalance).bignumber.to.eq(totalFee); 
+            expect(vaultBalance).bignumber.to.eq(totalFee);
         });
     });
 });
