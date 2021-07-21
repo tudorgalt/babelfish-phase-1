@@ -40,7 +40,14 @@ export default async (
 
     const vaultFake = await Vault.at(vaultProxy.address);
 
-    async function upgradeInstance(symbol: string, addressesForInstance: BassetInstanceDetails, feeAmount: number | BN) {
+    async function upgradeInstance(
+        symbol: string,
+        addressesForInstance: BassetInstanceDetails,
+        depositFee: number | BN,
+        depositBridgeFee: number | BN,
+        withdrawFee: number | BN,
+        withdrawBridgeFee: number | BN
+    ): Promise<void> {
         const massetFake: MassetV3Instance = await getDeployed(MassetV3, `${symbol}_MassetProxy`);
         const massetVersion = await massetFake.getVersion();
         console.log(symbol, ' Masset version: ', massetVersion);
@@ -110,14 +117,17 @@ export default async (
         await massetFake.upgradeToV3(
             basketManagerFake.address,
             tokenAddress,
-            feeAmount,
-            vaultFake.address
+            vaultFake.address,
+            depositFee,
+            depositBridgeFee,
+            withdrawFee,
+            withdrawBridgeFee
         );
     }
 
-    await upgradeInstance('ETHs', addressesForNetwork.ETHs, 1);
-    await upgradeInstance('XUSD', addressesForNetwork.XUSD, 1);
-    await upgradeInstance('BNBs', addressesForNetwork.BNBs, 1);
+    await upgradeInstance('ETHs', addressesForNetwork.ETHs, 1, 2, 3, 4);
+    await upgradeInstance('XUSD', addressesForNetwork.XUSD, 1, 2, 3, 4);
+    await upgradeInstance('BNBs', addressesForNetwork.BNBs, 1, 2, 3, 4);
 
     printState();
 };
