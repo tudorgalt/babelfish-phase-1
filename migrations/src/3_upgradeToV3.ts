@@ -1,6 +1,7 @@
-import { conditionalDeploy, conditionalInitialize, getDeployed, printState, setAddress } from "../state";
-import addresses from '../addresses';
 import { ZERO_ADDRESS } from "@utils/constants";
+import { MassetV3Instance, VaultInstance, VaultProxyInstance } from "types/generated";
+import addresses from '../addresses';
+import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "../state";
 
 const MAX_VALUE = 1000;
 
@@ -21,13 +22,27 @@ export default async (
     const MassetV3 = artifacts.require("MassetV3");
     const MassetProxy = artifacts.require("MassetProxy");
 
+    const Vault = artifacts.require("Vault");
+    const VaultProxy = artifacts.require("VaultProxy");
+
     const [default_, _admin] = accounts;
     const addressesForNetwork = addresses[deployer.network];
 
-    async function upgradeInstance(symbol: string, addressesForInstance: BassetInstanceDetails) {
+    const vault: VaultInstance = await conditionalDeploy(BasketManagerV3, "Vault",
+        () => deployer.deploy(Vault));
 
-        const massetFake = await getDeployed(MassetV3, `${symbol}_MassetProxy`);
-        const massetVersion =  await massetFake.getVersion();
+    const vaultProxy: VaultProxyInstance = await conditionalDeploy(BasketManagerProxy, "VaultProxy",
+        () => deployer.deploy(VaultProxy));
+
+    await conditionalInitialize("VaultProxy",
+        async () => vaultProxy.methods["initialize(address,address,bytes)"](vault.address, _admin, "0x")
+    );
+
+    const vaultFake = await Vault.at(vaultProxy.address);
+
+    async function upgradeInstance(symbol: string, addressesForInstance: BassetInstanceDetails, feeAmount: number | BN) {
+        const massetFake: MassetV3Instance = await getDeployed(MassetV3, `${symbol}_MassetProxy`);
+        const massetVersion = await massetFake.getVersion();
         console.log(symbol, ' Masset version: ', massetVersion);
         if (massetVersion >= '3.0') {
             console.log('Skipping...');
@@ -44,7 +59,7 @@ export default async (
 
         const initAbi = basketManager.contract.methods['initialize(address)'](massetFake.address).encodeABI();
         await conditionalInitialize(`${symbol}_BasketManagerProxy`,
-    async () => basketManagerProxy.initialize(basketManager.address, _admin, initAbi));
+            async () => basketManagerProxy.initialize(basketManager.address, _admin, initAbi));
 
         const basketManagerFake = await BasketManagerV3.at(basketManagerProxy.address);
 
@@ -69,7 +84,7 @@ export default async (
                     addressesForInstance.bridges[index], 0, MAX_VALUE, false));
             };
 
-            for(let i=0; i<addressesForInstance.bassets.length; i++) {
+            for (let i = 0; i < addressesForInstance.bassets.length; i++) {
                 if (!existingAssets.find(ta => ta === addressesForInstance.bassets[i])) {
                     addAsset(i);
                 }
@@ -88,15 +103,21 @@ export default async (
         const masset = await conditionalDeploy(MassetV3, `${symbol}_MassetV3`,
             () => deployer.deploy(MassetV3));
 
-        const abiInner = masset.contract.methods['upgradeToV3(address,address)'](basketManager.address, tokenAddress).encodeABI();
+
         const massetProxy = await MassetProxy.at(massetFake.address);
-        const abi = massetProxy.contract.methods['upgradeToAndCall(address,bytes)'](masset.address, abiInner).encodeABI();
-        console.log('ABI for upgrade: ', abi);
+
+        await massetProxy.upgradeTo(masset.address, { from: _admin });
+        await massetFake.upgradeToV3(
+            basketManagerFake.address,
+            tokenAddress,
+            feeAmount,
+            vaultFake.address
+        );
     }
 
-    await upgradeInstance('ETHs', addressesForNetwork.ETHs);
-    await upgradeInstance('XUSD', addressesForNetwork.XUSD);
-    await upgradeInstance('BNBs', addressesForNetwork.BNBs);
+    await upgradeInstance('ETHs', addressesForNetwork.ETHs, 1);
+    await upgradeInstance('XUSD', addressesForNetwork.XUSD, 1);
+    await upgradeInstance('BNBs', addressesForNetwork.BNBs, 1);
 
     printState();
 };

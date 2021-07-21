@@ -20,7 +20,7 @@
     "lint-ts": "yarn eslint ./test --ext .ts,.js --fix --quiet",
     "lint-sol": "solium -d contracts/ --fix ",
     "coverage": "yarn hardhat compile --force && node --max_old_space_size=6144 node_modules/.bin/hardhat coverage --temp 'build/contracts' --testfiles 'test/**/Test*.ts' --show-stack-traces",
-    "script": "yarn truffle exec ./scripts/main.js",
+    "script": "truffle --network development exec ./scripts/main.js",
     "script:rskTestnet": "truffle --network rskTestnet exec ./scripts/main.js",
     "script:rsk": "truffle --network rsk exec ./scripts/main.js",
     "test": "yarn run compile && node --max_old_space_size=4096 node_modules/.bin/hardhat test;",
