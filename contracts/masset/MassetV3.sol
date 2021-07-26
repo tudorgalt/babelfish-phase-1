@@ -78,7 +78,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @return fee          calculated   amount of fee
      */
     function calculateFee(uint256 massetAmount, uint256 feeAmount) internal pure returns(uint256 fee) {
-        return (massetAmount * feeAmount) / FEE_PRECISION;
+        return massetAmount.mul(feeAmount).div(FEE_PRECISION);
     }
 
     // public
