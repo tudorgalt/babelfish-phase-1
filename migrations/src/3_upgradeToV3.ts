@@ -1,5 +1,5 @@
 import { ZERO_ADDRESS } from "@utils/constants";
-import { MassetV3Instance, VaultInstance, VaultProxyInstance } from "types/generated";
+import { MassetV3Instance, FeesVaultInstance, FeesVaultProxyInstance } from "types/generated";
 import addresses from '../addresses';
 import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "../state";
 
@@ -22,23 +22,23 @@ export default async (
     const MassetV3 = artifacts.require("MassetV3");
     const MassetProxy = artifacts.require("MassetProxy");
 
-    const Vault = artifacts.require("Vault");
-    const VaultProxy = artifacts.require("VaultProxy");
+    const FeesVault = artifacts.require("FeesVault");
+    const FeesVaultProxy = artifacts.require("FeesVaultProxy");
 
     const [default_, _admin] = accounts;
     const addressesForNetwork = addresses[deployer.network];
 
-    const vault: VaultInstance = await conditionalDeploy(BasketManagerV3, "Vault",
-        () => deployer.deploy(Vault));
+    const feesVault: FeesVaultInstance = await conditionalDeploy(BasketManagerV3, "FeesVault",
+        () => deployer.deploy(FeesVault));
 
-    const vaultProxy: VaultProxyInstance = await conditionalDeploy(BasketManagerProxy, "VaultProxy",
-        () => deployer.deploy(VaultProxy));
+    const feesVaultProxy: FeesVaultProxyInstance = await conditionalDeploy(BasketManagerProxy, "FeesVaultProxy",
+        () => deployer.deploy(FeesVaultProxy));
 
     await conditionalInitialize("VaultProxy",
-        async () => vaultProxy.methods["initialize(address,address,bytes)"](vault.address, _admin, "0x")
+        async () => feesVaultProxy.methods["initialize(address,address,bytes)"](feesVault.address, _admin, "0x")
     );
 
-    const vaultFake = await Vault.at(vaultProxy.address);
+    const vaultFake = await FeesVault.at(feesVaultProxy.address);
 
     async function upgradeInstance(
         symbol: string,

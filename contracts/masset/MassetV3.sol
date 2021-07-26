@@ -9,7 +9,7 @@ import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancyGuard.sol";
 import { IBridge } from "./IBridge.sol";
 import { BasketManagerV3 } from "./BasketManagerV3.sol";
-import { Vault } from "./Vault.sol";
+import { FeesVault } from "../vault/FeesVault.sol";
 import "./Token.sol";
 
 contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard {
@@ -58,10 +58,10 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     uint256 private depositFee;
     uint256 private depositBridgeFee;
-    uint256 private withdrawFee;
-    uint256 private withdrawBridgeFee;
+    uint256 private withdrawalFee;
+    uint256 private withdrawalBridgeFee;
 
-    address private vaultAddress;
+    address private feesVaultAddress;
     BasketManagerV3 private basketManager;
     Token private token;
 
@@ -185,7 +185,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 fee = calculateFee(massetQuantity, feeAmount);
         massetsToMint = massetQuantity.sub(fee);
 
-        token.mint(vaultAddress, fee);
+        token.mint(feesVaultAddress, fee);
 
         return massetsToMint;
     }
@@ -238,7 +238,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(_massetQuantity > 0, "masset quantity must be greater than 0");
         require(basketManager.isValidBasset(_basset), "invalid basset");
 
-        uint256 feeAmount = bridgeFlag ? withdrawBridgeFee : withdrawFee;
+        uint256 feeAmount = bridgeFlag ? withdrawalBridgeFee : withdrawalFee;
 
         uint256 massetsToBurn = _transferAndCalulateFee(_massetQuantity, feeAmount, msg.sender);
         uint256 bassetQuantity = basketManager.convertMassetToBassetQuantity(_basset, massetsToBurn);
@@ -273,7 +273,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 fee = calculateFee(massetQuantity, feeAmount);
         massetsToBurn = massetQuantity.sub(fee);
 
-        require(token.transferFrom(sender, vaultAddress, fee), "fee transfer failed");
+        require(token.transferFrom(sender, feesVaultAddress, fee), "fee transfer failed");
 
         return massetsToBurn;
     }
@@ -401,12 +401,12 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return depositBridgeFee;
     }
 
-    function getWithdrawFee () external view returns(uint256) {
-        return withdrawFee;
+    function getWithdrawalFee () external view returns(uint256) {
+        return withdrawalFee;
     }
 
-    function getWithdrawBridgeFee () external view returns(uint256) {
-        return withdrawBridgeFee;
+    function getWithdrawalBridgeFee () external view returns(uint256) {
+        return withdrawalBridgeFee;
     }
 
     // Admin methods
@@ -421,42 +421,41 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         depositBridgeFee = amount;
     }
 
-    function setWithdrawFee (uint256 amount) public onlyOwner {
+    function setWithdrawalFee (uint256 amount) public onlyOwner {
         require(amount >= 0, "fee amount should be greater or equal zero");
-        withdrawFee = amount;
+        withdrawalFee = amount;
     }
 
-    function setWithdrawBridgeFee (uint256 amount) public onlyOwner {
+    function setWithdrawalBridgeFee (uint256 amount) public onlyOwner {
         require(amount >= 0, "fee amount should be greater or equal zero");
-        withdrawBridgeFee = amount;
+        withdrawalBridgeFee = amount;
     }
 
     // Temporary migration
     function upgradeToV3(
         address _basketManagerAddress,
         address _tokenAddress,
-        address _vaultAddress,
+        address _feesVaultAddress,
         uint256 _depositFee,
         uint256 _depositBridgeFee,
-        uint256 _withdrawFee,
-        uint256 _withdrawBridgeFee
+        uint256 _withdrawalFee,
+        uint256 _withdrawalBridgeFee
     ) external {
         require(
             keccak256(bytes(version)) == keccak256(bytes("1.0")) ||
             keccak256(bytes(version)) == keccak256(bytes("2.0")), "wrong version (1)");
         require(keccak256(bytes(BasketManagerV3(_basketManagerAddress).getVersion())) == keccak256(bytes("3.0")), "wrong version (2)");
-        require(_vaultAddress != address(0), "invalid vault address");
-
-        InitializableReentrancyGuard._initialize();
+        require(_feesVaultAddress != address(0), "invalid vault address");
 
         setDepositFee(_depositFee);
         setDepositBridgeFee(_depositBridgeFee);
-        setWithdrawFee(_withdrawFee);
-        setWithdrawBridgeFee(_withdrawBridgeFee);
+        setWithdrawalFee(_withdrawalFee);
+        setWithdrawalBridgeFee(_withdrawalBridgeFee);
 
-        vaultAddress = _vaultAddress;
+        feesVaultAddress = _feesVaultAddress;
         basketManager = BasketManagerV3(_basketManagerAddress);
         token = Token(_tokenAddress);
         version = "3.0";
+        InitializableReentrancyGuard._initialize();
     }
 }

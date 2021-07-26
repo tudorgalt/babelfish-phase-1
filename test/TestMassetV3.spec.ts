@@ -6,7 +6,7 @@ import { BN } from "@utils/tools";
 import envSetup from "@utils/env_setup";
 import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
-import { BasketManagerV3Instance, MassetV3Instance, MockBridgeInstance, MockERC20Instance, TokenInstance, VaultInstance } from "types/generated";
+import { BasketManagerV3Instance, MassetV3Instance, MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance } from "types/generated";
 
 const { expect } = envSetup.configure();
 
@@ -15,7 +15,7 @@ const MassetV3 = artifacts.require("MassetV3");
 const Token = artifacts.require("Token");
 const MockERC20 = artifacts.require("MockERC20");
 const MockBridge = artifacts.require("MockBridge");
-const Vault = artifacts.require("Vault");
+const FeesVault = artifacts.require("FeesVault");
 
 let standardAccounts: StandardAccounts;
 
@@ -24,15 +24,15 @@ const tokens = (amount: string | number): BN => toWei(new BN(amount), 'ether');
 const standardFees: Fees = {
     deposit: new BN(10),
     depositBridge: new BN(20),
-    withdraw: new BN(30),
-    withdrawBridge: new BN(40)
+    withdrawal: new BN(30),
+    withdrawalBridge: new BN(40)
 };
 
 contract("MassetV3", async (accounts) => {
     let masset: MassetV3Instance;
     let basketManagerObj: BasketManagerObj;
     let token: TokenInstance;
-    let vault: VaultInstance;
+    let vault: FeesVaultInstance;
     let mockTokenDummy: MockERC20Instance;
     let mockBridge: MockBridgeInstance;
 
@@ -42,7 +42,7 @@ contract("MassetV3", async (accounts) => {
 
     describe("initialize", async () => {
         beforeEach(async () => {
-            vault = await Vault.new();
+            vault = await FeesVault.new();
             masset = await MassetV3.new();
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
             token = await createToken(masset);
@@ -81,8 +81,8 @@ contract("MassetV3", async (accounts) => {
 
                 expect(await masset.getDepositFee()).bignumber.to.eq(new BN(1));
                 expect(await masset.getDepositBridgeFee()).bignumber.to.eq(new BN(2));
-                expect(await masset.getWithdrawFee()).bignumber.to.eq(new BN(3));
-                expect(await masset.getWithdrawBridgeFee()).bignumber.to.eq(new BN(4));
+                expect(await masset.getWithdrawalFee()).bignumber.to.eq(new BN(3));
+                expect(await masset.getWithdrawalBridgeFee()).bignumber.to.eq(new BN(4));
             });
         });
         context("should fail", async () => {
@@ -123,7 +123,7 @@ contract("MassetV3", async (accounts) => {
     describe("mint", async () => {
         beforeEach(async () => {
             masset = await MassetV3.new();
-            vault = await Vault.new();
+            vault = await FeesVault.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
             await initMassetV3(
@@ -189,7 +189,7 @@ contract("MassetV3", async (accounts) => {
     });
     describe("mintTo", async () => {
         beforeEach(async () => {
-            vault = await Vault.new();
+            vault = await FeesVault.new();
             masset = await MassetV3.new();
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
             token = await createToken(masset);
@@ -235,7 +235,7 @@ contract("MassetV3", async (accounts) => {
 
     describe("redeem", async () => {
         beforeEach(async () => {
-            vault = await Vault.new();
+            vault = await FeesVault.new();
             masset = await MassetV3.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
@@ -272,8 +272,8 @@ contract("MassetV3", async (accounts) => {
                 balance = await basketManagerObj.mockToken1.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.equal(initialBalance.sub(sum));
 
-                const withdrawFee = mintedMassets.mul(standardFees.withdraw).div(FEE_PRECISION);
-                const withdrawnBassets = mintedMassets.sub(withdrawFee);
+                const withdrawalFee = mintedMassets.mul(standardFees.withdrawal).div(FEE_PRECISION);
+                const withdrawnBassets = mintedMassets.sub(withdrawalFee);
 
                 await token.approve(masset.address, mintedMassets, {
                     from: standardAccounts.dummy1,
@@ -294,10 +294,10 @@ contract("MassetV3", async (accounts) => {
                 expect(balance).bignumber.to.equal(tokens(0));
 
                 balance = await basketManagerObj.mockToken1.balanceOf(standardAccounts.dummy1);
-                expect(balance).bignumber.to.equal(initialBalance.sub(mintFee).sub(withdrawFee));
+                expect(balance).bignumber.to.equal(initialBalance.sub(mintFee).sub(withdrawalFee));
 
                 const vaultBalance = await token.balanceOf(vault.address);
-                expect(vaultBalance).bignumber.to.eq(mintFee.add(withdrawFee));
+                expect(vaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
             });
         });
         context("should fail", () => {
@@ -341,7 +341,7 @@ contract("MassetV3", async (accounts) => {
 
     describe("redeemTo", async () => {
         beforeEach(async () => {
-            vault = await Vault.new();
+            vault = await FeesVault.new();
             masset = await MassetV3.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
@@ -362,7 +362,7 @@ contract("MassetV3", async (accounts) => {
                 const sum = new BN(10).pow(new BN(3));
                 const mintFee = sum.mul(standardFees.deposit).div(FEE_PRECISION);
                 const withdrawAmount = sum.sub(mintFee);
-                const withdrawFee = withdrawAmount.mul(standardFees.withdraw).div(FEE_PRECISION);
+                const withdrawalFee = withdrawAmount.mul(standardFees.withdrawal).div(FEE_PRECISION);
                 const recipient = standardAccounts.dummy2;
 
                 await basketManagerObj.mockToken1.approve(masset.address, sum, { from: standardAccounts.dummy1 });
@@ -373,10 +373,10 @@ contract("MassetV3", async (accounts) => {
                 await masset.redeemTo(basketManagerObj.mockToken1.address, withdrawAmount, recipient, { from: standardAccounts.dummy1 });
 
                 const balance = await basketManagerObj.mockToken1.balanceOf(recipient);
-                expect(balance).bignumber.to.equal(withdrawAmount.sub(withdrawFee), "should transfer bassets to correct recipient");
+                expect(balance).bignumber.to.equal(withdrawAmount.sub(withdrawalFee), "should transfer bassets to correct recipient");
 
                 const vaultBalance = await token.balanceOf(vault.address);
-                expect(vaultBalance).bignumber.to.eq(mintFee.add(withdrawFee));
+                expect(vaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
             });
         });
     });
@@ -387,7 +387,7 @@ contract("MassetV3", async (accounts) => {
         const mintedMassets = mintAmount.sub(mintFee);
 
         beforeEach(async () => {
-            vault = await Vault.new();
+            vault = await FeesVault.new();
             masset = await MassetV3.new();
             token = await createToken(masset);
             mockBridge = await MockBridge.new();
@@ -428,7 +428,7 @@ contract("MassetV3", async (accounts) => {
 
         context("should succeed", () => {
             it("if all params are valid", async () => {
-                const withdrawFee = mintedMassets.mul(standardFees.withdrawBridge).div(FEE_PRECISION);
+                const withdrawalFee = mintedMassets.mul(standardFees.withdrawalBridge).div(FEE_PRECISION);
 
                 await masset.methods["redeemToBridge(address,uint256,address)"](
                     basketManagerObj.mockToken1.address,
@@ -438,17 +438,17 @@ contract("MassetV3", async (accounts) => {
                 );
 
                 const bridgeBalance = await getBalance(basketManagerObj.mockToken1, mockBridge.address);
-                expect(bridgeBalance).to.bignumber.eq(mintedMassets.sub(withdrawFee), "should transfer bassets to bridge");
+                expect(bridgeBalance).to.bignumber.eq(mintedMassets.sub(withdrawalFee), "should transfer bassets to bridge");
 
                 const vaultBalance = await token.balanceOf(vault.address);
-                expect(vaultBalance).bignumber.to.eq(mintFee.add(withdrawFee));
+                expect(vaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
             });
         });
     });
 
     describe("onTokensMinted", async () => {
         beforeEach(async () => {
-            vault = await Vault.new();
+            vault = await FeesVault.new();
             masset = await MassetV3.new();
             token = await createToken(masset);
             mockBridge = await MockBridge.new();
@@ -596,8 +596,8 @@ contract("MassetV3", async (accounts) => {
 
                 await expectRevert(masset.setDepositFee(2, { from: standardAccounts.other }), revertMessage);
                 await expectRevert(masset.setDepositBridgeFee(2, { from: standardAccounts.other }), revertMessage);
-                await expectRevert(masset.setWithdrawFee(2, { from: standardAccounts.other }), revertMessage);
-                await expectRevert(masset.setWithdrawBridgeFee(2, { from: standardAccounts.other }), revertMessage);
+                await expectRevert(masset.setWithdrawalFee(2, { from: standardAccounts.other }), revertMessage);
+                await expectRevert(masset.setWithdrawalBridgeFee(2, { from: standardAccounts.other }), revertMessage);
             });
         });
 
@@ -605,25 +605,25 @@ contract("MassetV3", async (accounts) => {
             it("when amount is correct", async () => {
                 await masset.setDepositFee(standardFees.deposit, { from: admin });
                 await masset.setDepositBridgeFee(standardFees.depositBridge, { from: admin });
-                await masset.setWithdrawFee(standardFees.withdraw, { from: admin });
-                await masset.setWithdrawBridgeFee(standardFees.withdrawBridge, { from: admin });
+                await masset.setWithdrawalFee(standardFees.withdrawal, { from: admin });
+                await masset.setWithdrawalBridgeFee(standardFees.withdrawalBridge, { from: admin });
 
                 expect(await masset.getDepositFee()).bignumber.to.eq(standardFees.deposit);
                 expect(await masset.getDepositBridgeFee()).bignumber.to.eq(standardFees.depositBridge);
-                expect(await masset.getWithdrawFee()).bignumber.to.eq(standardFees.withdraw);
-                expect(await masset.getWithdrawBridgeFee()).bignumber.to.eq(standardFees.withdrawBridge);
+                expect(await masset.getWithdrawalFee()).bignumber.to.eq(standardFees.withdrawal);
+                expect(await masset.getWithdrawalBridgeFee()).bignumber.to.eq(standardFees.withdrawalBridge);
             });
 
             it("when amount is zero", async () => {
                 await masset.setDepositFee(0, { from: admin });
                 await masset.setDepositBridgeFee(0, { from: admin });
-                await masset.setWithdrawFee(0, { from: admin });
-                await masset.setWithdrawBridgeFee(0, { from: admin });
+                await masset.setWithdrawalFee(0, { from: admin });
+                await masset.setWithdrawalBridgeFee(0, { from: admin });
 
                 expect(await masset.getDepositFee()).bignumber.to.eq(ZERO);
                 expect(await masset.getDepositBridgeFee()).bignumber.to.eq(ZERO);
-                expect(await masset.getWithdrawFee()).bignumber.to.eq(ZERO);
-                expect(await masset.getWithdrawBridgeFee()).bignumber.to.eq(ZERO);
+                expect(await masset.getWithdrawalFee()).bignumber.to.eq(ZERO);
+                expect(await masset.getWithdrawalBridgeFee()).bignumber.to.eq(ZERO);
             });
         });
     });
@@ -633,7 +633,7 @@ contract("MassetV3", async (accounts) => {
         const basset2Factor = new BN(-1000000);
 
         beforeEach(async () => {
-            vault = await Vault.new();
+            vault = await FeesVault.new();
             masset = await MassetV3.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [20, 12], [basset1Factor, basset2Factor]);
@@ -689,11 +689,11 @@ contract("MassetV3", async (accounts) => {
             });
             expect(await getBalance(token, standardAccounts.dummy2)).bignumber.to.equal(tokens(0));
 
-            const withdrawFee = tokens(1).mul(standardFees.withdraw).div(FEE_PRECISION);
-            const expectedBalance = tokens(1).sub(withdrawFee).div(basset2Factor.neg());
+            const withdrawalFee = tokens(1).mul(standardFees.withdrawal).div(FEE_PRECISION);
+            const expectedBalance = tokens(1).sub(withdrawalFee).div(basset2Factor.neg());
             expect(await getBalance(basketManagerObj.mockToken2, standardAccounts.dummy2)).bignumber.to.equal(expectedBalance);
 
-            const totalFee = fee.mul(new BN(2)).add(withdrawFee); // 2 mints and one redeem
+            const totalFee = fee.mul(new BN(2)).add(withdrawalFee); // 2 mints and one redeem
             const vaultBalance = await token.balanceOf(vault.address);
             expect(vaultBalance).bignumber.to.eq(totalFee);
         });
@@ -723,8 +723,8 @@ async function initMassetV3(
         vaultAddress,
         fees.deposit,
         fees.depositBridge,
-        fees.withdraw,
-        fees.withdrawBridge,
+        fees.withdrawal,
+        fees.withdrawalBridge,
         txDetails
     );
 }
@@ -776,7 +776,7 @@ type BasketManagerObj = {
 type Fees = Record<
     | "deposit"
     | "depositBridge"
-    | "withdraw"
-    | "withdrawBridge",
+    | "withdrawal"
+    | "withdrawalBridge",
     BN
 >;

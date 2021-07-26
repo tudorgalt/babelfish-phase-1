@@ -1,5 +1,5 @@
 pragma solidity 0.5.16;
 
-contract Vault {
+contract FeesVault {
     function initialize() public {}
 }
