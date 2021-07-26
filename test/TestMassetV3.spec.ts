@@ -4,7 +4,7 @@ import { expectRevert, expectEvent } from "@openzeppelin/test-helpers";
 import { toWei } from "web3-utils";
 import { BN } from "@utils/tools";
 import envSetup from "@utils/env_setup";
-import { ZERO_ADDRESS, FEE_PRECISION } from "@utils/constants";
+import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { BasketManagerV3Instance, MassetV3Instance, MockBridgeInstance, MockERC20Instance, TokenInstance, VaultInstance } from "types/generated";
 
@@ -599,15 +599,6 @@ contract("MassetV3", async (accounts) => {
                 await expectRevert(masset.setWithdrawFee(2, { from: standardAccounts.other }), revertMessage);
                 await expectRevert(masset.setWithdrawBridgeFee(2, { from: standardAccounts.other }), revertMessage);
             });
-
-            it("when amount is less than zero", async () => {
-                const revertMessage = "VM Exception while processing transaction: reverted with reason string 'fee amount should be greater than zero'";
-
-                await expectRevert(masset.setDepositFee(0, { from: admin }), revertMessage);
-                await expectRevert(masset.setDepositBridgeFee(0, { from: admin }), revertMessage);
-                await expectRevert(masset.setWithdrawFee(0, { from: admin }), revertMessage);
-                await expectRevert(masset.setWithdrawBridgeFee(0, { from: admin }), revertMessage);
-            });
         });
 
         context("should succeed", async () => {
@@ -621,6 +612,18 @@ contract("MassetV3", async (accounts) => {
                 expect(await masset.getDepositBridgeFee()).bignumber.to.eq(standardFees.depositBridge);
                 expect(await masset.getWithdrawFee()).bignumber.to.eq(standardFees.withdraw);
                 expect(await masset.getWithdrawBridgeFee()).bignumber.to.eq(standardFees.withdrawBridge);
+            });
+
+            it("when amount is zero", async () => {
+                await masset.setDepositFee(0, { from: admin });
+                await masset.setDepositBridgeFee(0, { from: admin });
+                await masset.setWithdrawFee(0, { from: admin });
+                await masset.setWithdrawBridgeFee(0, { from: admin });
+
+                expect(await masset.getDepositFee()).bignumber.to.eq(ZERO);
+                expect(await masset.getDepositBridgeFee()).bignumber.to.eq(ZERO);
+                expect(await masset.getWithdrawFee()).bignumber.to.eq(ZERO);
+                expect(await masset.getWithdrawBridgeFee()).bignumber.to.eq(ZERO);
             });
         });
     });

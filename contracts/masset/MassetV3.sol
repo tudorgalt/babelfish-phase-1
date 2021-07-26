@@ -412,22 +412,22 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     // Admin methods
 
     function setDepositFee (uint256 amount) public onlyOwner {
-        require(amount > 0, "fee amount should be greater than zero");
+        require(amount >= 0, "fee amount should be greater or equal zero");
         depositFee = amount;
     }
 
     function setDepositBridgeFee (uint256 amount) public onlyOwner {
-        require(amount > 0, "fee amount should be greater than zero");
+        require(amount >= 0, "fee amount should be greater or equal zero");
         depositBridgeFee = amount;
     }
 
     function setWithdrawFee (uint256 amount) public onlyOwner {
-        require(amount > 0, "fee amount should be greater than zero");
+        require(amount >= 0, "fee amount should be greater or equal zero");
         withdrawFee = amount;
     }
 
     function setWithdrawBridgeFee (uint256 amount) public onlyOwner {
-        require(amount > 0, "fee amount should be greater than zero");
+        require(amount >= 0, "fee amount should be greater or equal zero");
         withdrawBridgeFee = amount;
     }
 
