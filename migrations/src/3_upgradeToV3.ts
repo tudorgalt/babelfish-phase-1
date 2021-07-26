@@ -34,7 +34,7 @@ export default async (
     const feesVaultProxy: FeesVaultProxyInstance = await conditionalDeploy(BasketManagerProxy, "FeesVaultProxy",
         () => deployer.deploy(FeesVaultProxy));
 
-    await conditionalInitialize("VaultProxy",
+    await conditionalInitialize("FeesVaultProxy",
         async () => feesVaultProxy.methods["initialize(address,address,bytes)"](feesVault.address, _admin, "0x")
     );
 

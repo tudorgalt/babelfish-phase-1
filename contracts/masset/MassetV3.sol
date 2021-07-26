@@ -18,6 +18,9 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // Events
 
+    /**
+     * @dev Event emitted when deposit is completed
+     */
     event Minted(
         address indexed minter,
         address indexed recipient,
@@ -26,6 +29,9 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 bassetQuantity
     );
 
+    /**
+     * @dev Event emitted when withdrawal is completed
+     */
     event Redeemed(
         address indexed redeemer,
         address indexed recipient,
@@ -43,6 +49,9 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         bytes operatorData
     );
 
+    /**
+     * @dev Event emitted when onTokensMinted method is called by the bridge
+     */
     event onTokensMintedCalled(
         address indexed sender,
         uint256 orderAmount,
@@ -52,7 +61,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // state
 
-    uint256 constant FEE_PRECISION = 1000;
+    /**
+     * @dev factor of fees
+     * @notice 1000 means that fees are in promils
+     */
+    uint256 constant private FEE_PRECISION = 1000;
 
     string private version;
 
@@ -177,7 +190,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     }
 
     /**
-     * @dev mint calculated fee
+     * @dev this method mints fee to vault contract and return the amount of massets that goes to the user
      * @param massetQuantity    amount of massets
      * @return massetsToMint    amount of massets that is left to mint for user
      */
@@ -240,11 +253,14 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         uint256 feeAmount = bridgeFlag ? withdrawalBridgeFee : withdrawalFee;
 
+        // massetsToBurn is the amount of massets that is left to burn after the fee was taken.
+        // It is used to calculate amount of bassets that are transfered to user.
         uint256 massetsToBurn = _transferAndCalulateFee(_massetQuantity, feeAmount, msg.sender);
         uint256 bassetQuantity = basketManager.convertMassetToBassetQuantity(_basset, massetsToBurn);
 
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
 
+        // In case of withdrawal to bridge the receiveTokensAt is called instead of transfer.
         if(bridgeFlag) {
             address bridgeAddress = basketManager.getBridge(_basset);
             require(bridgeAddress != address(0), "invalid bridge");
@@ -263,7 +279,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     }
 
     /**
-     * @dev transfers calculated fee
+     * @dev this method transfers fee to vault contract and return the amount of massets that will be burned
      *      must have approval to spend the senders Masset
      * @param massetQuantity        amount of massets to withdraw
      * @param sender                owner of massets
@@ -409,7 +425,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return withdrawalBridgeFee;
     }
 
-    // Admin methods
+    // Governance methods
 
     function setDepositFee (uint256 amount) public onlyOwner {
         require(amount >= 0, "fee amount should be greater or equal zero");
