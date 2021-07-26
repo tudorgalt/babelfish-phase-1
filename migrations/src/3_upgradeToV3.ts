@@ -125,9 +125,9 @@ export default async (
         );
     }
 
-    await upgradeInstance('ETHs', addressesForNetwork.ETHs, 1, 2, 3, 4);
-    await upgradeInstance('XUSD', addressesForNetwork.XUSD, 1, 2, 3, 4);
-    await upgradeInstance('BNBs', addressesForNetwork.BNBs, 1, 2, 3, 4);
+    await upgradeInstance('ETHs', addressesForNetwork.ETHs, 0, 0, 0, 0);
+    await upgradeInstance('XUSD', addressesForNetwork.XUSD, 0, 0, 0, 0);
+    await upgradeInstance('BNBs', addressesForNetwork.BNBs, 0, 0, 0, 0);
 
     printState();
 };
