@@ -1,7 +1,15 @@
 import { ZERO_ADDRESS } from "@utils/constants";
-import { MassetV3Instance, VaultInstance, VaultProxyInstance } from "types/generated";
-import addresses from '../addresses';
-import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "../state";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { MassetV3Instance } from "types/generated";
+import addresses from './utils/addresses';
+import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "./utils/state";
+
+const BasketManagerV3 = artifacts.require("BasketManagerV3");
+const BasketManagerProxy = artifacts.require("BasketManagerProxy");
+const MassetV3 = artifacts.require("MassetV3");
+const MassetProxy = artifacts.require("MassetProxy");
+const Vault = artifacts.require("Vault");
+const VaultProxy = artifacts.require("VaultProxy");
 
 const MAX_VALUE = 1000;
 
@@ -12,30 +20,17 @@ class BassetInstanceDetails {
     multisig: string;
 }
 
-export default async (
-    { artifacts }: { artifacts: Truffle.Artifacts },
-    deployer, network, accounts): Promise<void> => {
+const deployFunc = async ({ artifacts, network, deployments, getUnnamedAccounts }: HardhatRuntimeEnvironment) => {
+    const { deploy } = deployments;
+    const [default_, _admin] = await getUnnamedAccounts();
 
-    const BasketManagerV3 = artifacts.require("BasketManagerV3");
-    const BasketManagerProxy = artifacts.require("BasketManagerProxy");
+    const addressesForNetwork = addresses[network.name];
 
-    const MassetV3 = artifacts.require("MassetV3");
-    const MassetProxy = artifacts.require("MassetProxy");
-
-    const Vault = artifacts.require("Vault");
-    const VaultProxy = artifacts.require("VaultProxy");
-
-    const [default_, _admin] = accounts;
-    const addressesForNetwork = addresses[deployer.network];
-
-    const vault: VaultInstance = await conditionalDeploy(BasketManagerV3, "Vault",
-        () => deployer.deploy(Vault));
-
-    const vaultProxy: VaultProxyInstance = await conditionalDeploy(BasketManagerProxy, "VaultProxy",
-        () => deployer.deploy(VaultProxy));
+    const vault = await conditionalDeploy(Vault, "Vault", { from: default_ }, deploy);
+    const vaultProxy = await conditionalDeploy(VaultProxy, "VaultProxy", { from: default_ }, deploy);
 
     await conditionalInitialize("VaultProxy",
-        async () => vaultProxy.methods["initialize(address,address,bytes)"](vault.address, _admin, "0x")
+        async () => { await vaultProxy.methods["initialize(address,address,bytes)"](vault.address, _admin, "0x"); }
     );
 
     const vaultFake = await Vault.at(vaultProxy.address);
@@ -50,6 +45,7 @@ export default async (
     ): Promise<void> {
         const massetFake: MassetV3Instance = await getDeployed(MassetV3, `${symbol}_MassetProxy`);
         const massetVersion = await massetFake.getVersion();
+
         console.log(symbol, ' Masset version: ', massetVersion);
         if (massetVersion >= '3.0') {
             console.log('Skipping...');
@@ -58,29 +54,28 @@ export default async (
 
         const tokenAddress = await massetFake.getToken();
 
-        const basketManager = await conditionalDeploy(BasketManagerV3, `${symbol}_BasketManagerV3`,
-            () => deployer.deploy(BasketManagerV3));
-
-        const basketManagerProxy = await conditionalDeploy(BasketManagerProxy, `${symbol}_BasketManagerProxy`,
-            () => deployer.deploy(BasketManagerProxy));
+        const basketManager = await conditionalDeploy(BasketManagerV3, `${symbol}_BasketManagerV3`, { from: default_ }, deploy);
+        const basketManagerProxy = await conditionalDeploy(BasketManagerProxy, `${symbol}_BasketManagerProxy`, { from: default_ }, deploy);
 
         const initAbi = basketManager.contract.methods['initialize(address)'](massetFake.address).encodeABI();
         await conditionalInitialize(`${symbol}_BasketManagerProxy`,
-            async () => basketManagerProxy.initialize(basketManager.address, _admin, initAbi));
+            async () => { await basketManagerProxy.methods["initialize(address,address,bytes)"](basketManager.address, _admin, initAbi); }
+        );
 
         const basketManagerFake = await BasketManagerV3.at(basketManagerProxy.address);
 
-        if (network === 'development') {
+        if (network.name === 'development' || network.name === 'rinkeby') {
             const ERC20 = artifacts.require("ERC20");
             addressesForInstance.bassets = [(await ERC20.new()).address, (await ERC20.new()).address, (await ERC20.new()).address];
             addressesForInstance.factors = [1, 1, 1];
             addressesForInstance.bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
         }
 
-        let promises: Array<Promise<any>> = [];
+        const promises: Array<Promise<Truffle.TransactionResponse<Truffle.AnyEvent>>> = [];
+
         if (await basketManagerProxy.admin() === _admin) {
             const existingAssets = await basketManagerFake.getBassets();
-            const addAsset = (index) => {
+            const addAsset = (index: number) => {
                 console.log('adding asset: ',
                     addressesForInstance.bassets[index],
                     addressesForInstance.factors[index],
@@ -99,18 +94,15 @@ export default async (
 
             await Promise.all(promises);
 
-            if (network !== 'development') {
-                if (await basketManagerFake.owner() == default_) {
+            if (network.name !== 'development' && network.name !== 'rinkeby') {
+                if (await basketManagerFake.owner() === default_) {
                     await basketManagerFake.transferOwnership(addressesForInstance.multisig);
                 }
                 await basketManagerProxy.changeAdmin(addressesForInstance.multisig, { from: _admin });
             }
         }
 
-        const masset = await conditionalDeploy(MassetV3, `${symbol}_MassetV3`,
-            () => deployer.deploy(MassetV3));
-
-
+        const masset = await conditionalDeploy(MassetV3, `${symbol}_MassetV3`, { from: default_ }, deploy);
         const massetProxy = await MassetProxy.at(massetFake.address);
 
         await massetProxy.upgradeTo(masset.address, { from: _admin });
@@ -131,3 +123,7 @@ export default async (
 
     printState();
 };
+
+deployFunc.tags = ["migration"];
+
+export default deployFunc;

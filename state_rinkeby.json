@@ -1,0 +1,14 @@
+{
+  "Migrations": {
+    "address": "0x5d22e8F6212a651eBB7BAf9B25b366E3fe2Dc689"
+  },
+  "ETHs_Token": {
+    "address": "0x1c8d837456e7424cF812AAF34BDd7ccD4F71903E"
+  },
+  "ETHs_Masset": {
+    "address": "0x6A312b515abA5c8681D61eca272EA9741b314776"
+  },
+  "ETHs_MassetProxy": {
+    "address": "0xAE754b0CB20ADB837327Ca834EF416Ba52c681a0"
+  }
+}

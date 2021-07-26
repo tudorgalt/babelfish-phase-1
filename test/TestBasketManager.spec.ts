@@ -28,7 +28,7 @@ contract("BasketManager", async (accounts) => {
         let mockToken2;
         let mockToken3;
         let mockToken4;
-        let bassets, factors, bridges;
+        let bassets; let factors; let bridges;
         before(async () => {
             masset = await Masset.new();
             mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, 1);

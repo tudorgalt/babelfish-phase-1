@@ -26,10 +26,13 @@ module.exports = {
     },
     "rules": {
         "@typescript-eslint/no-use-before-define": 1,
+        "import/no-extraneous-dependencies": 0,
         "@typescript-eslint/semi": 1,
         "no-nested-ternary": 0,
+        "consistent-return": 0,
         "no-param-reassign": 0,
-        "lines-between-class-members": 0
+        "lines-between-class-members": 0,
+        "@typescript-eslint/explicit-function-return-type": 0
     },
     "overrides": [
         {

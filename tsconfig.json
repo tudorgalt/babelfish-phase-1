@@ -29,8 +29,7 @@
     "./test/**/*.ts",
     "./test-utils/*.ts",
     "./test-utils/**/*.ts",
-    "./migrations/**/*.ts",
-    "./migrations/*.js"
+    "./migrations"
   ],
   "files": ["./hardhat.config.ts"]
 }

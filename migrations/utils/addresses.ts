@@ -7,6 +7,14 @@ export default {
         BNBs: {
         }
     },
+    rinkeby: {
+        XUSD: {
+        },
+        ETHs: {
+        },
+        BNBs: {
+        }
+    },
     rskTestnet: {
         XUSD: {
             bassets: [

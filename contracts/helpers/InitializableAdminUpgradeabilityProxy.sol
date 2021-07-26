@@ -19,7 +19,7 @@ contract InitializableAdminUpgradeabilityProxy is BaseAdminUpgradeabilityProxy, 
    * This parameter is optional, if no data is given the initialization call to proxied contract will be skipped.
    */
     function initialize(address _logic, address _admin, bytes memory _data) public payable {
-        require(_implementation() == address(0), "invalid address");
+        require(_implementation() == address(0), "already initialized");
         InitializableUpgradeabilityProxy.initialize(_logic, _data);
         assert(ADMIN_SLOT == bytes32(uint256(keccak256("eip1967.proxy.admin")) - 1));
         _setAdmin(_admin);
