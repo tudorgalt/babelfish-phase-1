@@ -292,7 +292,10 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
                 IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
                 "call to bridge failed");
         } else {
-            int256 calculatedReward = rewardsManager.calculateWithdrawalReward(massetsToBurn);
+            int256 deviationBeforeRedeem = basketManager.getBassetRatioDeviation(_basset, 0, false);
+            int256 deviationAfterRedeem = basketManager.getBassetRatioDeviation(_basset, massetsToBurn, false);
+
+            int256 calculatedReward = rewardsManager.calculateReward(deviationBeforeRedeem, deviationAfterRedeem);
 
             if (calculatedReward >= 0) {
                 uint256 rewardsVaultBalance = token.balanceOf(address(rewardsVault));
