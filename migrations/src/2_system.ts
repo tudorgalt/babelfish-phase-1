@@ -1,12 +1,5 @@
 import { conditionalDeploy, conditionalInitialize, printState } from "../state";
-import addresses from '../addresses';
-
-class BassetInstanceDetails {
-    bassets: Array<string>;
-    factors: Array<number>;
-    bridges: Array<string>;
-    multisig: string;
-}
+import addresses, { BassetInstanceDetails } from '../addresses';
 
 export default async (
     { artifacts }: { artifacts: Truffle.Artifacts },

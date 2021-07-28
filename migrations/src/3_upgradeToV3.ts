@@ -1,16 +1,9 @@
 import { ZERO_ADDRESS } from "@utils/constants";
 import { MassetV3Instance, FeesVaultInstance, FeesVaultProxyInstance, RewardsVaultProxyInstance, RewardsVaultInstance } from "types/generated";
-import addresses from '../addresses';
+import addresses, { BassetInstanceDetails } from '../addresses';
 import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "../state";
 
 const MAX_VALUE = 1000;
-
-class BassetInstanceDetails {
-    bassets: Array<string>;
-    factors: Array<number>;
-    bridges: Array<string>;
-    multisig: string;
-}
 
 export default async (
     { artifacts }: { artifacts: Truffle.Artifacts },
@@ -27,6 +20,9 @@ export default async (
 
     const RewardsVault = artifacts.require("RewardsVault");
     const RewardsVaultProxy = artifacts.require("RewardsVaultProxy");
+
+    const RewardsManager = artifacts.require("RewardsManager");
+    const RewardsManagerProxy = artifacts.require("RewardsManagerProxy");
 
     const [default_, _admin] = accounts;
     const addressesForNetwork = addresses[deployer.network];
@@ -89,6 +85,7 @@ export default async (
             addressesForInstance.bassets = [(await ERC20.new()).address, (await ERC20.new()).address, (await ERC20.new()).address];
             addressesForInstance.factors = [1, 1, 1];
             addressesForInstance.bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
+            addressesForInstance.ratios = [300, 300, 400];
         }
 
         let promises: Array<Promise<any>> = [];
@@ -99,10 +96,17 @@ export default async (
                     addressesForInstance.bassets[index],
                     addressesForInstance.factors[index],
                     addressesForInstance.bridges[index]);
-                promises.push(basketManagerFake.addBasset(
-                    addressesForInstance.bassets[index],
-                    addressesForInstance.factors[index],
-                    addressesForInstance.bridges[index], 0, MAX_VALUE, false));
+                promises.push(
+                    basketManagerFake.addBasset(
+                        addressesForInstance.bassets[index],
+                        addressesForInstance.factors[index],
+                        addressesForInstance.bridges[index],
+                        0,
+                        MAX_VALUE,
+                        addressesForInstance.ratios[index],
+                        false
+                    )
+                );
             };
 
             for (let i = 0; i < addressesForInstance.bassets.length; i++) {
@@ -114,17 +118,28 @@ export default async (
             await Promise.all(promises);
 
             if (network !== 'development') {
-                if (await basketManagerFake.owner() == default_) {
+                if (await basketManagerFake.owner() === default_) {
                     await basketManagerFake.transferOwnership(addressesForInstance.multisig);
                 }
                 await basketManagerProxy.changeAdmin(addressesForInstance.multisig, { from: _admin });
             }
         }
 
+        const rewardsManager = await conditionalDeploy(RewardsManager, `${symbol}_RewardsManager`,
+            () => deployer.deploy(RewardsManager));
+        
+        const rewardsManagerProxy = await conditionalDeploy(RewardsManagerProxy, `${symbol}_RewardsManagerProxy`,
+            () => deployer.deploy(RewardsManagerProxy));
+
+        await conditionalInitialize(`${symbol}_RewardsManagerProxy`,
+            async () => rewardsManagerProxy.initialize(rewardsManager.address, _admin, "0x")
+        );
+
+        const rewardsManagerFake = await RewardsManager.at(rewardsManagerProxy.address);
+
         const masset = await conditionalDeploy(MassetV3, `${symbol}_MassetV3`,
             () => deployer.deploy(MassetV3));
 
-            
         const massetProxy = await MassetProxy.at(massetFake.address);
             
         await rewardsVaultFake.addApprover(massetFake.address);
@@ -138,7 +153,7 @@ export default async (
             depositBridgeFee,
             withdrawFee,
             withdrawBridgeFee,
-            "0", // ADDRESS OF REWARDS MANAGER !!!!!!!!!!
+            rewardsManagerFake.address,
             rewardsVaultFake.address
         );
     }
