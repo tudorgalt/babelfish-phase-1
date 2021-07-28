@@ -11,13 +11,9 @@ contract RewardsManager {
 
     // Public
 
-    function calculateDepositReward (uint256 amount) public view returns(int256 reward) {
+    function calculateReward (int256 deviationBefore, int256 deviationAfter) public view returns(int256 reward) {
         // !!  MOCK   !!
-        return int256(amount.mul(2).div(100)); 
+        return 200;
     }
 
-    function calculateWithdrawalReward (uint256 amount) public view returns(int256 reward) {
-        // !!  MOCK   !!
-        return int256(amount.mul(2).div(100)); 
-    }
 }

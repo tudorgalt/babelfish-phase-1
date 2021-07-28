@@ -77,7 +77,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     uint256 private withdrawalBridgeFee;
 
     address private feesVaultAddress;
-    
+
     RewardsVault private rewardsVault;
     RewardsManager private rewardsManager;
     BasketManagerV3 private basketManager;
@@ -188,15 +188,23 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, depositFee);
 
-        int256 rewardAmount = rewardsManager.calculateDepositReward(massetsToMint);
+        int256 deviationBeforeMint = basketManager.getBassetRatioDeviation(_basset, 0, true);
+        int256 deviationAfterMint = basketManager.getBassetRatioDeviation(_basset, massetsToMint, true);
 
-        if (rewardAmount > 0) {
+        int256 calculatedReward = rewardsManager.calculateReward(deviationBeforeMint, deviationAfterMint);
+
+        if (calculatedReward >= 0) {
+            uint256 rewardsVaultBalance = token.balanceOf(address(rewardsVault));
+            uint256 rewardAmount = uint256(calculatedReward) <= rewardsVaultBalance ? uint256(calculatedReward) : rewardsVaultBalance;
+
             token.mint(_recipient, massetsToMint);
-            rewardsVault.getApproval(uint256(rewardAmount), address(token));
-            token.transferFrom(address(rewardsVault), _recipient, uint256(rewardAmount));
+            if (rewardAmount > 0) {
+                rewardsVault.getApproval(rewardAmount, address(token));
+                token.transferFrom(address(rewardsVault), _recipient, rewardAmount);
+            }
         } else {
-            token.mint(_recipient, massetsToMint.sub(uint256(-rewardAmount)));
-            token.mint(address(rewardsVault), uint256(-rewardAmount));
+            token.mint(_recipient, massetsToMint.sub(uint256(-calculatedReward)));
+            token.mint(address(rewardsVault), uint256(-calculatedReward));
         }
 
         emit Minted(msg.sender, _recipient, massetsToMint, _basset, _bassetQuantity);
@@ -284,16 +292,21 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
                 IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
                 "call to bridge failed");
         } else {
-            int256 rewardAmount = rewardsManager.calculateWithdrawalReward(massetsToBurn);
+            int256 calculatedReward = rewardsManager.calculateWithdrawalReward(massetsToBurn);
 
-            if (rewardAmount > 0) {
+            if (calculatedReward >= 0) {
+                uint256 rewardsVaultBalance = token.balanceOf(address(rewardsVault));
+                uint256 rewardAmount = uint256(calculatedReward) <= rewardsVaultBalance ? uint256(calculatedReward) : rewardsVaultBalance;
+
                 IERC20(_basset).transfer(_recipient, bassetQuantity);
-                rewardsVault.getApproval(uint256(rewardAmount), address(token));
-                token.transferFrom(address(rewardsVault), _recipient, uint256(rewardAmount));
+                if (rewardAmount > 0) {
+                    rewardsVault.getApproval(rewardAmount, address(token));
+                    token.transferFrom(address(rewardsVault), _recipient, rewardAmount);
+                }
             } else {
-                uint256 rewardAmountBasset = basketManager.convertMassetToBassetQuantity(_basset, uint256(-rewardAmount));
+                uint256 rewardAmountBasset = basketManager.convertMassetToBassetQuantity(_basset, uint256(-calculatedReward));
                 IERC20(_basset).transfer(_recipient, bassetQuantity.sub(rewardAmountBasset));
-                token.mint(msg.sender, uint256(-rewardAmount));
+                token.mint(msg.sender, uint256(-calculatedReward));
             }
         }
 
