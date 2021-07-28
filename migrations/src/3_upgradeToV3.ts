@@ -1,5 +1,5 @@
 import { ZERO_ADDRESS } from "@utils/constants";
-import { MassetV3Instance, FeesVaultInstance, FeesVaultProxyInstance } from "types/generated";
+import { MassetV3Instance, FeesVaultInstance, FeesVaultProxyInstance, RewardsVaultProxyInstance, RewardsVaultInstance } from "types/generated";
 import addresses from '../addresses';
 import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "../state";
 
@@ -25,6 +25,9 @@ export default async (
     const FeesVault = artifacts.require("FeesVault");
     const FeesVaultProxy = artifacts.require("FeesVaultProxy");
 
+    const RewardsVault = artifacts.require("RewardsVault");
+    const RewardsVaultProxy = artifacts.require("RewardsVaultProxy");
+
     const [default_, _admin] = accounts;
     const addressesForNetwork = addresses[deployer.network];
 
@@ -37,8 +40,19 @@ export default async (
     await conditionalInitialize("FeesVaultProxy",
         async () => feesVaultProxy.methods["initialize(address,address,bytes)"](feesVault.address, _admin, "0x")
     );
-
     const vaultFake = await FeesVault.at(feesVaultProxy.address);
+
+    const rewardsVault: RewardsVaultInstance = await conditionalDeploy(RewardsVault, "RewardsVault",
+        () => deployer.deploy(RewardsVault));
+
+    const rewardsVaultProxy: RewardsVaultProxyInstance = await conditionalDeploy(RewardsVaultProxy, "RewardsVaultProxy",
+        () => deployer.deploy(RewardsVaultProxy));
+
+    const initFunc = rewardsVault.contract.methods.initialize().encodeABI();
+    await conditionalInitialize("RewardsVaultProxy",
+        async () => rewardsVaultProxy.methods["initialize(address,address,bytes)"](rewardsVault.address, _admin, initFunc)
+    );
+    const rewardsVaultFake = await RewardsVault.at(rewardsVaultProxy.address);
 
     async function upgradeInstance(
         symbol: string,
@@ -110,8 +124,10 @@ export default async (
         const masset = await conditionalDeploy(MassetV3, `${symbol}_MassetV3`,
             () => deployer.deploy(MassetV3));
 
-
+            
         const massetProxy = await MassetProxy.at(massetFake.address);
+            
+        await rewardsVaultFake.addApprover(massetFake.address);
 
         await massetProxy.upgradeTo(masset.address, { from: _admin });
         await massetFake.upgradeToV3(
@@ -121,7 +137,9 @@ export default async (
             depositFee,
             depositBridgeFee,
             withdrawFee,
-            withdrawBridgeFee
+            withdrawBridgeFee,
+            "0", // ADDRESS OF REWARDS MANAGER !!!!!!!!!!
+            rewardsVaultFake.address
         );
     }
 
