@@ -1,13 +1,20 @@
-export default {
+export type BassetInstanceDetails = {
+    bassets: Array<string>;
+    factors: Array<number>;
+    bridges: Array<string>;
+    ratios: Array<number>;
+    multisig?: string;
+};
+
+export type DevelopmentNetworks = "development";
+export type ProducitionNetworks = "rskTestnet" | "rsk";
+
+export type Addresses =
+    { [k in DevelopmentNetworks]: { [k: string]: Partial<BassetInstanceDetails> } } &
+    { [k in ProducitionNetworks]: { [k: string]: BassetInstanceDetails } };
+
+const addresses: Addresses = {
     development: {
-        XUSD: {
-        },
-        ETHs: {
-        },
-        BNBs: {
-        }
-    },
-    rinkeby: {
         XUSD: {
         },
         ETHs: {
@@ -47,7 +54,8 @@ export default {
                 // non bridge
                 '0x0000000000000000000000000000000000000000'
             ],
-            factors: [1, 1, 1, 1, 1, 1, 1, 1]
+            factors: [1, 1, 1, 1, 1, 1, 1, 1],
+            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         },
         ETHs: {
             bassets: [
@@ -64,7 +72,8 @@ export default {
                 // BSC->RSK
                 '0x2b2bcad081fa773dc655361d1bb30577caa556f8'
             ],
-            factors: [1, 1]
+            factors: [1, 1],
+            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         },
         BNBs: {
             bassets: [
@@ -75,7 +84,8 @@ export default {
                 // BSC->RSK
                 '0x2b2bcad081fa773dc655361d1bb30577caa556f8', // BNBs
             ],
-            factors: [1]
+            factors: [1],
+            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         }
     },
     rsk: {
@@ -111,7 +121,8 @@ export default {
                 '0x0000000000000000000000000000000000000000'
             ],
             factors: [1, 1, 1, 1, 1, 1, 1, 1],
-            multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01'
+            multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01',
+            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         },
         ETHs: {
             bassets: [
@@ -129,7 +140,8 @@ export default {
                 '0x971b97c8cc82e7d27bc467c2dc3f219c6ee2e350'
             ],
             factors: [1, 1],
-            multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01'
+            multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01',
+            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         },
         BNBs: {
             bassets: [
@@ -141,7 +153,10 @@ export default {
                 '0x971b97c8cc82e7d27bc467c2dc3f219c6ee2e350', // BNBs
             ],
             factors: [1],
-            multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01'
+            multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01',
+            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         }
     }
 };
+
+export default addresses;

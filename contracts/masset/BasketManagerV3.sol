@@ -19,6 +19,7 @@ contract BasketManagerV3 is InitializableOwnable {
     mapping(address => address) private bridgeMap;
     mapping(address => uint256) private minMap;
     mapping(address => uint256) private maxMap;
+    mapping(address => uint256) private targetRatioMap;
     mapping(address => bool) private pausedMap;
 
     // Modifiers
@@ -106,7 +107,60 @@ contract BasketManagerV3 is InitializableOwnable {
         return _massetQuantity.div(uint256(-factor));
     }
 
+    /**
+     * @dev Calculate ratio of specyfic basset in basket
+     * @param  _basset      Address of basset to check ratio for
+     * @param  offset       Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
+     * @param  isDeposit    Flag to determine offset direction(deposit/redeem).
+     * @return ratio        Ratio of basset to total of basset in promils
+     */
+    function getBassetRatio(
+        address _basset,
+        uint256 offset,
+        bool isDeposit
+    ) public view validBasset(_basset) returns (uint256 ratio) {
+        uint256 total = getTotalMassetBalance();
+        uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
+
+        if (isDeposit) {
+            total = total.add(offset);
+            bassetBalance = bassetBalance.add(offset);
+        } else {
+            require(offset <= total, "offset is greater than total");
+            require(offset <= bassetBalance, "offset is greater than bassetBalance");
+
+            total = total.sub(offset);
+            bassetBalance = bassetBalance.sub(offset);
+        }
+
+        uint256 bassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
+
+        return bassetBalanceInMasset.mul(1000).div(total);
+    }
+
+    /**
+     * @dev Calculate deviation from target ratio
+     * @param  _basset      Address of basset to check ratio for
+     * @param  offset       Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
+     * @param  isDeposit    Flag to determine offset direction(deposit/redeem).
+     * @return deviation    Number between -1000 and 1000. Represents deviation from target ratio.
+     */
+    function getBassetRatioDeviation(
+        address _basset,
+        uint256 offset,
+        bool isDeposit
+    ) public view validBasset(_basset) returns (int256 deviation) {
+        int256 currentRatio = int256(getBassetRatio(_basset, offset, isDeposit));
+        int256 targetRatio = int256(getBassetTargetRatio(_basset));
+
+        return currentRatio - targetRatio;
+    }
+
     // Getters
+
+    function getBassetTargetRatio(address _basset) public view validBasset(_basset) returns(uint256 ratio) {
+        return targetRatioMap[_basset];
+    }
 
     function getTotalMassetBalance() public view returns (uint256 total) {
         for(uint i=0; i<bassetsArray.length; i++) {
@@ -147,13 +201,22 @@ contract BasketManagerV3 is InitializableOwnable {
 
     // Admin methods
 
-    function addBasset(address _basset, int256 _factor, address _bridge, uint256 _min, uint256 _max, bool _paused) public onlyOwner {
+    function addBasset(
+        address _basset,
+        int256 _factor,
+        address _bridge,
+        uint256 _min,
+        uint256 _max,
+        uint256 _ratio,
+        bool _paused
+    ) public onlyOwner {
         require(_basset != address(0), "invalid basset address");
         require(!bassetsMap[_basset], "basset already exists");
 
         bassetsArray.push(_basset);
         bassetsMap[_basset] = true;
 
+        setTargetRatio(_basset, _ratio);
         setFactor(_basset, _factor);
         setRange(_basset, _min, _max);
         setBridge(_basset, _bridge);
@@ -162,7 +225,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     function addBassets(
         address[] memory _bassets, int256[] memory _factors, address[] memory _bridges,
-        uint256[] memory _mins, uint256[] memory _maxs, bool[] memory _pausedFlags) public onlyOwner {
+        uint256[] memory _mins, uint256[] memory _maxs, uint256[] memory _ratios, bool[] memory _pausedFlags) public onlyOwner {
 
         uint length = _bassets.length;
         require(
@@ -173,7 +236,7 @@ contract BasketManagerV3 is InitializableOwnable {
             _pausedFlags.length == length, "invalid lengths");
 
         for(uint i=0; i<length; i++) {
-            addBasset(_bassets[i], _factors[i], _bridges[i], _mins[i], _maxs[i], _pausedFlags[i]);
+            addBasset(_bassets[i], _factors[i], _bridges[i], _mins[i], _maxs[i], _ratios[i], _pausedFlags[i]);
         }
     }
 
@@ -183,6 +246,11 @@ contract BasketManagerV3 is InitializableOwnable {
         require(_max >= _min, "invalid range");
         minMap[_basset] = _min;
         maxMap[_basset] = _max;
+    }
+
+    function setTargetRatio(address _basset, uint256 _ratio) public validBasset(_basset) onlyOwner {
+        require(_ratio < 1000, "ratio should be less than 1000%%");
+        targetRatioMap[_basset] = _ratio;
     }
 
     function isPowerOfTen(int256 x) public pure returns (bool result) {

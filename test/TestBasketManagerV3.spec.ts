@@ -22,6 +22,7 @@ contract("BasketManagerV3", async (accounts) => {
     const mins = [10, 10];
     const maxs = [100, 100];
     const pauses = [false, false];
+    const ratios = [500, 500];
     const bridges = [ZERO_ADDRESS, ZERO_ADDRESS];
 
     let basketManager: BasketManagerV3Instance;
@@ -51,7 +52,7 @@ contract("BasketManagerV3", async (accounts) => {
             });
 
             it("when Basset is paused", async () => {
-                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, true, { from: owner });
+                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, 500, true, { from: owner });
 
                 await expectRevert(
                     basketManager.checkBasketBalanceForDeposit(mockToken1.address, tokens(10)),
@@ -66,7 +67,7 @@ contract("BasketManagerV3", async (accounts) => {
             beforeEach("before each", async () => {
                 bassets = [mockToken1.address, mockToken2.address];
 
-                await basketManager.addBassets(bassets, factors, bridges, mins, maxs, pauses, { from: owner });
+                await basketManager.addBassets(bassets, factors, bridges, mins, maxs, ratios, pauses, { from: owner });
             });
 
             context("should return true", async () => {
@@ -97,10 +98,10 @@ contract("BasketManagerV3", async (accounts) => {
     });
 
     describe("checkBasketBalanceForWithdrawal", async () => {
-        beforeEach("before each", async () => { 
+        beforeEach("before each", async () => {
             mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
             mockToken2 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
-            
+
             basketManager = await BasketManagerV3.new({ from: owner });
             await basketManager.initialize(massetMock, { from: owner });
         });
@@ -114,7 +115,7 @@ contract("BasketManagerV3", async (accounts) => {
             });
 
             it("when Basset is paused", async () => {
-                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, true, { from: owner });
+                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, 500, true, { from: owner });
 
                 await expectRevert(
                     basketManager.checkBasketBalanceForWithdrawal(mockToken1.address, tokens(10)),
@@ -123,7 +124,7 @@ contract("BasketManagerV3", async (accounts) => {
             });
 
             it("when Basset balance is not sufficient", async () => {
-                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, false, { from: owner });
+                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, 500, false, { from: owner });
 
                 await expectRevert(
                     basketManager.checkBasketBalanceForWithdrawal(mockToken1.address, tokens(10)),
@@ -137,7 +138,7 @@ contract("BasketManagerV3", async (accounts) => {
 
             beforeEach("before each", async () => {
                 bassets = [mockToken1.address, mockToken2.address];
-                await basketManager.addBassets(bassets, factors, bridges, mins, maxs, pauses, { from: owner });
+                await basketManager.addBassets(bassets, factors, bridges, mins, maxs, ratios, pauses, { from: owner });
             });
 
             context("should return true", async () => {
@@ -197,9 +198,9 @@ contract("BasketManagerV3", async (accounts) => {
                 basketManager = await BasketManagerV3.new({ from: owner });
                 await basketManager.initialize(massetMock, { from: owner });
             });
-            
+
             it("works fine with factor equal 1", async () => {
-                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, false, { from: owner });
+                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, 500, false, { from: owner });
                 const massetAmount = await basketManager.convertBassetToMassetQuantity(mockToken1.address, tokens(10));
                 const expectedMassetAmount = tokens(10);
                 expect(massetAmount).bignumber.to.eq(expectedMassetAmount);
@@ -207,7 +208,7 @@ contract("BasketManagerV3", async (accounts) => {
 
             it("works fine with positive factor", async () => {
                 const factor = 10;
-                await basketManager.addBasset(mockToken1.address, factor, ZERO_ADDRESS, 10, 100, false, { from: owner });
+                await basketManager.addBasset(mockToken1.address, factor, ZERO_ADDRESS, 10, 100, 500, false, { from: owner });
 
                 const massetAmount = await basketManager.convertBassetToMassetQuantity(mockToken1.address, tokens(100));
                 const expectedMassetAmount = tokens(100).div(new BN(factor));
@@ -217,7 +218,7 @@ contract("BasketManagerV3", async (accounts) => {
 
             it("works fine with negative factor", async () => {
                 const factor = -10;
-                await basketManager.addBasset(mockToken1.address, factor, ZERO_ADDRESS, 10, 100, false, { from: owner });
+                await basketManager.addBasset(mockToken1.address, factor, ZERO_ADDRESS, 10, 100, 500, false, { from: owner });
 
                 const massetAmount = await basketManager.convertBassetToMassetQuantity(mockToken1.address, tokens(100));
                 const expectedMassetAmount = tokens(100).mul(new BN(-factor));
@@ -246,9 +247,9 @@ contract("BasketManagerV3", async (accounts) => {
                 basketManager = await BasketManagerV3.new({ from: owner });
                 await basketManager.initialize(massetMock, { from: owner });
             });
-            
+
             it("works fine with factor equal 1", async () => {
-                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, false, { from: owner });
+                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, 500, false, { from: owner });
                 const bassetAmount = await basketManager.convertMassetToBassetQuantity(mockToken1.address, tokens(10));
                 const expectedBassetAmount = tokens(10);
 
@@ -257,7 +258,7 @@ contract("BasketManagerV3", async (accounts) => {
 
             it("works fine with positive factor", async () => {
                 const factor = 10;
-                await basketManager.addBasset(mockToken1.address, factor, ZERO_ADDRESS, 10, 100, false, { from: owner });
+                await basketManager.addBasset(mockToken1.address, factor, ZERO_ADDRESS, 10, 100, 500, false, { from: owner });
 
                 const bassetAmount = await basketManager.convertMassetToBassetQuantity(mockToken1.address, tokens(100));
                 const expectedBassetAmount = tokens(100).mul(new BN(factor));
@@ -267,7 +268,7 @@ contract("BasketManagerV3", async (accounts) => {
 
             it("works fine with negative factor", async () => {
                 const factor = -10;
-                await basketManager.addBasset(mockToken1.address, factor, ZERO_ADDRESS, 10, 100, false, { from: owner });
+                await basketManager.addBasset(mockToken1.address, factor, ZERO_ADDRESS, 10, 100, 500, false, { from: owner });
 
                 const bassetAmount = await basketManager.convertMassetToBassetQuantity(mockToken1.address, tokens(100));
                 const expectedBassetAmount = tokens(100).div(new BN(-factor));
@@ -295,14 +296,14 @@ contract("BasketManagerV3", async (accounts) => {
         });
 
         it("returns 0 with empty balance of bassets", async () => {
-            await basketManager.addBassets(bassets, factors, bridges, mins, maxs, pauses, { from: owner });
+            await basketManager.addBassets(bassets, factors, bridges, mins, maxs, ratios, pauses, { from: owner });
 
             const totalBalance = await basketManager.getTotalMassetBalance();
             expect(totalBalance).bignumber.to.eq(ZERO);
         });
 
         it("properly calculates total Masset balance", async () => {
-            await basketManager.addBassets(bassets, factors, bridges, mins, maxs, pauses, { from: owner });
+            await basketManager.addBassets(bassets, factors, bridges, mins, maxs, ratios, pauses, { from: owner });
             await mockToken1.giveMe(tokens(10), { from: massetMock });
             await mockToken2.giveMe(tokens(1000), { from: massetMock });
 
@@ -323,22 +324,22 @@ contract("BasketManagerV3", async (accounts) => {
         context("should fail", async () => {
             it("when it's not called by the owner", async () => {
                 await expectRevert(
-                    basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, false, { from: user }),
+                    basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, 500, false, { from: user }),
                     "VM Exception while processing transaction: reverted with reason string 'InitializableOwnable: caller is not the owner'"
                 );
             });
 
             it("when basset is zero address", async () => {
                 await expectRevert(
-                    basketManager.addBasset(ZERO_ADDRESS, 1, ZERO_ADDRESS, 10, 100, false, { from: owner }),
+                    basketManager.addBasset(ZERO_ADDRESS, 1, ZERO_ADDRESS, 10, 100, 500, false, { from: owner }),
                     "VM Exception while processing transaction: reverted with reason string 'invalid basset address'"
                 );
             });
 
             it("when basset already exists", async () => {
-                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, false, { from: owner });
+                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, 500, false, { from: owner });
                 await expectRevert(
-                    basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, false, { from: owner }),
+                    basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, 500, false, { from: owner }),
                     "VM Exception while processing transaction: reverted with reason string 'basset already exists'"
                 );
             });
@@ -346,16 +347,114 @@ contract("BasketManagerV3", async (accounts) => {
 
         context("should succeed", async () => {
             it("with all valid params", async () => {
-                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, false, { from: owner });
+                await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, 500, false, { from: owner });
 
-                const { 0: min, 1: max} = await basketManager.getRange(mockToken1.address);
+                const { 0: min, 1: max } = await basketManager.getRange(mockToken1.address);
 
                 expect(min.toString()).to.equal('10');
                 expect(max.toString()).to.equal('100');
                 expect((await basketManager.getFactor(mockToken1.address)).toString()).to.equal('1');
                 expect((await basketManager.getBridge(mockToken1.address)).toString()).to.equal(ZERO_ADDRESS);
                 expect((await basketManager.getPaused(mockToken1.address))).to.equal(false);
+                expect((await basketManager.getBassetTargetRatio(mockToken1.address))).bignumber.to.equal(new BN(500));
             });
+        });
+    });
+
+    describe("getBassetRatio", async () => {
+        beforeEach("before each", async () => {
+            mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
+            mockToken2 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
+
+            const bassets = [mockToken1.address, mockToken2.address];
+
+            basketManager = await BasketManagerV3.new({ from: owner });
+            await basketManager.initialize(massetMock, { from: owner });
+            await basketManager.addBassets(bassets, factors, bridges, mins, maxs, ratios, pauses, { from: owner });
+        });
+
+        context("should succeed", async () => {
+            beforeEach(async () => {
+                await mockToken1.giveMe(tokens(10), { from: massetMock });
+                await mockToken2.giveMe(tokens(10), { from: massetMock });
+            });
+
+            it("calculates ratio properly with no offset", async () => {
+                expect(await basketManager.getBassetRatio(mockToken1.address, 0, true)).bignumber.to.eq("500");
+                await mockToken2.giveMe(tokens(10), { from: massetMock });
+                expect(await basketManager.getBassetRatio(mockToken1.address, 0, true)).bignumber.to.eq("333");
+                await mockToken2.giveMe(tokens(36), { from: massetMock });
+                expect(await basketManager.getBassetRatio(mockToken1.address, 0, true)).bignumber.to.eq("151"); // 10/66 ~= 151
+                await mockToken2.giveMe(tokens(10000000), { from: massetMock });
+                expect(await basketManager.getBassetRatio(mockToken1.address, 0, true)).bignumber.to.eq("0");
+            });
+
+            it("calculates ratio properly in case of deposit with offset", async () => {
+                expect(await basketManager.getBassetRatio(mockToken1.address, tokens(10), true)).bignumber.to.eq("666");
+                await mockToken2.giveMe(tokens(10), { from: massetMock });
+                expect(await basketManager.getBassetRatio(mockToken1.address, tokens(1), true)).bignumber.to.eq("354"); // 11/31 ~= 354
+                await mockToken2.giveMe(tokens(36), { from: massetMock });
+                expect(await basketManager.getBassetRatio(mockToken1.address, tokens(100000), true)).bignumber.to.eq("999");
+            });
+
+            it("calculates ratio properly in case of redeem with offset", async () => {
+                expect(await basketManager.getBassetRatio(mockToken1.address, tokens(10), false)).bignumber.to.eq("0"); // withdrawal of all bassets
+                await mockToken2.giveMe(tokens(10), { from: massetMock });
+                expect(await basketManager.getBassetRatio(mockToken1.address, tokens(1), false)).bignumber.to.eq("310"); // 9/29 ~= 310
+            });
+        });
+
+        context("should fail", async () => {
+            it("when offset is greater than total", async () => {
+                await expectRevert(
+                    basketManager.getBassetRatio(mockToken1.address, tokens(10), false),
+                    "VM Exception while processing transaction: reverted with reason string 'offset is greater than total'"
+                );
+            });
+
+            it("when offset is greater than bassetBalance", async () => {
+                await mockToken1.giveMe(tokens(1), { from: massetMock });
+                await mockToken2.giveMe(tokens(10), { from: massetMock });
+
+                await expectRevert(
+                    basketManager.getBassetRatio(mockToken1.address, tokens(10), false),
+                    "VM Exception while processing transaction: reverted with reason string 'offset is greater than bassetBalance'"
+                );
+            });
+        });
+    });
+
+    describe("getBassetRatioDeviation", async () => {
+        const targetRatios = [600, 400];
+
+        beforeEach("before each", async () => {
+            mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
+            mockToken2 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
+
+            const bassets = [mockToken1.address, mockToken2.address];
+            basketManager = await BasketManagerV3.new({ from: owner });
+            await basketManager.initialize(massetMock, { from: owner });
+            await basketManager.addBassets(bassets, factors, bridges, mins, maxs, targetRatios, pauses, { from: owner });
+
+            // set perfect ratio at start
+            await mockToken1.giveMe(tokens(60), { from: massetMock });
+            await mockToken2.giveMe(tokens(40), { from: massetMock });
+        });
+
+        it("calculates ratio deviation correctly", async () => {
+            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, 0, true)).bignumber.to.eq(ZERO);
+            await mockToken1.giveMe(tokens(10), { from: massetMock }); // set ratio to 636
+            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, 0, true)).bignumber.to.eq("36"); // 636 - 600
+            await mockToken1.giveMe(tokens(1000030), { from: massetMock }); // set ratio to 999
+            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, 0, true)).bignumber.to.eq("399"); // 999 - 600
+            expect(await basketManager.getBassetRatioDeviation(mockToken2.address, 0, true)).bignumber.to.eq("-400"); // 0 - 400
+        });
+
+        it("works fine with offset", async () => {
+            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, tokens(60), false)).bignumber.to.eq("-600"); // in case of withdrawal of all funds
+            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, tokens(10), false)).bignumber.to.eq("-45"); // 555 - 600
+            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, tokens(50), true)).bignumber.to.eq("133"); // 733 - 600
+            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, tokens(10000000), true)).bignumber.to.eq("399"); // 999 - 600
         });
     });
 
@@ -366,7 +465,7 @@ contract("BasketManagerV3", async (accounts) => {
             mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
 
             await basketManager.initialize(massetMock, { from: owner });
-            await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, false, { from: owner });
+            await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, 500, false, { from: owner });
         });
 
         context("should fail", async () => {
@@ -424,7 +523,7 @@ contract("BasketManagerV3", async (accounts) => {
             mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
 
             await basketManager.initialize(massetMock, { from: owner });
-            await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, false, { from: owner });
+            await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, 500, false, { from: owner });
         });
 
         context("should fail", async () => {

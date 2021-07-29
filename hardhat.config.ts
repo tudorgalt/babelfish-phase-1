@@ -45,18 +45,18 @@ const config: HardhatUserConfig = {
             // network_id: 3,
             // skipDryRun: true,
         },
-        rinkeby: {
-            accounts: {
-                mnemonic: "seek danger physical menu pen arrest clutch blade weird detect digital frog",
-                initialIndex: 0,
-                count: 3
-            },
-            url: "https://rinkeby.infura.io/v3/4326f844557341a89a24bdcfc571fc10",
-            chainId: 4,
-            gasPrice: 1000000000, // 100 GWei,
-            gas: 2000000,
-            timeout: 160000
-        }
+        // rinkeby: {
+        //     accounts: {
+        //         mnemonic: "seek danger physical menu pen arrest clutch blade weird detect digital frog",
+        //         initialIndex: 0,
+        //         count: 3
+        //     },
+        //     url: "https://rinkeby.infura.io/v3/4326f844557341a89a24bdcfc571fc10",
+        //     chainId: 4,
+        //     gasPrice: 1000000000, // 100 GWei,
+        //     gas: 2000000,
+        //     timeout: 160000
+        // }
         // kovan: {
         //     provider() {
         //         return new HDWalletProvider("seek danger physical menu pen arrest clutch blade weird detect digital frog",

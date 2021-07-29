@@ -1,6 +1,7 @@
 import { DeployFunction } from "hardhat-deploy/dist/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import addresses from './utils/addresses';
+import addresses, { BassetInstanceDetails } from './utils/addresses';
+
 import { conditionalDeploy, conditionalInitialize, printState } from "./utils/state";
 
 const cToken = artifacts.require("Token");
@@ -8,12 +9,6 @@ const cBasketManager = artifacts.require("BasketManager");
 const cMasset = artifacts.require("Masset");
 const cMassetProxy = artifacts.require("MassetProxy");
 
-class BassetInstanceDetails {
-    bassets: Array<string>;
-    factors: Array<number>;
-    bridges: Array<string>;
-    multisig: string;
-}
 
 const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAccounts }: HardhatRuntimeEnvironment) => {
     const [default_, _admin] = await getUnnamedAccounts();
@@ -41,7 +36,7 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
             console.log({ tx })
         }
         console.log("A TUTAJ???")
-        if (network.name === 'development' || network.name === 'rinkeby') {
+        if (network.name === 'development') {
             const { address: mockTokenAddress } = await deploy("Token", {
                 from: default_,
                 args: ['MOCK', 'MOCK', 18]
@@ -62,13 +57,13 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
             .initialize(
                 dBasketManager.address,
                 dToken.address,
-                network.name !== 'development' && network.name !== 'rinkeby'
+                network.name !== 'development'
             ).encodeABI();
 
         await conditionalInitialize(`${symbol}_MassetProxy`, async () => { // TEST THIS !!!!!!!!!!!!!!!!!!!!!!
             const tx = await dMassetProxy.methods["initialize(address,address,bytes)"](
                 dMasset.address,
-                (network.name !== 'development' && network.name !== 'rinkeby') ? addressesForInstance.multisig : _admin,
+                (network.name !== 'development') ? addressesForInstance.multisig : _admin,
                 initdata,
             );
 
