@@ -361,7 +361,7 @@ contract("BasketManagerV3", async (accounts) => {
         });
     });
 
-    describe("getBassetRatio", async () => { // START WITH DEVIATION
+    describe("getBassetRatio", async () => {
         beforeEach("before each", async () => {
             mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
             mockToken2 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });

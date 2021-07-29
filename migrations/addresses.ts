@@ -55,7 +55,7 @@ const addresses: Addresses = {
                 '0x0000000000000000000000000000000000000000'
             ],
             factors: [1, 1, 1, 1, 1, 1, 1, 1],
-            ratios: [] // ADD PROPER RADIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         },
         ETHs: {
             bassets: [
@@ -73,7 +73,7 @@ const addresses: Addresses = {
                 '0x2b2bcad081fa773dc655361d1bb30577caa556f8'
             ],
             factors: [1, 1],
-            ratios: [] // ADD PROPER RADIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         },
         BNBs: {
             bassets: [
@@ -85,7 +85,7 @@ const addresses: Addresses = {
                 '0x2b2bcad081fa773dc655361d1bb30577caa556f8', // BNBs
             ],
             factors: [1],
-            ratios: [] // ADD PROPER RADIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         }
     },
     rsk: {
@@ -122,7 +122,7 @@ const addresses: Addresses = {
             ],
             factors: [1, 1, 1, 1, 1, 1, 1, 1],
             multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01',
-            ratios: [] // ADD PROPER RADIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         },
         ETHs: {
             bassets: [
@@ -141,7 +141,7 @@ const addresses: Addresses = {
             ],
             factors: [1, 1],
             multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01',
-            ratios: [] // ADD PROPER RADIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         },
         BNBs: {
             bassets: [
@@ -154,7 +154,7 @@ const addresses: Addresses = {
             ],
             factors: [1],
             multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01',
-            ratios: [] // ADD PROPER RADIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         }
     }
 };
