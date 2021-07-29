@@ -1,15 +1,7 @@
 import { ZERO_ADDRESS } from "@utils/constants";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { MassetV3Instance } from "types/generated";
-import addresses from './utils/addresses';
-import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "./utils/state";
-
-const BasketManagerV3 = artifacts.require("BasketManagerV3");
-const BasketManagerProxy = artifacts.require("BasketManagerProxy");
-const MassetV3 = artifacts.require("MassetV3");
-const MassetProxy = artifacts.require("MassetProxy");
-const Vault = artifacts.require("Vault");
-const VaultProxy = artifacts.require("VaultProxy");
+import { MassetV3Instance, FeesVaultInstance, FeesVaultProxyInstance } from "types/generated";
+import addresses from '../addresses';
+import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "../state";
 
 const MAX_VALUE = 1000;
 
@@ -26,14 +18,26 @@ const deployFunc = async ({ artifacts, network, deployments, getUnnamedAccounts 
 
     const addressesForNetwork = addresses[network.name];
 
-    const vault = await conditionalDeploy(Vault, "Vault", { from: default_ }, deploy);
-    const vaultProxy = await conditionalDeploy(VaultProxy, "VaultProxy", { from: default_ }, deploy);
+    const MassetV3 = artifacts.require("MassetV3");
+    const MassetProxy = artifacts.require("MassetProxy");
 
-    await conditionalInitialize("VaultProxy",
-        async () => { await vaultProxy.methods["initialize(address,address,bytes)"](vault.address, _admin, "0x"); }
+    const FeesVault = artifacts.require("FeesVault");
+    const FeesVaultProxy = artifacts.require("FeesVaultProxy");
+
+    const [default_, _admin] = accounts;
+    const addressesForNetwork = addresses[deployer.network];
+
+    const feesVault: FeesVaultInstance = await conditionalDeploy(BasketManagerV3, "FeesVault",
+        () => deployer.deploy(FeesVault));
+
+    const feesVaultProxy: FeesVaultProxyInstance = await conditionalDeploy(BasketManagerProxy, "FeesVaultProxy",
+        () => deployer.deploy(FeesVaultProxy));
+
+    await conditionalInitialize("FeesVaultProxy",
+        async () => feesVaultProxy.methods["initialize(address,address,bytes)"](feesVault.address, _admin, "0x")
     );
 
-    const vaultFake = await Vault.at(vaultProxy.address);
+    const vaultFake = await FeesVault.at(feesVaultProxy.address);
 
     async function upgradeInstance(
         symbol: string,
@@ -117,9 +121,9 @@ const deployFunc = async ({ artifacts, network, deployments, getUnnamedAccounts 
         );
     }
 
-    await upgradeInstance('ETHs', addressesForNetwork.ETHs, 1, 2, 3, 4);
-    await upgradeInstance('XUSD', addressesForNetwork.XUSD, 1, 2, 3, 4);
-    await upgradeInstance('BNBs', addressesForNetwork.BNBs, 1, 2, 3, 4);
+    await upgradeInstance('ETHs', addressesForNetwork.ETHs, 0, 0, 0, 0);
+    await upgradeInstance('XUSD', addressesForNetwork.XUSD, 0, 0, 0, 0);
+    await upgradeInstance('BNBs', addressesForNetwork.BNBs, 0, 0, 0, 0);
 
     printState();
 };
