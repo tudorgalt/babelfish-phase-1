@@ -191,7 +191,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         int256 deviationBeforeMint = basketManager.getBassetRatioDeviation(_basset, 0, true);
         int256 deviationAfterMint = basketManager.getBassetRatioDeviation(_basset, massetsToMint, true);
 
-        int256 calculatedReward = rewardsManager.calculateReward(deviationBeforeMint, deviationAfterMint);
+        int256 calculatedReward = rewardsManager.calculateReward(deviationBeforeMint, deviationAfterMint, true);
 
         if (calculatedReward >= 0) {
             uint256 rewardsVaultBalance = token.balanceOf(address(rewardsVault));
@@ -295,7 +295,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
             int256 deviationBeforeRedeem = basketManager.getBassetRatioDeviation(_basset, 0, false);
             int256 deviationAfterRedeem = basketManager.getBassetRatioDeviation(_basset, massetsToBurn, false);
 
-            int256 calculatedReward = rewardsManager.calculateReward(deviationBeforeRedeem, deviationAfterRedeem);
+            int256 calculatedReward = rewardsManager.calculateReward(deviationBeforeRedeem, deviationAfterRedeem, false);
 
             if (calculatedReward >= 0) {
                 uint256 rewardsVaultBalance = token.balanceOf(address(rewardsVault));
