@@ -24,6 +24,8 @@ typings/
 # Optional eslint cache
 .eslintcache
 
+# saved addresses on development network
+state_development.json 
 
 # dotenv environment variables file
 .env
