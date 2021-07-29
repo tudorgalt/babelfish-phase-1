@@ -1,7 +1,15 @@
 import { ZERO_ADDRESS } from "@utils/constants";
-import { MassetV3Instance, FeesVaultInstance, FeesVaultProxyInstance } from "types/generated";
-import addresses from '../addresses';
-import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "../state";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { MassetV3Instance } from "types/generated";
+import addresses from './utils/addresses';
+import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "./utils/state";
+
+const BasketManagerV3 = artifacts.require("BasketManagerV3");
+const BasketManagerProxy = artifacts.require("BasketManagerProxy");
+const MassetV3 = artifacts.require("MassetV3");
+const MassetProxy = artifacts.require("MassetProxy");
+const FeesVault = artifacts.require("FeesVault");
+const FeesVaultProxy = artifacts.require("FeesVaultProxy");
 
 const MAX_VALUE = 1000;
 
@@ -18,23 +26,11 @@ const deployFunc = async ({ artifacts, network, deployments, getUnnamedAccounts 
 
     const addressesForNetwork = addresses[network.name];
 
-    const MassetV3 = artifacts.require("MassetV3");
-    const MassetProxy = artifacts.require("MassetProxy");
-
-    const FeesVault = artifacts.require("FeesVault");
-    const FeesVaultProxy = artifacts.require("FeesVaultProxy");
-
-    const [default_, _admin] = accounts;
-    const addressesForNetwork = addresses[deployer.network];
-
-    const feesVault: FeesVaultInstance = await conditionalDeploy(BasketManagerV3, "FeesVault",
-        () => deployer.deploy(FeesVault));
-
-    const feesVaultProxy: FeesVaultProxyInstance = await conditionalDeploy(BasketManagerProxy, "FeesVaultProxy",
-        () => deployer.deploy(FeesVaultProxy));
+    const feesVault = await conditionalDeploy(FeesVault, "Vault", { from: default_ }, deploy);
+    const feesVaultProxy = await conditionalDeploy(FeesVaultProxy, "VaultProxy", { from: default_ }, deploy);
 
     await conditionalInitialize("FeesVaultProxy",
-        async () => feesVaultProxy.methods["initialize(address,address,bytes)"](feesVault.address, _admin, "0x")
+        async () => { await feesVaultProxy.methods["initialize(address,address,bytes)"](feesVault.address, _admin, "0x"); }
     );
 
     const vaultFake = await FeesVault.at(feesVaultProxy.address);
