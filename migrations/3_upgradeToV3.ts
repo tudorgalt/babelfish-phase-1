@@ -1,9 +1,11 @@
 import { ZERO_ADDRESS } from "@utils/constants";
+import { tokens } from "@utils/tools";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { MassetV3Instance } from "types/generated";
-import addresses, { BassetInstanceDetails } from './utils/addresses';
+import addresses, { BassetInstanceDetails, isDevelopmentNetwork } from './utils/addresses';
 import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "./utils/state";
 
+const ERC20Mintable = artifacts.require("ERC20Mintable");
 const BasketManagerV3 = artifacts.require("BasketManagerV3");
 const BasketManagerProxy = artifacts.require("BasketManagerProxy");
 const MassetV3 = artifacts.require("MassetV3");
@@ -17,7 +19,7 @@ const RewardsManagerProxy = artifacts.require("RewardsManagerProxy");
 
 const MAX_VALUE = 1000;
 
-const deployFunc = async ({ artifacts, network, deployments, getUnnamedAccounts }: HardhatRuntimeEnvironment) => {
+const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatRuntimeEnvironment) => {
     const { deploy } = deployments;
     const [default_, _admin] = await getUnnamedAccounts();
 
@@ -69,9 +71,20 @@ const deployFunc = async ({ artifacts, network, deployments, getUnnamedAccounts 
 
         const basketManagerFake = await BasketManagerV3.at(basketManagerProxy.address);
 
-        if (network.name === 'development') {
-            const ERC20 = artifacts.require("ERC20");
-            addressesForInstance.bassets = [(await ERC20.new()).address, (await ERC20.new()).address, (await ERC20.new()).address];
+        if (isDevelopmentNetwork(network.name)) {
+            const basset1 = await ERC20Mintable.new();
+            const basset2 = await ERC20Mintable.new();
+            const basset3 = await ERC20Mintable.new();
+
+            // set basket balances with perfect ratio
+            await basset1.mint(massetFake.address, tokens(30));
+            await basset1.mint(massetFake.address, tokens(40));
+            await basset1.mint(massetFake.address, tokens(40));
+
+            // mint some tokens for owner
+            await basset1.mint(default_, tokens(1000));
+
+            addressesForInstance.bassets = [basset1.address, basset2.address, basset3.address];
             addressesForInstance.factors = [1, 1, 1];
             addressesForInstance.bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
             addressesForInstance.ratios = [300, 300, 400];
@@ -107,7 +120,7 @@ const deployFunc = async ({ artifacts, network, deployments, getUnnamedAccounts 
 
             await Promise.all(promises);
 
-            if (network.name !== 'development') {
+            if(!isDevelopmentNetwork(network.name)) {
                 if (await basketManagerFake.owner() === default_) {
                     await basketManagerFake.transferOwnership(addressesForInstance.multisig);
                 }

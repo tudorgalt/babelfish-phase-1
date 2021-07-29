@@ -8,6 +8,8 @@ import { Address } from 'types';
 let state: AddressesState = null;
 let network = 'localhost';
 
+const emptyState: AddressesState = {};
+
 export function setNetwork(_network: string) {
     network = _network;
 }
@@ -80,7 +82,6 @@ export async function setAddress(key: string, address: string) {
 export async function readState(): Promise<AddressesState> {
     return new Promise((resolve, reject) => {
         const filePath = `state_${network}.json`;
-        const emptyState: AddressesState = {};
 
         fs.readFile(filePath, (readErr, data) => {
             const parsedData = data?.toString('utf-8');
@@ -108,6 +109,14 @@ export function writeState(obj: AddressesState): Promise<void> {
 
 export async function printState() {
     console.log(state);
+}
+
+export async function clearState() {
+    if (!state) {
+        state = await readState();
+    }
+    state = emptyState;
+    await writeState(state);
 }
 
 type AddressesState = {

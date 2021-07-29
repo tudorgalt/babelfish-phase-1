@@ -446,6 +446,14 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return address(token);
     }
 
+    function getFeesVault() external view returns (address) {
+        return feesVaultAddress;
+    }
+
+    function getRewardsVault() external view returns (address) {
+        return address(rewardsVault);
+    }
+
     function getBasketManager() external view returns (address) {
         return address(basketManager);
     }

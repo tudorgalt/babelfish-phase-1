@@ -1,3 +1,6 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type UnionType<T extends readonly any[]> = T[number];
+
 export type BassetInstanceDetails = {
     bassets: Array<string>;
     factors: Array<number>;
@@ -6,14 +9,29 @@ export type BassetInstanceDetails = {
     multisig?: string;
 };
 
-export type DevelopmentNetworks = "development";
-export type ProducitionNetworks = "rskTestnet" | "rsk";
+const developmentNetworks = ["development", "hardhat"] as const;
+const productionNetworks = ["rskTestnet", "rsk"] as const;
+
+export type DevelopmentNetworks = UnionType<typeof developmentNetworks>;
+export type ProducitionNetworks = UnionType<typeof productionNetworks>;
 
 export type Addresses =
     { [k in DevelopmentNetworks]: { [k: string]: Partial<BassetInstanceDetails> } } &
     { [k in ProducitionNetworks]: { [k: string]: BassetInstanceDetails } };
 
+export const isDevelopmentNetwork = (networkName: string): networkName is DevelopmentNetworks => {
+    return developmentNetworks.includes(networkName as DevelopmentNetworks);
+};
+
 const addresses: Addresses = {
+    hardhat: {
+        XUSD: {
+        },
+        ETHs: {
+        },
+        BNBs: {
+        }
+    },
     development: {
         XUSD: {
         },

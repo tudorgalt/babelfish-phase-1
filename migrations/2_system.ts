@@ -1,6 +1,6 @@
 import { DeployFunction } from "hardhat-deploy/dist/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import addresses, { BassetInstanceDetails } from './utils/addresses';
+import addresses, { BassetInstanceDetails, isDevelopmentNetwork } from './utils/addresses';
 
 import { conditionalDeploy, conditionalInitialize, printState } from "./utils/state";
 
@@ -12,7 +12,7 @@ const cMassetProxy = artifacts.require("MassetProxy");
 
 const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAccounts }: HardhatRuntimeEnvironment) => {
     const [default_, _admin] = await getUnnamedAccounts();
-    const { deploy,  } = deployments;
+    const { deploy } = deployments;
 
     const addressesForNetwork = addresses[network.name];
 
@@ -33,7 +33,7 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
         if (await dToken.owner() !== dMassetProxy.address) {
             await dToken.transferOwnership(dMassetProxy.address);
         }
-        if (network.name === 'development') {
+        if (isDevelopmentNetwork(network.name)) {
             const { address: mockTokenAddress } = await deploy("Token", {
                 from: default_,
                 args: ['MOCK', 'MOCK', 18]
@@ -54,13 +54,13 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
             .initialize(
                 dBasketManager.address,
                 dToken.address,
-                network.name !== 'development'
+                !isDevelopmentNetwork(network.name)
             ).encodeABI();
 
         await conditionalInitialize(`${symbol}_MassetProxy`, async () => {
             await dMassetProxy.methods["initialize(address,address,bytes)"](
                 dMasset.address,
-                (network.name !== 'development') ? addressesForInstance.multisig : _admin,
+                !isDevelopmentNetwork(network.name) ? addressesForInstance.multisig : _admin,
                 initdata,
             );
         });

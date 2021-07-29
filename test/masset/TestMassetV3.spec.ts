@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { expectRevert, expectEvent } from "@openzeppelin/test-helpers";
-import { toWei } from "web3-utils";
-import { BN } from "@utils/tools";
+import { BN, tokens } from "@utils/tools";
 import envSetup from "@utils/env_setup";
 import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
@@ -18,8 +17,6 @@ const MockBridge = artifacts.require("MockBridge");
 const FeesVault = artifacts.require("FeesVault");
 
 let standardAccounts: StandardAccounts;
-
-const tokens = (amount: string | number): BN => toWei(new BN(amount), 'ether');
 
 const standardFees: Fees = {
     deposit: new BN(10),
