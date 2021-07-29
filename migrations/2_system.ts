@@ -31,11 +31,8 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
         }, deploy);
 
         if (await dToken.owner() !== dMassetProxy.address) {
-            console.log("NO JESTEM TUTAJ!!!");
-            const tx = await dToken.transferOwnership(dMassetProxy.address);
-            console.log({ tx })
+            await dToken.transferOwnership(dMassetProxy.address);
         }
-        console.log("A TUTAJ???")
         if (network.name === 'development') {
             const { address: mockTokenAddress } = await deploy("Token", {
                 from: default_,
@@ -60,14 +57,12 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
                 network.name !== 'development'
             ).encodeABI();
 
-        await conditionalInitialize(`${symbol}_MassetProxy`, async () => { // TEST THIS !!!!!!!!!!!!!!!!!!!!!!
-            const tx = await dMassetProxy.methods["initialize(address,address,bytes)"](
+        await conditionalInitialize(`${symbol}_MassetProxy`, async () => {
+            await dMassetProxy.methods["initialize(address,address,bytes)"](
                 dMasset.address,
                 (network.name !== 'development') ? addressesForInstance.multisig : _admin,
                 initdata,
             );
-
-            console.log(tx);
         });
 
     }
