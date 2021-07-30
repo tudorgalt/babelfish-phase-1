@@ -16,6 +16,7 @@ const Token = artifacts.require("Token");
 const MockERC20 = artifacts.require("MockERC20");
 const MockBridge = artifacts.require("MockBridge");
 const FeesVault = artifacts.require("FeesVault");
+const FeesManager = artifacts.require("FeesManager");
 const RewardsVault = artifacts.require("RewardsVault");
 const RewardsManager = artifacts.require("RewardsManager");
 
@@ -54,6 +55,7 @@ contract("MassetV3", async (accounts) => {
             it("when given a valid basket manager", async () => {
                 const rewardsVault = await RewardsVault.new();
                 const rewardsManager = await RewardsManager.new();
+                const feesManager = await RewardsManager.new();
 
                 await masset.initialize(
                     basketManagerObj.basketManager.address,
@@ -80,7 +82,8 @@ contract("MassetV3", async (accounts) => {
                     3,
                     4,
                     rewardsManager.address,
-                    rewardsVault.address
+                    rewardsVault.address,
+                    feesManager.address
                 );
 
                 version = await masset.getVersion();
@@ -719,6 +722,7 @@ async function initMassetV3(
 ): Promise<void> {
     const rewardsVault = await RewardsVault.new();
     const rewardsManager = await RewardsManager.new();
+    const feesManager = await FeesManager.new();
 
     await masset.initialize(
         basketManagerAddress,
@@ -737,6 +741,7 @@ async function initMassetV3(
         fees.withdrawalBridge,
         rewardsManager.address,
         rewardsVault.address,
+        feesManager.address,
         txDetails
     );
 }

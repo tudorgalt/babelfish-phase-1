@@ -18,6 +18,9 @@ export default async (
     const FeesVault = artifacts.require("FeesVault");
     const FeesVaultProxy = artifacts.require("FeesVaultProxy");
 
+    const FeesManager = artifacts.require("FeesManager");
+    const FeesManagerProxy = artifacts.require("FeesManagerProxy");
+
     const RewardsVault = artifacts.require("RewardsVault");
     const RewardsVaultProxy = artifacts.require("RewardsVaultProxy");
 
@@ -127,21 +130,31 @@ export default async (
 
         const rewardsManager = await conditionalDeploy(RewardsManager, `${symbol}_RewardsManager`,
             () => deployer.deploy(RewardsManager));
-        
+
         const rewardsManagerProxy = await conditionalDeploy(RewardsManagerProxy, `${symbol}_RewardsManagerProxy`,
             () => deployer.deploy(RewardsManagerProxy));
 
         await conditionalInitialize(`${symbol}_RewardsManagerProxy`,
             async () => rewardsManagerProxy.initialize(rewardsManager.address, _admin, "0x")
         );
-
         const rewardsManagerFake = await RewardsManager.at(rewardsManagerProxy.address);
+        
+        const feesManager = await conditionalDeploy(FeesManager, `${symbol}_FeesManager`,
+            () => deployer.deploy(FeesManager));
+
+        const feesManagerProxy = await conditionalDeploy(FeesManagerProxy, `${symbol}_FeesManagerProxy`,
+            () => deployer.deploy(FeesManagerProxy));
+
+        await conditionalInitialize(`${symbol}_FeesManagerProxy`,
+            async () => feesManagerProxy.initialize(feesManager.address, _admin, "0x")
+        );
+        const feesManagerFake = await FeesManager.at(feesManagerProxy.address);
 
         const masset = await conditionalDeploy(MassetV3, `${symbol}_MassetV3`,
             () => deployer.deploy(MassetV3));
 
         const massetProxy = await MassetProxy.at(massetFake.address);
-            
+
         await rewardsVaultFake.addApprover(massetFake.address);
 
         await massetProxy.upgradeTo(masset.address, { from: _admin });
@@ -154,7 +167,8 @@ export default async (
             withdrawFee,
             withdrawBridgeFee,
             rewardsManagerFake.address,
-            rewardsVaultFake.address
+            rewardsVaultFake.address,
+            feesManagerFake.address
         );
     }
 
