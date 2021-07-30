@@ -126,7 +126,6 @@ contract BasketManagerV3 is InitializableOwnable {
             total = total.add(offset);
             bassetBalance = bassetBalance.add(offset);
         } else {
-            require(offset <= total, "offset is greater than total");
             require(offset <= bassetBalance, "offset is greater than bassetBalance");
 
             total = total.sub(offset);

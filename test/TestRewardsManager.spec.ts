@@ -1,7 +1,5 @@
 import { expectRevert } from "@openzeppelin/test-helpers";
-import { toWei } from "web3-utils";
 
-import { BN } from "@utils/tools";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { RewardsManagerInstance } from "types/generated";
 
