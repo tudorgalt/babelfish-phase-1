@@ -10,6 +10,7 @@ import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancy
 import { IBridge } from "./IBridge.sol";
 import { BasketManagerV3 } from "./BasketManagerV3.sol";
 import { RewardsManager } from "./RewardsManager.sol";
+import { FeesManager } from "./FeesManager.sol";
 import { FeesVault } from "../vault/FeesVault.sol";
 import { RewardsVault } from "../vault/RewardsVault.sol";
 import "./Token.sol";
@@ -80,6 +81,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     RewardsVault private rewardsVault;
     RewardsManager private rewardsManager;
+    FeesManager private feesManager;
     BasketManagerV3 private basketManager;
     Token private token;
 
@@ -91,12 +93,40 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     }
 
     /**
-     * @dev Calculate and return fee amount based on massetAmount
-     * @param massetAmount  amount of masset to deposit / withdraw
-     * @return fee          calculated   amount of fee
+     * @dev this method collects / transfers rewards and return the amount of massets that will be left for user.
+     * @notice All amount in this methods are in masset!
+     * @param _basset               address of basset to perform deposit/redeem on.
+     * @param _massetAmount         amount of deposit/redeem. Must be in masset precision.
+     * @param  isDeposit            Flag to determine offset direction(deposit/redeem).
+     * @param _recipient            Address to credit/take reward from.
+     * @return massetsLeft          amount of funds that is left to user in masset precision.
      */
-    function calculateFee(uint256 massetAmount, uint256 feeAmount) internal pure returns(uint256 fee) {
-        return massetAmount.mul(feeAmount).div(FEE_PRECISION);
+    function _collectAndCalculateRewards(
+        address _basset,
+        uint256 _massetAmount,
+        bool isDeposit,
+        address _recipient
+    ) internal returns (uint256 massetsLeft) {
+        int256 deviationBefore = basketManager.getBassetRatioDeviation(_basset, 0, isDeposit);
+        int256 deviationAfter = basketManager.getBassetRatioDeviation(_basset, _massetAmount, isDeposit);
+
+        int256 calculatedReward = rewardsManager.calculateReward(deviationBefore, deviationAfter);
+
+        if (calculatedReward > 0) {
+            uint256 rewardsVaultBalance = token.balanceOf(address(rewardsVault));
+            uint256 rewardAmount = uint256(calculatedReward) <= rewardsVaultBalance ? uint256(calculatedReward) : rewardsVaultBalance;
+
+            if (rewardAmount > 0) {
+                rewardsVault.getApproval(rewardAmount, address(token));
+                token.transferFrom(address(rewardsVault), _recipient, rewardAmount);
+            }
+
+            return _massetAmount;
+        } else {
+            token.mint(address(rewardsManager), uint256(-calculatedReward));
+
+            return _massetAmount.sub(uint256(-calculatedReward));
+        }
     }
 
     // public
@@ -186,26 +216,10 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         IERC20(_basset).transferFrom(msg.sender, address(this), _bassetQuantity);
 
-        uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, depositFee);
+        uint256 massetsSubFee = _mintAndCalulateFee(massetQuantity, depositFee);
+        uint256 massetsToMint = _collectAndCalculateRewards(_basset, massetsSubFee, true, _recipient);
 
-        int256 deviationBeforeMint = basketManager.getBassetRatioDeviation(_basset, 0, true);
-        int256 deviationAfterMint = basketManager.getBassetRatioDeviation(_basset, massetsToMint, true);
-
-        int256 calculatedReward = rewardsManager.calculateReward(deviationBeforeMint, deviationAfterMint, true);
-
-        if (calculatedReward >= 0) {
-            uint256 rewardsVaultBalance = token.balanceOf(address(rewardsVault));
-            uint256 rewardAmount = uint256(calculatedReward) <= rewardsVaultBalance ? uint256(calculatedReward) : rewardsVaultBalance;
-
-            token.mint(_recipient, massetsToMint);
-            if (rewardAmount > 0) {
-                rewardsVault.getApproval(rewardAmount, address(token));
-                token.transferFrom(address(rewardsVault), _recipient, rewardAmount);
-            }
-        } else {
-            token.mint(_recipient, massetsToMint.sub(uint256(-calculatedReward)));
-            token.mint(address(rewardsVault), uint256(-calculatedReward));
-        }
+        token.mint(_recipient, massetsToMint);
 
         emit Minted(msg.sender, _recipient, massetsToMint, _basset, _bassetQuantity);
 
@@ -218,7 +232,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @return massetsToMint    amount of massets that is left to mint for user
      */
     function _mintAndCalulateFee(uint256 massetQuantity, uint256 feeAmount) internal returns (uint256 massetsToMint) {
-        uint256 fee = calculateFee(massetQuantity, feeAmount);
+        uint256 fee = feesManager.calculateFee(massetQuantity, feeAmount);
         massetsToMint = massetQuantity.sub(fee);
 
         token.mint(feesVaultAddress, fee);
@@ -292,25 +306,10 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
                 IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
                 "call to bridge failed");
         } else {
-            int256 deviationBeforeRedeem = basketManager.getBassetRatioDeviation(_basset, 0, false);
-            int256 deviationAfterRedeem = basketManager.getBassetRatioDeviation(_basset, massetsToBurn, false);
+            uint256 massetsToTransfer = _collectAndCalculateRewards(_basset, massetsToBurn, false, _recipient);
+            uint256 bassetsToTransfer = basketManager.convertMassetToBassetQuantity(_basset, massetsToTransfer);
 
-            int256 calculatedReward = rewardsManager.calculateReward(deviationBeforeRedeem, deviationAfterRedeem, false);
-
-            if (calculatedReward >= 0) {
-                uint256 rewardsVaultBalance = token.balanceOf(address(rewardsVault));
-                uint256 rewardAmount = uint256(calculatedReward) <= rewardsVaultBalance ? uint256(calculatedReward) : rewardsVaultBalance;
-
-                IERC20(_basset).transfer(_recipient, bassetQuantity);
-                if (rewardAmount > 0) {
-                    rewardsVault.getApproval(rewardAmount, address(token));
-                    token.transferFrom(address(rewardsVault), _recipient, rewardAmount);
-                }
-            } else {
-                uint256 rewardAmountBasset = basketManager.convertMassetToBassetQuantity(_basset, uint256(-calculatedReward));
-                IERC20(_basset).transfer(_recipient, bassetQuantity.sub(rewardAmountBasset));
-                token.mint(msg.sender, uint256(-calculatedReward));
-            }
+            IERC20(_basset).transfer(_recipient, bassetsToTransfer);
         }
 
         token.burn(msg.sender, massetsToBurn);
@@ -327,7 +326,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @return massetsToBurn        amount of massets that is left to burn
      */
     function _transferAndCalulateFee(uint256 massetQuantity, uint256 feeAmount, address sender) internal returns (uint256 massetsToBurn) {
-        uint256 fee = calculateFee(massetQuantity, feeAmount);
+        uint256 fee = feesManager.calculateFee(massetQuantity, feeAmount);
         massetsToBurn = massetQuantity.sub(fee);
 
         require(token.transferFrom(sender, feesVaultAddress, fee), "fee transfer failed");
@@ -498,7 +497,8 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 _withdrawalFee,
         uint256 _withdrawalBridgeFee,
         address _rewardsManagerAddress,
-        address _rewardsVaultAddress
+        address _rewardsVaultAddress,
+        address _feeManagerAddress
     ) external {
         require(
             keccak256(bytes(version)) == keccak256(bytes("1.0")) ||
@@ -517,6 +517,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         rewardsVault = RewardsVault(_rewardsVaultAddress);
         rewardsManager = RewardsManager(_rewardsManagerAddress);
+        feesManager = FeesManager(_feeManagerAddress);
         basketManager = BasketManagerV3(_basketManagerAddress);
         token = Token(_tokenAddress);
         version = "3.0";
