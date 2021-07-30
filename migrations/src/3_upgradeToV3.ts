@@ -30,10 +30,10 @@ export default async (
     const [default_, _admin] = accounts;
     const addressesForNetwork = addresses[deployer.network];
 
-    const feesVault: FeesVaultInstance = await conditionalDeploy(BasketManagerV3, "FeesVault",
+    const feesVault: FeesVaultInstance = await conditionalDeploy(FeesVault, "FeesVault",
         () => deployer.deploy(FeesVault));
 
-    const feesVaultProxy: FeesVaultProxyInstance = await conditionalDeploy(BasketManagerProxy, "FeesVaultProxy",
+    const feesVaultProxy: FeesVaultProxyInstance = await conditionalDeploy(FeesVaultProxy, "FeesVaultProxy",
         () => deployer.deploy(FeesVaultProxy));
 
     await conditionalInitialize("FeesVaultProxy",
