@@ -10,6 +10,7 @@ import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancy
 import { IBridge } from "./IBridge.sol";
 import { BasketManagerV3 } from "./BasketManagerV3.sol";
 import { RewardsManager } from "./RewardsManager.sol";
+import { FeesManager } from "./FeesManager.sol";
 import { FeesVault } from "../vault/FeesVault.sol";
 import { RewardsVault } from "../vault/RewardsVault.sol";
 import "./Token.sol";
@@ -80,6 +81,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     RewardsVault private rewardsVault;
     RewardsManager private rewardsManager;
+    FeesManager private feesManager;
     BasketManagerV3 private basketManager;
     Token private token;
 
@@ -218,7 +220,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @return massetsToMint    amount of massets that is left to mint for user
      */
     function _mintAndCalulateFee(uint256 massetQuantity, uint256 feeAmount) internal returns (uint256 massetsToMint) {
-        uint256 fee = calculateFee(massetQuantity, feeAmount);
+        uint256 fee = feesManager.calculateFee(massetQuantity, feeAmount);
         massetsToMint = massetQuantity.sub(fee);
 
         token.mint(feesVaultAddress, fee);
@@ -327,7 +329,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @return massetsToBurn        amount of massets that is left to burn
      */
     function _transferAndCalulateFee(uint256 massetQuantity, uint256 feeAmount, address sender) internal returns (uint256 massetsToBurn) {
-        uint256 fee = calculateFee(massetQuantity, feeAmount);
+        uint256 fee = feesManager.calculateFee(massetQuantity, feeAmount);
         massetsToBurn = massetQuantity.sub(fee);
 
         require(token.transferFrom(sender, feesVaultAddress, fee), "fee transfer failed");
@@ -498,7 +500,8 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 _withdrawalFee,
         uint256 _withdrawalBridgeFee,
         address _rewardsManagerAddress,
-        address _rewardsVaultAddress
+        address _rewardsVaultAddress,
+        address _feeManagerAddress
     ) external {
         require(
             keccak256(bytes(version)) == keccak256(bytes("1.0")) ||
@@ -517,6 +520,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         rewardsVault = RewardsVault(_rewardsVaultAddress);
         rewardsManager = RewardsManager(_rewardsManagerAddress);
+        feesManager = FeesManager(_feeManagerAddress);
         basketManager = BasketManagerV3(_basketManagerAddress);
         token = Token(_tokenAddress);
         version = "3.0";
