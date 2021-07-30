@@ -6,7 +6,7 @@ import { BN } from "@utils/tools";
 import envSetup from "@utils/env_setup";
 import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
-import { BasketManagerV3Instance, MassetV3Instance, MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance } from "types/generated";
+import { BasketManagerV3Instance, MassetV3Instance, MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance, RewardsManagerInstance } from "types/generated";
 
 const { expect } = envSetup.configure();
 
@@ -718,7 +718,7 @@ async function initMassetV3(
     txDetails: Truffle.TransactionDetails = { from: standardAccounts.default }
 ): Promise<void> {
     const rewardsVault = await RewardsVault.new();
-    const rewardsManager = await RewardsManager.new();
+    const rewardsManager = await createRewardsManager(360)
 
     await masset.initialize(
         basketManagerAddress,
@@ -767,6 +767,13 @@ async function createBasketManager(
         bassets,
         basketManager,
     };
+}
+
+async function createRewardsManager(aCurveDenominator: number | BN): Promise<RewardsManagerInstance> {
+    const rewardsManager = await RewardsManager.new();
+    rewardsManager.initialize(aCurveDenominator);
+    
+    return rewardsManager;
 }
 
 async function createToken(masset: MassetV3Instance) {
