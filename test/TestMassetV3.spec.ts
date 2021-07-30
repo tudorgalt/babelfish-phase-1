@@ -19,6 +19,7 @@ const FeesVault = artifacts.require("FeesVault");
 const FeesManager = artifacts.require("FeesManager");
 const RewardsVault = artifacts.require("RewardsVault");
 const RewardsManager = artifacts.require("RewardsManager");
+const DevelopmentConstants = artifacts.require("DevelopmentConstants");
 
 let standardAccounts: StandardAccounts;
 
@@ -41,7 +42,14 @@ contract("MassetV3", async (accounts) => {
 
     standardAccounts = new StandardAccounts(accounts);
 
-    before("before all", async () => { });
+    before("before all", async () => {
+        DevelopmentConstants.contractName="Constants";
+        const constantsLib = await DevelopmentConstants.new();
+        // this is done like that because we run tests using hardhat which require different syntax than truffles link
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        BasketManagerV3.link(constantsLib as any);
+        FeesManager.link(constantsLib as any);
+    });
 
     describe("initialize", async () => {
         beforeEach(async () => {

@@ -7,6 +7,7 @@ import { ZERO, ZERO_ADDRESS } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { BasketManagerV3Instance, MockERC20Instance } from "types/generated";
 
+const DevelopmentConstants = artifacts.require("DevelopmentConstants");
 const MockERC20 = artifacts.require("MockERC20");
 const BasketManagerV3 = artifacts.require("BasketManagerV3");
 
@@ -30,6 +31,11 @@ contract("BasketManagerV3", async (accounts) => {
     let mockToken2: MockERC20Instance;
 
     before("before all", async () => {
+        DevelopmentConstants.contractName="Constants";
+        const constantsLib = await DevelopmentConstants.new();
+        // this is done like that because we run tests using hardhat which require different syntax than truffles link
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        BasketManagerV3.link(constantsLib as any);
         basketManager = await BasketManagerV3.new();
     });
 

@@ -1,5 +1,13 @@
 import { ZERO_ADDRESS } from "@utils/constants";
-import { MassetV3Instance, FeesVaultInstance, FeesVaultProxyInstance, RewardsVaultProxyInstance, RewardsVaultInstance } from "types/generated";
+import {
+    MassetV3Instance,
+    FeesVaultInstance,
+    ConstantsContract,
+    RewardsVaultInstance,
+    FeesVaultProxyInstance,
+    RewardsVaultProxyInstance,
+    DevelopmentConstantsContract
+} from "types/generated";
 import addresses, { BassetInstanceDetails } from '../addresses';
 import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "../state";
 
@@ -10,6 +18,7 @@ export default async (
     deployer, network, accounts): Promise<void> => {
 
     const Constants = artifacts.require("Constants");
+    const DevelopmentConstants = artifacts.require("DevelopmentConstants");
 
     const BasketManagerV3 = artifacts.require("BasketManagerV3");
     const BasketManagerProxy = artifacts.require("BasketManagerProxy");
@@ -32,9 +41,18 @@ export default async (
     const [default_, _admin] = accounts;
     const addressesForNetwork = addresses[deployer.network];
 
-    await conditionalDeploy(Constants, "Constants", () => deployer.deploy(Constants));
     // link Constants library to contracts
-    await deployer.link(Constants, [Constants, BasketManagerV3, FeesManager]);
+    let constantsContract: ConstantsContract | DevelopmentConstantsContract;
+
+    if (network === 'development') {
+        DevelopmentConstants.contractName = "Constants";
+        constantsContract = DevelopmentConstants;
+    } else {
+        constantsContract = Constants;
+    }
+
+    await conditionalDeploy(constantsContract, "Constants", () => deployer.deploy(constantsContract));
+    await deployer.link(constantsContract, [constantsContract, BasketManagerV3, FeesManager]);
 
     const feesVault: FeesVaultInstance = await conditionalDeploy(FeesVault, "FeesVault",
         () => deployer.deploy(FeesVault));
