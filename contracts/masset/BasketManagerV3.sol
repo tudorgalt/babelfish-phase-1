@@ -3,12 +3,11 @@ pragma solidity 0.5.16;
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
+import { Constants } from "../Constants.sol";
 
 contract BasketManagerV3 is InitializableOwnable {
 
     using SafeMath for uint256;
-
-    uint256 constant MAX_VALUE = 1000;
 
     // state
     string version;
@@ -60,7 +59,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
         uint256 balance = totalBassetBalanceInMasset.add(massetQuantity);
         uint256 total = getTotalMassetBalance().add(massetQuantity);
-        uint256 ratio = balance.mul(MAX_VALUE).div(total);
+        uint256 ratio = balance.mul(Constants.getMaxBasketValue()).div(total);
         uint256 max = maxMap[_basset];
         return ratio <= max;
     }
@@ -81,7 +80,7 @@ contract BasketManagerV3 is InitializableOwnable {
         uint256 min = minMap[_basset];
         if (total == 0) return min == 0;
 
-        uint256 ratio = balance.mul(MAX_VALUE).div(total);
+        uint256 ratio = balance.mul(Constants.getMaxBasketValue()).div(total);
         return ratio >= min;
     }
 
@@ -112,7 +111,7 @@ contract BasketManagerV3 is InitializableOwnable {
      * @param  _basset      Address of basset to check ratio for
      * @param  offset       Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
      * @param  isDeposit    Flag to determine offset direction(deposit/redeem).
-     * @return ratio        Ratio of basset to total of basset in promils
+     * @return ratio        Ratio of basset to total of basset in REWARDS_PRECISION
      */
     function getBassetRatio(
         address _basset,
@@ -135,7 +134,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
         uint256 bassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
 
-        return bassetBalanceInMasset.mul(1000).div(total);
+        return bassetBalanceInMasset.mul(Constants.getRewardsPrecision()).div(total);
     }
 
     /**
@@ -143,7 +142,7 @@ contract BasketManagerV3 is InitializableOwnable {
      * @param  _basset      Address of basset to check ratio for
      * @param  offset       Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
      * @param  isDeposit    Flag to determine offset direction(deposit/redeem).
-     * @return deviation    Number between -1000 and 1000. Represents deviation from target ratio.
+     * @return deviation    Number between -REWARDS_PRECISION and REWARDS_PRECISION. Represents deviation from target ratio.
      */
     function getBassetRatioDeviation(
         address _basset,
@@ -241,15 +240,15 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     function setRange(address _basset, uint256 _min, uint256 _max) public validBasset(_basset) onlyOwner {
-        require(_min <= MAX_VALUE, "invalid minimum");
-        require(_max <= MAX_VALUE, "invalid maximum");
+        require(_min <= Constants.getMaxBasketValue(), "invalid minimum");
+        require(_max <= Constants.getMaxBasketValue(), "invalid maximum");
         require(_max >= _min, "invalid range");
         minMap[_basset] = _min;
         maxMap[_basset] = _max;
     }
 
     function setTargetRatio(address _basset, uint256 _ratio) public validBasset(_basset) onlyOwner {
-        require(_ratio < 1000, "ratio should be less than 1000%%");
+        require(_ratio < Constants.getRewardsPrecision(), "ratio should be less than 1");
         targetRatioMap[_basset] = _ratio;
     }
 

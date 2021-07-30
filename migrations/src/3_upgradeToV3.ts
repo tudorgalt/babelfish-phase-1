@@ -9,6 +9,8 @@ export default async (
     { artifacts }: { artifacts: Truffle.Artifacts },
     deployer, network, accounts): Promise<void> => {
 
+    const Constants = artifacts.require("Constants");
+
     const BasketManagerV3 = artifacts.require("BasketManagerV3");
     const BasketManagerProxy = artifacts.require("BasketManagerProxy");
 
@@ -29,6 +31,10 @@ export default async (
 
     const [default_, _admin] = accounts;
     const addressesForNetwork = addresses[deployer.network];
+
+    await conditionalDeploy(Constants, "Constants", () => deployer.deploy(Constants));
+    // link Constants library to contracts
+    await deployer.link(Constants, [Constants, BasketManagerV3, FeesManager]);
 
     const feesVault: FeesVaultInstance = await conditionalDeploy(FeesVault, "FeesVault",
         () => deployer.deploy(FeesVault));
@@ -138,7 +144,7 @@ export default async (
             async () => rewardsManagerProxy.initialize(rewardsManager.address, _admin, "0x")
         );
         const rewardsManagerFake = await RewardsManager.at(rewardsManagerProxy.address);
-        
+
         const feesManager = await conditionalDeploy(FeesManager, `${symbol}_FeesManager`,
             () => deployer.deploy(FeesManager));
 

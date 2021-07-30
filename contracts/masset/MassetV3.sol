@@ -64,12 +64,6 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // state
 
-    /**
-     * @dev factor of fees
-     * @notice 1000 means that fees are in promils
-     */
-    uint256 constant private FEE_PRECISION = 1000;
-
     string private version;
 
     uint256 private depositFee;
