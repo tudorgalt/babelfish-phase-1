@@ -51,10 +51,10 @@ contract BasketManagerV3 is InitializableOwnable {
         address _basset,
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
-        uint256 massetQuantity = convertBassetToMassetQuantity(_basset, _bassetQuantity);
+        (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
         uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
 
-        uint256 totalBassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
+        (uint256 totalBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
         uint256 balance = totalBassetBalanceInMasset.add(massetQuantity);
         uint256 total = getTotalMassetBalance().add(massetQuantity);
@@ -67,9 +67,9 @@ contract BasketManagerV3 is InitializableOwnable {
         address _basset,
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
-        uint256 massetQuantity = convertBassetToMassetQuantity(_basset, _bassetQuantity);
+        (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
         uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
-        uint256 totalBassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
+        (uint256 totalBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
         require(totalBassetBalanceInMasset >= massetQuantity, "basset balance is not sufficient");
 
@@ -85,24 +85,32 @@ contract BasketManagerV3 is InitializableOwnable {
 
     function convertBassetToMassetQuantity(
         address _basset,
-        uint256 _bassetQuantity) public view validBasset(_basset) returns(uint256) {
+        uint256 _bassetQuantity) public view validBasset(_basset) returns(uint256 masset, uint256 basset) {
 
         int256 factor = factorMap[_basset];
         if(factor > 0) {
-            return _bassetQuantity.div(uint256(factor));
+            masset = _bassetQuantity.div(uint256(factor));
+            basset = masset.mul(uint256(factor));
+            return (masset, basset);
         }
-        return _bassetQuantity.mul(uint256(-factor));
+        masset = _bassetQuantity.mul(uint256(-factor));
+        basset = masset.div(uint256(-factor));
+        return (masset, basset);
     }
 
     function convertMassetToBassetQuantity(
         address _basset,
-        uint256 _massetQuantity) public view validBasset(_basset) returns(uint256) {
+        uint256 _massetQuantity) public view validBasset(_basset) returns(uint256 basset, uint256 masset) {
 
         int256 factor = factorMap[_basset];
         if(factor > 0) {
-            return _massetQuantity.mul(uint256(factor));
+            basset = _massetQuantity.mul(uint256(factor));
+            masset = basset.div(uint256(factor));
+            return (basset, masset);
         }
-        return _massetQuantity.div(uint256(-factor));
+        basset = _massetQuantity.div(uint256(-factor));
+        masset = basset.mul(uint256(-factor));
+        return (basset, masset);
     }
 
     // Getters
@@ -111,7 +119,8 @@ contract BasketManagerV3 is InitializableOwnable {
         for(uint i=0; i<bassetsArray.length; i++) {
             address basset = bassetsArray[i];
             uint256 balance = IERC20(basset).balanceOf(masset);
-            total += convertBassetToMassetQuantity(basset, balance);
+            (uint256 massetQuantity, ) = convertBassetToMassetQuantity(basset, balance);
+            total += massetQuantity;
         }
     }
 

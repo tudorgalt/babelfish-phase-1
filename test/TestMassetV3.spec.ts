@@ -254,17 +254,21 @@ contract("MassetV3", async (accounts) => {
         context("should succeed", () => {
             it("if all params are valid", async () => {
                 const initialBalance = tokens(1);
-                const sum = new BN(10).pow(new BN(2));
+                const sum = new BN(123123).pow(new BN(2));
                 const mintFee = sum.mul(standardFees.deposit).div(FEE_PRECISION);
 
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
                 });
+                
                 await masset.mint(basketManagerObj.mockToken1.address, sum, {
                     from: standardAccounts.dummy1,
                 });
 
-                const mintedMassets = sum.sub(mintFee);
+                const calculated = await basketManagerObj.basketManager.convertBassetToMassetQuantity(basketManagerObj.mockToken1.address, sum);
+                let mintedMassets = calculated[0];
+
+                mintedMassets = mintedMassets.sub(mintFee);
 
                 let balance = await token.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.equal(mintedMassets);
