@@ -62,6 +62,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         bytes userData
     );
 
+    event DepositFeeChanged (uint256 depositFee);
+    event DepositBridgeFeeChanged (uint256 depositBridgeFee);
+    event WithdrawalFeeChanged (uint256 withdrawalFee);
+    event WithdrawalBridgeFeeChanged (uint256 withdrawalBridgeFee);
+
     // state
 
     /**
@@ -431,24 +436,32 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // Governance methods
 
-    function setDepositFee (uint256 amount) public onlyOwner {
-        require(amount >= 0, "fee amount should be greater or equal zero");
-        depositFee = amount;
+    function setDepositFee (uint256 _amount) public onlyOwner {
+        require(_amount >= 0, "fee amount should be greater or equal zero");
+        depositFee = _amount;
+
+        emit DepositFeeChanged(_amount);
     }
 
-    function setDepositBridgeFee (uint256 amount) public onlyOwner {
-        require(amount >= 0, "fee amount should be greater or equal zero");
-        depositBridgeFee = amount;
+    function setDepositBridgeFee (uint256 _amount) public onlyOwner {
+        require(_amount >= 0, "fee amount should be greater or equal zero");
+        depositBridgeFee = _amount;
+
+        emit DepositBridgeFeeChanged(_amount);
     }
 
-    function setWithdrawalFee (uint256 amount) public onlyOwner {
-        require(amount >= 0, "fee amount should be greater or equal zero");
-        withdrawalFee = amount;
+    function setWithdrawalFee (uint256 _amount) public onlyOwner {
+        require(_amount >= 0, "fee amount should be greater or equal zero");
+        withdrawalFee = _amount;
+
+        emit WithdrawalFeeChanged(_amount);
     }
 
-    function setWithdrawalBridgeFee (uint256 amount) public onlyOwner {
-        require(amount >= 0, "fee amount should be greater or equal zero");
-        withdrawalBridgeFee = amount;
+    function setWithdrawalBridgeFee (uint256 _amount) public onlyOwner {
+        require(_amount >= 0, "fee amount should be greater or equal zero");
+        withdrawalBridgeFee = _amount;
+
+        emit WithdrawalBridgeFeeChanged(_amount);
     }
 
     // Temporary migration

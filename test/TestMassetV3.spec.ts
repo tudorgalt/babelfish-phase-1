@@ -606,10 +606,19 @@ contract("MassetV3", async (accounts) => {
 
         context("should succeed", async () => {
             it("when amount is correct", async () => {
-                await masset.setDepositFee(standardFees.deposit, { from: admin });
-                await masset.setDepositBridgeFee(standardFees.depositBridge, { from: admin });
-                await masset.setWithdrawalFee(standardFees.withdrawal, { from: admin });
-                await masset.setWithdrawalBridgeFee(standardFees.withdrawalBridge, { from: admin });
+                let tx: Truffle.TransactionResponse<Truffle.AnyEvent>;
+
+                tx =  await masset.setDepositFee(standardFees.deposit, { from: admin });
+                await expectEvent(tx.receipt, "DepositFeeChanged", { depositFee: standardFees.deposit });
+
+                tx = await masset.setDepositBridgeFee(standardFees.depositBridge, { from: admin });
+                await expectEvent(tx.receipt, "DepositBridgeFeeChanged", { depositBridgeFee: standardFees.depositBridge });
+
+                tx = await masset.setWithdrawalFee(standardFees.withdrawal, { from: admin });
+                await expectEvent(tx.receipt, "WithdrawalFeeChanged", { withdrawalFee: standardFees.withdrawal });
+
+                tx = await masset.setWithdrawalBridgeFee(standardFees.withdrawalBridge, { from: admin });
+                await expectEvent(tx.receipt, "WithdrawalBridgeFeeChanged", { withdrawalBridgeFee: standardFees.withdrawalBridge });
 
                 expect(await masset.getDepositFee()).bignumber.to.eq(standardFees.deposit);
                 expect(await masset.getDepositBridgeFee()).bignumber.to.eq(standardFees.depositBridge);

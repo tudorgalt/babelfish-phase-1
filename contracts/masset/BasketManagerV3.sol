@@ -8,6 +8,15 @@ contract BasketManagerV3 is InitializableOwnable {
 
     using SafeMath for uint256;
 
+    // Events
+
+    event BassetAdded (address basset);
+    event BassetRemoved (address basset);
+    event FactorChanged (address basset, int256 factor);
+    event BridgeChanged (address basset, address bridge);
+    event RangeChanged (address basset, uint256 min, uint256 max);
+    event PausedChanged (address basset, bool paused);
+
     uint256 constant MAX_VALUE = 1000;
 
     // state
@@ -158,6 +167,8 @@ contract BasketManagerV3 is InitializableOwnable {
         setRange(_basset, _min, _max);
         setBridge(_basset, _bridge);
         setPaused(_basset, _paused);
+
+        emit BassetAdded(_basset);
     }
 
     function addBassets(
@@ -183,6 +194,8 @@ contract BasketManagerV3 is InitializableOwnable {
         require(_max >= _min, "invalid range");
         minMap[_basset] = _min;
         maxMap[_basset] = _max;
+
+        emit RangeChanged(_basset, _min, _max);
     }
 
     function isPowerOfTen(int256 x) public pure returns (bool result) {
@@ -202,14 +215,20 @@ contract BasketManagerV3 is InitializableOwnable {
         require(_factor != 0, "invalid factor");
         require(_factor == 1 || isPowerOfTen(_factor), "factor must be power of 10");
         factorMap[_basset] = _factor;
+
+        emit FactorChanged(_basset, _factor);
     }
 
     function setBridge(address _basset, address _bridge) public validBasset(_basset) onlyOwner {
         bridgeMap[_basset] = _bridge;
+
+        emit BridgeChanged(_basset, _bridge);
     }
 
     function setPaused(address _basset, bool _flag) public validBasset(_basset) onlyOwner {
         pausedMap[_basset] = _flag;
+
+        emit PausedChanged(_basset, _flag);
     }
 
     function removeBasset(address _basset) public validBasset(_basset) onlyOwner {
@@ -223,5 +242,7 @@ contract BasketManagerV3 is InitializableOwnable {
             }
         }
         bassetsArray.length--;
+
+        emit BassetRemoved(_basset);
     }
 }
