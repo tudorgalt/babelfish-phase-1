@@ -372,6 +372,9 @@ contract("MassetV3", async (accounts) => {
 
                 await masset.redeemTo(basketManagerObj.mockToken1.address, withdrawAmount, recipient, { from: standardAccounts.dummy1 });
 
+                const tokenBalance = await token.balanceOf(standardAccounts.dummy1);
+                expect(tokenBalance).bignumber.to.eq("0");
+
                 const balance = await basketManagerObj.mockToken1.balanceOf(recipient);
                 expect(balance).bignumber.to.equal(withdrawAmount.sub(withdrawalFee), "should transfer bassets to correct recipient");
 
