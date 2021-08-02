@@ -20,7 +20,11 @@ pragma solidity 0.5.16;
  * metering changes introduced in the Istanbul hardfork.
  */
 contract InitializableReentrancyGuard {
-    bool private _notEntered;
+    /**
+     * 1 - not entered
+     * 2 - entered
+     */
+    uint256 private _notEntered;
 
     function _initialize() internal {
         // Storing an initial non-zero value makes deployment a bit more
@@ -29,7 +33,7 @@ contract InitializableReentrancyGuard {
         // the total transaction's gas, it is best to keep them low in cases
         // like this one, to increase the likelihood of the full refund coming
         // into effect.
-        _notEntered = true;
+        _notEntered = 1;
     }
 
     /**
@@ -41,15 +45,15 @@ contract InitializableReentrancyGuard {
      */
     modifier nonReentrant() {
         // On the first call to nonReentrant, _notEntered will be true
-        require(_notEntered, "ReentrancyGuard: reentrant call");
+        require(_notEntered == 1, "ReentrancyGuard: reentrant call");
 
         // Any calls to nonReentrant after this point will fail
-        _notEntered = false;
+        _notEntered = 2;
 
         _;
 
         // By storing the original value once again, a refund is triggered (see
         // https://eips.ethereum.org/EIPS/eip-2200)
-        _notEntered = true;
+        _notEntered = 1;
     }
 }
