@@ -110,30 +110,35 @@ contract BasketManagerV3 is InitializableOwnable {
     /**
      * @dev Calculate ratio of specyfic basset in basket
      * @param  _basset      Address of basset to check ratio for
-     * @param  offset       Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
-     * @param  isDeposit    Flag to determine offset direction(deposit/redeem).
+     * @param  _offset       Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
+     * @param  _isDeposit    Flag to determine offset direction(deposit/redeem).
      * @return ratio        Ratio of basset to total of basset in promils
      */
     function getBassetRatio(
         address _basset,
-        uint256 offset,
-        bool isDeposit
+        uint256 _offset,
+        bool _isDeposit
     ) public view validBasset(_basset) returns (uint256 ratio) {
         uint256 total = getTotalMassetBalance();
+
         uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
+        uint256 offsetInMasset = convertBassetToMassetQuantity(_basset, _offset);
 
-        if (isDeposit) {
-            total = total.add(offset);
-            bassetBalance = bassetBalance.add(offset);
+        if (_isDeposit) {
+            total = total.add(offsetInMasset);
+            bassetBalance = bassetBalance.add(_offset);
         } else {
-            require(offset <= bassetBalance, "offset is greater than bassetBalance");
+            require(_offset <= bassetBalance, "offset is greater than bassetBalance");
 
-            total = total.sub(offset);
-            bassetBalance = bassetBalance.sub(offset);
+            total = total.sub(offsetInMasset);
+            bassetBalance = bassetBalance.sub(_offset);
+        }
+
+        if(total == 0) {
+            return 0;
         }
 
         uint256 bassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
-
         return bassetBalanceInMasset.mul(1000).div(total);
     }
 

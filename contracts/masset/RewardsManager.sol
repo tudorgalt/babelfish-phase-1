@@ -20,7 +20,7 @@ contract RewardsManager is InitializableOwnable {
     }
 
     // Public
-    function calculateReward(int256 _deviationBefore, int256 _deviationAfter, bool isDeposit) public view returns(int256 reward) {
+    function calculateReward(int256 _deviationBefore, int256 _deviationAfter, bool _isDeposit) public view returns(int256 reward) {
         int256 y = 0;
         if (_deviationBefore == _deviationAfter) {
             y = pointOnCurve(_deviationBefore);
@@ -32,7 +32,7 @@ contract RewardsManager is InitializableOwnable {
 
         int256 ammount = y;
 
-        return isDeposit ? -ammount : ammount;
+        return _isDeposit ? -ammount : ammount;
     }
 
     function segmentOnCurve(int256 _x1, int256 _x2) public view returns(int256 y) {
