@@ -182,7 +182,7 @@ contract("MassetV3", async (accounts) => {
             it("if amount is greater than the balance", async () => {
                 await expectRevert(
                     masset.mint(basketManagerObj.mockToken1.address, 100000),
-                    "VM Exception while processing transaction: reverted with reason string 'ERC20: transfer amount exceeds balance'",
+                    "VM Exception while processing transaction: reverted with reason string 'SafeERC20: low-level call failed'",
                 );
             });
         });

@@ -3,6 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IERC777Recipient } from "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import { IERC1820Registry } from "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
@@ -15,6 +16,8 @@ import "./Token.sol";
 contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard {
 
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+    using SafeERC20 for Token;
 
     // Events
 
@@ -179,7 +182,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         uint256 massetQuantity = basketManager.convertBassetToMassetQuantity(_basset, _bassetQuantity);
 
-        IERC20(_basset).transferFrom(msg.sender, address(this), _bassetQuantity);
+        IERC20(_basset).safeTransferFrom(msg.sender, address(this), _bassetQuantity);
 
         uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, depositFee);
         token.mint(_recipient, massetsToMint);
@@ -269,7 +272,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
                 IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
                 "call to bridge failed");
         } else {
-            IERC20(_basset).transfer(_recipient, bassetQuantity);
+            IERC20(_basset).safeTransfer(_recipient, bassetQuantity);
         }
 
         token.burn(msg.sender, massetsToBurn);
@@ -289,7 +292,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 fee = calculateFee(massetQuantity, feeAmount);
         massetsToBurn = massetQuantity.sub(fee);
 
-        require(token.transferFrom(sender, feesVaultAddress, fee), "fee transfer failed");
+        token.safeTransferFrom(sender, feesVaultAddress, fee);
 
         return massetsToBurn;
     }
