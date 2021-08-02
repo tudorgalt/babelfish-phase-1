@@ -37,8 +37,17 @@ contract InitializableOwnable is Context {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(isOwner(), "InitializableOwnable: caller is not the owner");
+        _onlyOwner();
         _;
+    }
+
+    /**
+    * @dev Throws if called by any account other than the owner. 
+    * this method is called and separated from modifier to optimize bytecode and save gas.
+    */
+
+    function _onlyOwner() internal view {
+        require(isOwner(), "InitializableOwnable: caller is not the owner");
     }
 
     /**
