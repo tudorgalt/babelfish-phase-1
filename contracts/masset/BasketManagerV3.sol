@@ -85,32 +85,32 @@ contract BasketManagerV3 is InitializableOwnable {
 
     function convertBassetToMassetQuantity(
         address _basset,
-        uint256 _bassetQuantity) public view validBasset(_basset) returns(uint256 masset, uint256 basset) {
+        uint256 _bassetQuantity) public view validBasset(_basset) returns(uint256 massetQuantity, uint256 bassetQuantity) {
 
         int256 factor = factorMap[_basset];
         if(factor > 0) {
-            masset = _bassetQuantity.div(uint256(factor));
-            basset = masset.mul(uint256(factor));
-            return (masset, basset);
+            massetQuantity = _bassetQuantity.div(uint256(factor));
+            bassetQuantity = massetQuantity.mul(uint256(factor));
+            return (massetQuantity, bassetQuantity);
         }
-        masset = _bassetQuantity.mul(uint256(-factor));
-        basset = masset.div(uint256(-factor));
-        return (masset, basset);
+        massetQuantity = _bassetQuantity.mul(uint256(-factor));
+        bassetQuantity = massetQuantity.div(uint256(-factor));
+        return (massetQuantity, bassetQuantity);
     }
 
     function convertMassetToBassetQuantity(
         address _basset,
-        uint256 _massetQuantity) public view validBasset(_basset) returns(uint256 basset, uint256 masset) {
+        uint256 _massetQuantity) public view validBasset(_basset) returns(uint256 bassetQuantity, uint256 massetQuantity) {
 
         int256 factor = factorMap[_basset];
         if(factor > 0) {
-            basset = _massetQuantity.mul(uint256(factor));
-            masset = basset.div(uint256(factor));
-            return (basset, masset);
+            bassetQuantity = _massetQuantity.mul(uint256(factor));
+            massetQuantity = bassetQuantity.div(uint256(factor));
+            return (bassetQuantity, massetQuantity);
         }
-        basset = _massetQuantity.div(uint256(-factor));
-        masset = basset.mul(uint256(-factor));
-        return (basset, masset);
+        bassetQuantity = _massetQuantity.div(uint256(-factor));
+        massetQuantity = bassetQuantity.mul(uint256(-factor));
+        return (bassetQuantity, massetQuantity);
     }
 
     // Getters
