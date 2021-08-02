@@ -69,6 +69,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @notice 1000 means that fees are in promils
      */
     uint256 constant private FEE_PRECISION = 1000;
+    bytes32 constant ERC777_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
 
     string private version;
 
@@ -85,7 +86,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     function registerAsERC777Recipient() internal {
         IERC1820Registry ERC1820 = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
-        ERC1820.setInterfaceImplementer(address(this), keccak256("ERC777TokensRecipient"), address(this));
+        ERC1820.setInterfaceImplementer(address(this), ERC777_RECIPIENT_INTERFACE_HASH, address(this));
     }
 
     /**
