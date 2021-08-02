@@ -263,6 +263,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
 
+        token.burn(msg.sender, massetsToBurn);
         // In case of withdrawal to bridge the receiveTokensAt is called instead of transfer.
         if(bridgeFlag) {
             address bridgeAddress = basketManager.getBridge(_basset);
@@ -275,7 +276,6 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
             IERC20(_basset).safeTransfer(_recipient, bassetQuantity);
         }
 
-        token.burn(msg.sender, massetsToBurn);
         emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity);
 
         return _massetQuantity;
