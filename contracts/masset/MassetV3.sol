@@ -89,6 +89,9 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // internal
 
+    /**
+     * @dev Register this contracts as implementer of the "ERC777 Tokens Recipient" interface in the ERC1820 registry
+     */
     function registerAsERC777Recipient() internal {
         IERC1820Registry ERC1820 = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
         ERC1820.setInterfaceImplementer(address(this), ERC777_RECIPIENT_INTERFACE_HASH, address(this));
@@ -343,12 +346,22 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return _redeemTo(_basset, _massetQuantity, _recipient, true);
     }
 
+    /**
+     * @dev Decode bytes data to address
+     * @param data              Data to decode
+     * @return address          Decoded address
+     */
     function _decodeAddress(bytes memory data) private pure returns (address) {
         address addr = abi.decode(data, (address));
         require(addr != address(0), "Converter: Error decoding extraData");
         return addr;
     }
 
+    /**
+     * @dev Encode address to bytes data
+     * @param _address          Address to encode
+     * @return address          Decoded address
+     */
     function _encodeAddress(address _address) private pure returns (bytes memory) {
         require(_address != address(0), "Converter: Error encoding extraData");
         return abi.encode(_address);
