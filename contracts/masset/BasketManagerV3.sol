@@ -23,7 +23,6 @@ contract BasketManagerV3 is InitializableOwnable {
     string version;
     address masset;
     address[] private bassetsArray;
-    mapping(address => bool) private bassetsMap;
     mapping(address => int256) private factorMap;
     mapping(address => address) private bridgeMap;
     mapping(address => uint256) private minMap;
@@ -38,7 +37,7 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     modifier validBasset(address _basset) {
-        require(bassetsMap[_basset], "invalid basset");
+        require(factorMap[_basset] != 0, "invalid basset");
         _;
     }
 
@@ -57,7 +56,7 @@ contract BasketManagerV3 is InitializableOwnable {
      * @dev Checks if bAasset is valid by checking its presence in the bassets list
      */
     function isValidBasset(address _basset) public view returns(bool) {
-        return bassetsMap[_basset];
+        return (factorMap[_basset] != 0);
     }
 
     /**
@@ -70,10 +69,10 @@ contract BasketManagerV3 is InitializableOwnable {
         address _basset,
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
-        uint256 massetQuantity = convertBassetToMassetQuantity(_basset, _bassetQuantity);
+        (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
         uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
 
-        uint256 totalBassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
+        (uint256 totalBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
         uint256 balance = totalBassetBalanceInMasset.add(massetQuantity);
         uint256 total = getTotalMassetBalance().add(massetQuantity);
@@ -92,9 +91,9 @@ contract BasketManagerV3 is InitializableOwnable {
         address _basset,
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
-        uint256 massetQuantity = convertBassetToMassetQuantity(_basset, _bassetQuantity);
+        (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
         uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
-        uint256 totalBassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
+        (uint256 totalBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
         require(totalBassetBalanceInMasset >= massetQuantity, "basset balance is not sufficient");
 
@@ -117,13 +116,17 @@ contract BasketManagerV3 is InitializableOwnable {
      */
     function convertBassetToMassetQuantity(
         address _basset,
-        uint256 _bassetQuantity) public view validBasset(_basset) returns(uint256) {
+        uint256 _bassetQuantity) public view validBasset(_basset) returns(uint256 massetQuantity, uint256 bassetQuantity) {
 
         int256 factor = factorMap[_basset];
         if(factor > 0) {
-            return _bassetQuantity.div(uint256(factor));
+            massetQuantity = _bassetQuantity.div(uint256(factor));
+            bassetQuantity = massetQuantity.mul(uint256(factor));
+            return (massetQuantity, bassetQuantity);
         }
-        return _bassetQuantity.mul(uint256(-factor));
+        massetQuantity = _bassetQuantity.mul(uint256(-factor));
+        bassetQuantity = massetQuantity.div(uint256(-factor));
+        return (massetQuantity, bassetQuantity);
     }
 
     /**
@@ -135,13 +138,17 @@ contract BasketManagerV3 is InitializableOwnable {
      */
     function convertMassetToBassetQuantity(
         address _basset,
-        uint256 _massetQuantity) public view validBasset(_basset) returns(uint256) {
+        uint256 _massetQuantity) public view validBasset(_basset) returns(uint256 bassetQuantity, uint256 massetQuantity) {
 
         int256 factor = factorMap[_basset];
         if(factor > 0) {
-            return _massetQuantity.mul(uint256(factor));
+            bassetQuantity = _massetQuantity.mul(uint256(factor));
+            massetQuantity = bassetQuantity.div(uint256(factor));
+            return (bassetQuantity, massetQuantity);
         }
-        return _massetQuantity.div(uint256(-factor));
+        bassetQuantity = _massetQuantity.div(uint256(-factor));
+        massetQuantity = bassetQuantity.mul(uint256(-factor));
+        return (bassetQuantity, massetQuantity);
     }
 
     // Getters
@@ -154,7 +161,8 @@ contract BasketManagerV3 is InitializableOwnable {
         for(uint i=0; i<bassetsArray.length; i++) {
             address basset = bassetsArray[i];
             uint256 balance = IERC20(basset).balanceOf(masset);
-            total += convertBassetToMassetQuantity(basset, balance);
+            (uint256 massetQuantity, ) = convertBassetToMassetQuantity(basset, balance);
+            total += massetQuantity;
         }
     }
 
@@ -200,10 +208,10 @@ contract BasketManagerV3 is InitializableOwnable {
      */
     function addBasset(address _basset, int256 _factor, address _bridge, uint256 _min, uint256 _max, bool _paused) public onlyOwner {
         require(_basset != address(0), "invalid basset address");
-        require(!bassetsMap[_basset], "basset already exists");
+        require(factorMap[_basset] == 0, "basset already exists");
+        require(_factor != 0, "invalid factor");
 
         bassetsArray.push(_basset);
-        bassetsMap[_basset] = true;
 
         setFactor(_basset, _factor);
         setRange(_basset, _min, _max);
@@ -257,7 +265,7 @@ contract BasketManagerV3 is InitializableOwnable {
         result = number == 1;
     }
 
-    function setFactor(address _basset, int256 _factor) public validBasset(_basset) onlyOwner {
+    function setFactor(address _basset, int256 _factor) public onlyOwner {
         require(_factor != 0, "invalid factor");
         require(_factor == 1 || isPowerOfTen(_factor), "factor must be power of 10");
         factorMap[_basset] = _factor;
@@ -283,7 +291,7 @@ contract BasketManagerV3 is InitializableOwnable {
      */
     function removeBasset(address _basset) public validBasset(_basset) onlyOwner {
         require(getBassetBalance(_basset) == 0, "balance not zero");
-        bassetsMap[_basset] = false;
+        factorMap[_basset] = 0;
         bool flag;
         for(uint i = 0; i < bassetsArray.length - 1; i++) {
             flag = flag || bassetsArray[i] == _basset;

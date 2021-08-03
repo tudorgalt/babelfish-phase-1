@@ -202,7 +202,7 @@ contract("BasketManagerV3", async (accounts) => {
                 await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, false, { from: owner });
                 const massetAmount = await basketManager.convertBassetToMassetQuantity(mockToken1.address, tokens(10));
                 const expectedMassetAmount = tokens(10);
-                expect(massetAmount).bignumber.to.eq(expectedMassetAmount);
+                expect(massetAmount[0]).bignumber.to.eq(expectedMassetAmount);
             });
 
             it("works fine with positive factor", async () => {
@@ -212,7 +212,7 @@ contract("BasketManagerV3", async (accounts) => {
                 const massetAmount = await basketManager.convertBassetToMassetQuantity(mockToken1.address, tokens(100));
                 const expectedMassetAmount = tokens(100).div(new BN(factor));
 
-                expect(massetAmount).bignumber.to.eq(expectedMassetAmount);
+                expect(massetAmount[0]).bignumber.to.eq(expectedMassetAmount);
             });
 
             it("works fine with negative factor", async () => {
@@ -222,7 +222,7 @@ contract("BasketManagerV3", async (accounts) => {
                 const massetAmount = await basketManager.convertBassetToMassetQuantity(mockToken1.address, tokens(100));
                 const expectedMassetAmount = tokens(100).mul(new BN(-factor));
 
-                expect(massetAmount).bignumber.to.eq(expectedMassetAmount);
+                expect(massetAmount[0]).bignumber.to.eq(expectedMassetAmount);
             });
         });
     });
@@ -252,7 +252,7 @@ contract("BasketManagerV3", async (accounts) => {
                 const bassetAmount = await basketManager.convertMassetToBassetQuantity(mockToken1.address, tokens(10));
                 const expectedBassetAmount = tokens(10);
 
-                expect(bassetAmount).bignumber.to.eq(expectedBassetAmount);
+                expect(bassetAmount[0]).bignumber.to.eq(expectedBassetAmount);
             });
 
             it("works fine with positive factor", async () => {
@@ -262,7 +262,7 @@ contract("BasketManagerV3", async (accounts) => {
                 const bassetAmount = await basketManager.convertMassetToBassetQuantity(mockToken1.address, tokens(100));
                 const expectedBassetAmount = tokens(100).mul(new BN(factor));
 
-                expect(bassetAmount).bignumber.to.eq(expectedBassetAmount);
+                expect(bassetAmount[0]).bignumber.to.eq(expectedBassetAmount);
             });
 
             it("works fine with negative factor", async () => {
@@ -272,7 +272,7 @@ contract("BasketManagerV3", async (accounts) => {
                 const bassetAmount = await basketManager.convertMassetToBassetQuantity(mockToken1.address, tokens(100));
                 const expectedBassetAmount = tokens(100).div(new BN(-factor));
 
-                expect(bassetAmount).bignumber.to.eq(expectedBassetAmount);
+                expect(bassetAmount[0]).bignumber.to.eq(expectedBassetAmount);
             });
         });
     });
