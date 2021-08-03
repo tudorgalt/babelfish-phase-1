@@ -3,6 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IERC777Recipient } from "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import { IERC1820Registry } from "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
@@ -15,6 +16,8 @@ import "./Token.sol";
 contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard {
 
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+    using SafeERC20 for Token;
 
     // Events
 
@@ -59,6 +62,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         bytes userData
     );
 
+    event DepositFeeChanged (uint256 depositFee);
+    event DepositBridgeFeeChanged (uint256 depositBridgeFee);
+    event WithdrawalFeeChanged (uint256 withdrawalFee);
+    event WithdrawalBridgeFeeChanged (uint256 withdrawalBridgeFee);
+
     // state
 
     /**
@@ -66,6 +74,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @notice 1000 means that fees are in promils
      */
     uint256 constant private FEE_PRECISION = 1000;
+    bytes32 constant ERC777_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
 
     string private version;
 
@@ -80,9 +89,12 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // internal
 
+    /**
+     * @dev Register this contracts as implementer of the "ERC777 Tokens Recipient" interface in the ERC1820 registry
+     */
     function registerAsERC777Recipient() internal {
         IERC1820Registry ERC1820 = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
-        ERC1820.setInterfaceImplementer(address(this), keccak256("ERC777TokensRecipient"), address(this));
+        ERC1820.setInterfaceImplementer(address(this), ERC777_RECIPIENT_INTERFACE_HASH, address(this));
     }
 
     /**
@@ -177,16 +189,16 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(basketManager.isValidBasset(_basset), "invalid basset");
         require(basketManager.checkBasketBalanceForDeposit(_basset, _bassetQuantity), "invalid basket");
 
-        uint256 massetQuantity = basketManager.convertBassetToMassetQuantity(_basset, _bassetQuantity);
+        (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(_basset, _bassetQuantity);
 
-        IERC20(_basset).transferFrom(msg.sender, address(this), _bassetQuantity);
+        IERC20(_basset).safeTransferFrom(msg.sender, address(this), bassetQuantity);
 
         uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, depositFee);
         token.mint(_recipient, massetsToMint);
 
-        emit Minted(msg.sender, _recipient, massetsToMint, _basset, _bassetQuantity);
+        emit Minted(msg.sender, _recipient, massetsToMint, _basset, bassetQuantity);
 
-        return massetQuantity;
+        return massetsToMint;
     }
 
     /**
@@ -255,11 +267,12 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         // massetsToBurn is the amount of massets that is left to burn after the fee was taken.
         // It is used to calculate amount of bassets that are transfered to user.
-        uint256 massetsToBurn = _transferAndCalulateFee(_massetQuantity, feeAmount, msg.sender);
-        uint256 bassetQuantity = basketManager.convertMassetToBassetQuantity(_basset, massetsToBurn);
+        uint256 massetsAfterFee = _transferAndCalulateFee(_massetQuantity, feeAmount, msg.sender);
+        (uint256 bassetQuantity, uint256 massetsToBurn) = basketManager.convertMassetToBassetQuantity(_basset, massetsAfterFee);
 
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
 
+        token.burn(msg.sender, massetsToBurn);
         // In case of withdrawal to bridge the receiveTokensAt is called instead of transfer.
         if(bridgeFlag) {
             address bridgeAddress = basketManager.getBridge(_basset);
@@ -269,13 +282,12 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
                 IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
                 "call to bridge failed");
         } else {
-            IERC20(_basset).transfer(_recipient, bassetQuantity);
+            IERC20(_basset).safeTransfer(_recipient, bassetQuantity);
         }
 
-        token.burn(msg.sender, massetsToBurn);
         emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity);
 
-        return _massetQuantity;
+        return massetsToBurn;
     }
 
     /**
@@ -289,7 +301,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 fee = calculateFee(massetQuantity, feeAmount);
         massetsToBurn = massetQuantity.sub(fee);
 
-        require(token.transferFrom(sender, feesVaultAddress, fee), "fee transfer failed");
+        token.safeTransferFrom(sender, feesVaultAddress, fee);
 
         return massetsToBurn;
     }
@@ -334,12 +346,22 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return _redeemTo(_basset, _massetQuantity, _recipient, true);
     }
 
+    /**
+     * @dev Decode bytes data to address
+     * @param data              Data to decode
+     * @return address          Decoded address
+     */
     function _decodeAddress(bytes memory data) private pure returns (address) {
         address addr = abi.decode(data, (address));
         require(addr != address(0), "Converter: Error decoding extraData");
         return addr;
     }
 
+    /**
+     * @dev Encode address to bytes data
+     * @param _address          Address to encode
+     * @return address          Decoded address
+     */
     function _encodeAddress(address _address) private pure returns (bytes memory) {
         require(_address != address(0), "Converter: Error encoding extraData");
         return abi.encode(_address);
@@ -388,11 +410,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(basketManager.isValidBasset(basset), "invalid basset");
         require(basketManager.checkBasketBalanceForDeposit(basset, _orderAmount), "basket out of balance");
 
-        uint256 massetQuantity = basketManager.convertBassetToMassetQuantity(basset, _orderAmount);
+        (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(basset, _orderAmount);
         uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, depositBridgeFee);
         token.mint(recipient, massetsToMint);
 
-        emit Minted(msg.sender, recipient, massetsToMint, basset, _orderAmount);
+        emit Minted(msg.sender, recipient, massetsToMint, basset, bassetQuantity);
     }
 
     // Getters
@@ -427,24 +449,32 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // Governance methods
 
-    function setDepositFee (uint256 amount) public onlyOwner {
-        require(amount >= 0, "fee amount should be greater or equal zero");
-        depositFee = amount;
+    function setDepositFee (uint256 _amount) public onlyOwner {
+        require(_amount >= 0, "fee amount should be greater or equal zero");
+        depositFee = _amount;
+
+        emit DepositFeeChanged(_amount);
     }
 
-    function setDepositBridgeFee (uint256 amount) public onlyOwner {
-        require(amount >= 0, "fee amount should be greater or equal zero");
-        depositBridgeFee = amount;
+    function setDepositBridgeFee (uint256 _amount) public onlyOwner {
+        require(_amount >= 0, "fee amount should be greater or equal zero");
+        depositBridgeFee = _amount;
+
+        emit DepositBridgeFeeChanged(_amount);
     }
 
-    function setWithdrawalFee (uint256 amount) public onlyOwner {
-        require(amount >= 0, "fee amount should be greater or equal zero");
-        withdrawalFee = amount;
+    function setWithdrawalFee (uint256 _amount) public onlyOwner {
+        require(_amount >= 0, "fee amount should be greater or equal zero");
+        withdrawalFee = _amount;
+
+        emit WithdrawalFeeChanged(_amount);
     }
 
-    function setWithdrawalBridgeFee (uint256 amount) public onlyOwner {
-        require(amount >= 0, "fee amount should be greater or equal zero");
-        withdrawalBridgeFee = amount;
+    function setWithdrawalBridgeFee (uint256 _amount) public onlyOwner {
+        require(_amount >= 0, "fee amount should be greater or equal zero");
+        withdrawalBridgeFee = _amount;
+
+        emit WithdrawalBridgeFeeChanged(_amount);
     }
 
     // Temporary migration

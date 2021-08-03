@@ -8,13 +8,21 @@ contract BasketManagerV3 is InitializableOwnable {
 
     using SafeMath for uint256;
 
+    // Events
+
+    event BassetAdded (address basset);
+    event BassetRemoved (address basset);
+    event FactorChanged (address basset, int256 factor);
+    event BridgeChanged (address basset, address bridge);
+    event RangeChanged (address basset, uint256 min, uint256 max);
+    event PausedChanged (address basset, bool paused);
+
     uint256 constant MAX_VALUE = 1000;
 
     // state
     string version;
     address masset;
     address[] private bassetsArray;
-    mapping(address => bool) private bassetsMap;
     mapping(address => int256) private factorMap;
     mapping(address => address) private bridgeMap;
     mapping(address => uint256) private minMap;
@@ -23,14 +31,37 @@ contract BasketManagerV3 is InitializableOwnable {
 
     // Modifiers
 
+    /**
+    * @dev Prevents a contract from making actions on paused bassets.
+    */
     modifier notPaused(address _basset) {
-        require(!pausedMap[_basset], "basset is paused");
+        _notPaused(_basset);
         _;
     }
 
+    /**
+    * @dev Prevents a contract from making actions on invalid bassets.
+    */
     modifier validBasset(address _basset) {
-        require(bassetsMap[_basset], "invalid basset");
+        _validBasset(_basset);
         _;
+    }
+
+    /**
+    * @dev Prevents a contract from making actions on paused bassets.
+    * this method is called and separated from modifier to optimize bytecode and save gas.
+    */
+    function _notPaused(address _basset) internal view {
+        require(!pausedMap[_basset], "basset is paused");
+    }
+
+
+    /**
+    * @dev Prevents a contract from making actions on invalid bassets.
+    * this method is called and separated from modifier to optimize bytecode and save gas.
+    */
+    function _validBasset(address _basset) internal view {
+        require(factorMap[_basset] != 0, "invalid basset");
     }
 
     // Initializer
@@ -44,18 +75,27 @@ contract BasketManagerV3 is InitializableOwnable {
 
     // Methods for Masset logic
 
+    /**
+     * @dev Checks if bAasset is valid by checking its presence in the bassets list
+     */
     function isValidBasset(address _basset) public view returns(bool) {
-        return bassetsMap[_basset];
+        return (factorMap[_basset] != 0);
     }
 
+    /**
+     * @dev Checks if ratio of bAssets in basket is appropriate to make a deposit of specific asset
+     * @param _basset           address of bAsset to deposit
+     * @param _bassetQuantity   amount of bAssets to deposit
+     * @return Flag indicating whether a deposit can be made
+     */
     function checkBasketBalanceForDeposit(
         address _basset,
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
-        uint256 massetQuantity = convertBassetToMassetQuantity(_basset, _bassetQuantity);
+        (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
         uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
 
-        uint256 totalBassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
+        (uint256 totalBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
         uint256 balance = totalBassetBalanceInMasset.add(massetQuantity);
         uint256 total = getTotalMassetBalance().add(massetQuantity);
@@ -64,13 +104,19 @@ contract BasketManagerV3 is InitializableOwnable {
         return ratio <= max;
     }
 
+    /**
+     * @dev Checks if ratio of bAssets in basket is appropriate to make a withdrawal of specific asset
+     * @param _basset           address of bAsset to redeem
+     * @param _bassetQuantity   amount of bAssets to redeem
+     * @return Flag indicating whether a withdrawal can be made
+     */
     function checkBasketBalanceForWithdrawal(
         address _basset,
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
-        uint256 massetQuantity = convertBassetToMassetQuantity(_basset, _bassetQuantity);
+        (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
         uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
-        uint256 totalBassetBalanceInMasset = convertBassetToMassetQuantity(_basset, bassetBalance);
+        (uint256 totalBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
         require(totalBassetBalanceInMasset >= massetQuantity, "basset balance is not sufficient");
 
@@ -84,35 +130,62 @@ contract BasketManagerV3 is InitializableOwnable {
         return ratio >= min;
     }
 
+    /**
+     * @dev Converts bAsset to mAsset quantity. This is used to adjust precisions.
+     *      Despite bAssets and mAssets are in 1:1 ratio, they may have diffrent factors.
+     *      Since the ratio may cause fractions, the bAsset is adjusted to match nearest non fraction amount and returned.
+     * @param _basset           address of bAsset
+     * @param _bassetQuantity   amount of bAssets to check
+     * @return Calculated amount of mAssets and Adjusted amount of bAssets
+     */
     function convertBassetToMassetQuantity(
         address _basset,
-        uint256 _bassetQuantity) public view validBasset(_basset) returns(uint256) {
+        uint256 _bassetQuantity) public view validBasset(_basset) returns(uint256 massetQuantity, uint256 bassetQuantity) {
 
         int256 factor = factorMap[_basset];
         if(factor > 0) {
-            return _bassetQuantity.div(uint256(factor));
+            massetQuantity = _bassetQuantity.div(uint256(factor));
+            bassetQuantity = massetQuantity.mul(uint256(factor));
+            return (massetQuantity, bassetQuantity);
         }
-        return _bassetQuantity.mul(uint256(-factor));
+        massetQuantity = _bassetQuantity.mul(uint256(-factor));
+        return (massetQuantity, _bassetQuantity);
     }
 
+    /**
+     * @dev Converts mAsset to bAsset quantity. This is used to adjust precisions.
+     *      Despite bAssets and mAssets are in 1:1 ratio, they may have diffrent factors.
+     *      Since the ratio may cause fractions, the mAsset is adjusted to match nearest non fraction amount and returned.
+     * @param _basset           address of bAsset
+     * @param _massetQuantity   amount of mAssets to check
+     * @return Calculated amount of bAssets and Adjusted amount of mAssets
+     */
     function convertMassetToBassetQuantity(
         address _basset,
-        uint256 _massetQuantity) public view validBasset(_basset) returns(uint256) {
+        uint256 _massetQuantity) public view validBasset(_basset) returns(uint256 bassetQuantity, uint256 massetQuantity) {
 
         int256 factor = factorMap[_basset];
         if(factor > 0) {
-            return _massetQuantity.mul(uint256(factor));
+            bassetQuantity = _massetQuantity.mul(uint256(factor));
+            return (bassetQuantity, _massetQuantity);
         }
-        return _massetQuantity.div(uint256(-factor));
+        bassetQuantity = _massetQuantity.div(uint256(-factor));
+        massetQuantity = bassetQuantity.mul(uint256(-factor));
+        return (bassetQuantity, massetQuantity);
     }
 
     // Getters
 
+    /**
+     * @dev Calculates total mAsset balance
+     * @return Calculated total balance
+     */
     function getTotalMassetBalance() public view returns (uint256 total) {
         for(uint i=0; i<bassetsArray.length; i++) {
             address basset = bassetsArray[i];
             uint256 balance = IERC20(basset).balanceOf(masset);
-            total += convertBassetToMassetQuantity(basset, balance);
+            (uint256 massetQuantity, ) = convertBassetToMassetQuantity(basset, balance);
+            total += massetQuantity;
         }
     }
 
@@ -147,19 +220,34 @@ contract BasketManagerV3 is InitializableOwnable {
 
     // Admin methods
 
+    /**
+     * @dev Adds a new bAsset
+     * @param _basset       address of bAsset
+     * @param _factor       factor  amount
+     * @param _bridge       address of bridge
+     * @param _min          minimum ratio in basket
+     * @param _max          maximum ratio in basket
+     * @param _paused       flag to determine if basset should be paused
+     */
     function addBasset(address _basset, int256 _factor, address _bridge, uint256 _min, uint256 _max, bool _paused) public onlyOwner {
         require(_basset != address(0), "invalid basset address");
-        require(!bassetsMap[_basset], "basset already exists");
+        require(factorMap[_basset] == 0, "basset already exists");
+        require(_factor != 0, "invalid factor");
 
         bassetsArray.push(_basset);
-        bassetsMap[_basset] = true;
 
         setFactor(_basset, _factor);
         setRange(_basset, _min, _max);
         setBridge(_basset, _bridge);
         setPaused(_basset, _paused);
+
+        emit BassetAdded(_basset);
     }
 
+    /**
+     * @dev Adds multiple bAssets
+     * @notice All parameters must be arrays with proper order
+     */
     function addBassets(
         address[] memory _bassets, int256[] memory _factors, address[] memory _bridges,
         uint256[] memory _mins, uint256[] memory _maxs, bool[] memory _pausedFlags) public onlyOwner {
@@ -183,6 +271,8 @@ contract BasketManagerV3 is InitializableOwnable {
         require(_max >= _min, "invalid range");
         minMap[_basset] = _min;
         maxMap[_basset] = _max;
+
+        emit RangeChanged(_basset, _min, _max);
     }
 
     function isPowerOfTen(int256 x) public pure returns (bool result) {
@@ -198,23 +288,33 @@ contract BasketManagerV3 is InitializableOwnable {
         result = number == 1;
     }
 
-    function setFactor(address _basset, int256 _factor) public validBasset(_basset) onlyOwner {
+    function setFactor(address _basset, int256 _factor) public onlyOwner {
         require(_factor != 0, "invalid factor");
         require(_factor == 1 || isPowerOfTen(_factor), "factor must be power of 10");
         factorMap[_basset] = _factor;
+
+        emit FactorChanged(_basset, _factor);
     }
 
     function setBridge(address _basset, address _bridge) public validBasset(_basset) onlyOwner {
         bridgeMap[_basset] = _bridge;
+
+        emit BridgeChanged(_basset, _bridge);
     }
 
     function setPaused(address _basset, bool _flag) public validBasset(_basset) onlyOwner {
         pausedMap[_basset] = _flag;
+
+        emit PausedChanged(_basset, _flag);
     }
 
+    /**
+     * @dev Removes bAsset
+     * @param _basset       Address of bAsset to remove
+     */
     function removeBasset(address _basset) public validBasset(_basset) onlyOwner {
         require(getBassetBalance(_basset) == 0, "balance not zero");
-        bassetsMap[_basset] = false;
+        factorMap[_basset] = 0;
         bool flag;
         for(uint i = 0; i < bassetsArray.length - 1; i++) {
             flag = flag || bassetsArray[i] == _basset;
@@ -223,5 +323,7 @@ contract BasketManagerV3 is InitializableOwnable {
             }
         }
         bassetsArray.length--;
+
+        emit BassetRemoved(_basset);
     }
 }
