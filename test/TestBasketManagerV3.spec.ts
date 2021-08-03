@@ -200,9 +200,10 @@ contract("BasketManagerV3", async (accounts) => {
 
             it("works fine with factor equal 1", async () => {
                 await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, false, { from: owner });
-                const massetAmount = await basketManager.convertBassetToMassetQuantity(mockToken1.address, tokens(10));
-                const expectedMassetAmount = tokens(10);
-                expect(massetAmount[0]).bignumber.to.eq(expectedMassetAmount);
+                const [massetAmount, bassetAmount] = await basketManager.convertBassetToMassetQuantity(mockToken1.address, tokens(10000));
+                const expectedMassetAmount = tokens(10000);
+                expect(massetAmount).bignumber.to.eq(expectedMassetAmount);
+                expect(bassetAmount).bignumber.to.eq(expectedMassetAmount);
             });
 
             it("works fine with positive factor", async () => {
@@ -213,6 +214,17 @@ contract("BasketManagerV3", async (accounts) => {
                 const expectedMassetAmount = tokens(100).div(new BN(factor));
 
                 expect(massetAmount[0]).bignumber.to.eq(expectedMassetAmount);
+            });
+
+            it("works fine when amount don't divide evenly", async () => {
+                const factor = 10;
+                await basketManager.addBasset(mockToken1.address, factor, ZERO_ADDRESS, 10, 100, false, { from: owner });
+
+                const [massetAmount, bassetAmount] = await basketManager.convertBassetToMassetQuantity(mockToken1.address, 15);
+                const expectedMassetAmount = "1";
+
+                expect(massetAmount).bignumber.to.eq(expectedMassetAmount);
+                expect(bassetAmount).bignumber.to.eq("10");
             });
 
             it("works fine with negative factor", async () => {
@@ -249,30 +261,39 @@ contract("BasketManagerV3", async (accounts) => {
 
             it("works fine with factor equal 1", async () => {
                 await basketManager.addBasset(mockToken1.address, 1, ZERO_ADDRESS, 10, 100, false, { from: owner });
-                const bassetAmount = await basketManager.convertMassetToBassetQuantity(mockToken1.address, tokens(10));
+                const [bassetAmount] = await basketManager.convertMassetToBassetQuantity(mockToken1.address, tokens(10));
                 const expectedBassetAmount = tokens(10);
 
-                expect(bassetAmount[0]).bignumber.to.eq(expectedBassetAmount);
+                expect(bassetAmount).bignumber.to.eq(expectedBassetAmount);
+            });
+
+            it("works fine when amount don't divide evenly", async () => {
+                await basketManager.addBasset(mockToken1.address, -100, ZERO_ADDRESS, 10, 100, false, { from: owner });
+                const [bassetAmount, massetAmount] = await basketManager.convertMassetToBassetQuantity(mockToken1.address, 5);
+                const expectedBassetAmount = "0";
+
+                expect(bassetAmount).bignumber.to.eq(expectedBassetAmount);
+                expect(massetAmount).bignumber.to.eq("0");
             });
 
             it("works fine with positive factor", async () => {
                 const factor = 10;
                 await basketManager.addBasset(mockToken1.address, factor, ZERO_ADDRESS, 10, 100, false, { from: owner });
 
-                const bassetAmount = await basketManager.convertMassetToBassetQuantity(mockToken1.address, tokens(100));
+                const [bassetAmount] = await basketManager.convertMassetToBassetQuantity(mockToken1.address, tokens(100));
                 const expectedBassetAmount = tokens(100).mul(new BN(factor));
 
-                expect(bassetAmount[0]).bignumber.to.eq(expectedBassetAmount);
+                expect(bassetAmount).bignumber.to.eq(expectedBassetAmount);
             });
 
             it("works fine with negative factor", async () => {
                 const factor = -10;
                 await basketManager.addBasset(mockToken1.address, factor, ZERO_ADDRESS, 10, 100, false, { from: owner });
 
-                const bassetAmount = await basketManager.convertMassetToBassetQuantity(mockToken1.address, tokens(100));
+                const [bassetAmount] = await basketManager.convertMassetToBassetQuantity(mockToken1.address, tokens(100));
                 const expectedBassetAmount = tokens(100).div(new BN(-factor));
 
-                expect(bassetAmount[0]).bignumber.to.eq(expectedBassetAmount);
+                expect(bassetAmount).bignumber.to.eq(expectedBassetAmount);
             });
         });
     });
