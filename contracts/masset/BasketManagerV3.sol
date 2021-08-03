@@ -31,14 +31,37 @@ contract BasketManagerV3 is InitializableOwnable {
 
     // Modifiers
 
+    /**
+    * @dev Prevents a contract from making actions on paused bassets.
+    */
     modifier notPaused(address _basset) {
-        require(!pausedMap[_basset], "basset is paused");
+        _notPaused(_basset);
         _;
     }
 
+    /**
+    * @dev Prevents a contract from making actions on invalid bassets.
+    */
     modifier validBasset(address _basset) {
-        require(factorMap[_basset] != 0, "invalid basset");
+        _validBasset(_basset);
         _;
+    }
+
+    /**
+    * @dev Prevents a contract from making actions on paused bassets.
+    * this method is called and separated from modifier to optimize bytecode and save gas.
+    */
+    function _notPaused(address _basset) internal view {
+        require(!pausedMap[_basset], "basset is paused");
+    }
+
+
+    /**
+    * @dev Prevents a contract from making actions on invalid bassets.
+    * this method is called and separated from modifier to optimize bytecode and save gas.
+    */
+    function _validBasset(address _basset) internal view {
+        require(factorMap[_basset] != 0, "invalid basset");
     }
 
     // Initializer
@@ -109,10 +132,11 @@ contract BasketManagerV3 is InitializableOwnable {
 
     /**
      * @dev Converts bAsset to mAsset quantity. This is used to adjust precisions.
-     *      Despite bAssets and mAssets are in 1:1 ratio, they may have diffrent factors
+     *      Despite bAssets and mAssets are in 1:1 ratio, they may have diffrent factors.
+     *      Since the ratio may cause fractions, the bAsset is adjusted to match nearest non fraction amount and returned.
      * @param _basset           address of bAsset
      * @param _bassetQuantity   amount of bAssets to check
-     * @return Calculated amount of mAssets
+     * @return Calculated amount of mAssets and Adjusted amount of bAssets
      */
     function convertBassetToMassetQuantity(
         address _basset,
@@ -125,16 +149,16 @@ contract BasketManagerV3 is InitializableOwnable {
             return (massetQuantity, bassetQuantity);
         }
         massetQuantity = _bassetQuantity.mul(uint256(-factor));
-        bassetQuantity = massetQuantity.div(uint256(-factor));
-        return (massetQuantity, bassetQuantity);
+        return (massetQuantity, _bassetQuantity);
     }
 
     /**
      * @dev Converts mAsset to bAsset quantity. This is used to adjust precisions.
-     *      Despite bAssets and mAssets are in 1:1 ratio, they may have diffrent factors
+     *      Despite bAssets and mAssets are in 1:1 ratio, they may have diffrent factors.
+     *      Since the ratio may cause fractions, the mAsset is adjusted to match nearest non fraction amount and returned.
      * @param _basset           address of bAsset
      * @param _massetQuantity   amount of mAssets to check
-     * @return Calculated amount of bAssets
+     * @return Calculated amount of bAssets and Adjusted amount of mAssets
      */
     function convertMassetToBassetQuantity(
         address _basset,
@@ -143,8 +167,7 @@ contract BasketManagerV3 is InitializableOwnable {
         int256 factor = factorMap[_basset];
         if(factor > 0) {
             bassetQuantity = _massetQuantity.mul(uint256(factor));
-            massetQuantity = bassetQuantity.div(uint256(factor));
-            return (bassetQuantity, massetQuantity);
+            return (bassetQuantity, _massetQuantity);
         }
         bassetQuantity = _massetQuantity.div(uint256(-factor));
         massetQuantity = bassetQuantity.mul(uint256(-factor));

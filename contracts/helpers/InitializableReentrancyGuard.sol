@@ -45,7 +45,7 @@ contract InitializableReentrancyGuard {
      */
     modifier nonReentrant() {
         // On the first call to nonReentrant, _notEntered will be true
-        require(_notEntered == 1, "ReentrancyGuard: reentrant call");
+        _nonReentrant();
 
         // Any calls to nonReentrant after this point will fail
         _notEntered = 2;
@@ -55,5 +55,13 @@ contract InitializableReentrancyGuard {
         // By storing the original value once again, a refund is triggered (see
         // https://eips.ethereum.org/EIPS/eip-2200)
         _notEntered = 1;
+    }
+
+    /**
+    * @dev Prevents a contract from calling itself, directly or indirectly.
+    * this method is called and separated from modifier to optimize bytecode and save gas.
+    */
+    function _nonReentrant() internal view {
+        require(_notEntered == 1, "ReentrancyGuard: reentrant call");
     }
 }
