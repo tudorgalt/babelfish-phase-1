@@ -42,7 +42,7 @@ contract InitializableOwnable is Context {
     }
 
     /**
-    * @dev Throws if called by any account other than the owner. 
+    * @dev Throws if called by any account other than the owner.
     * this method is called and separated from modifier to optimize bytecode and save gas.
     */
 
