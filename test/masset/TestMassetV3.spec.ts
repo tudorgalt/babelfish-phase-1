@@ -15,6 +15,9 @@ const Token = artifacts.require("Token");
 const MockERC20 = artifacts.require("MockERC20");
 const MockBridge = artifacts.require("MockBridge");
 const FeesVault = artifacts.require("FeesVault");
+const FeesManager = artifacts.require("FeesManager");
+const RewardsVault = artifacts.require("RewardsVault");
+const RewardsManager = artifacts.require("RewardsManager");
 
 let standardAccounts: StandardAccounts;
 
@@ -47,6 +50,10 @@ contract("MassetV3", async (accounts) => {
 
         context("should succeed", async () => {
             it("when given a valid basket manager", async () => {
+                const rewardsVault = await RewardsVault.new();
+                const rewardsManager = await RewardsManager.new();
+                const feesManager = await RewardsManager.new();
+
                 await masset.initialize(
                     basketManagerObj.basketManager.address,
                     token.address,
@@ -70,7 +77,10 @@ contract("MassetV3", async (accounts) => {
                     1,
                     2,
                     3,
-                    4
+                    4,
+                    rewardsManager.address,
+                    rewardsVault.address,
+                    feesManager.address
                 );
 
                 version = await masset.getVersion();
@@ -707,6 +717,10 @@ async function initMassetV3(
     fees: Fees,
     txDetails: Truffle.TransactionDetails = { from: standardAccounts.default }
 ): Promise<void> {
+    const rewardsVault = await RewardsVault.new();
+    const rewardsManager = await RewardsManager.new();
+    const feesManager = await FeesManager.new();
+
     await masset.initialize(
         basketManagerAddress,
         tokenAddress,
@@ -722,6 +736,9 @@ async function initMassetV3(
         fees.depositBridge,
         fees.withdrawal,
         fees.withdrawalBridge,
+        rewardsManager.address,
+        rewardsVault.address,
+        feesManager.address,
         txDetails
     );
 }
@@ -740,10 +757,11 @@ async function createBasketManager(
     const mins = [0, 0];
     const maxs = [1000, 1000];
     const pauses = [false, false];
+    const ratios = [500, 500];
 
     const basketManager = await BasketManagerV3.new({ from: standardAccounts.default });
     await basketManager.initialize(masset.address, { from: standardAccounts.default });
-    await basketManager.addBassets(bassets, factors, bridges, mins, maxs, pauses, { from: standardAccounts.default });
+    await basketManager.addBassets(bassets, factors, bridges, mins, maxs, ratios, pauses, { from: standardAccounts.default });
 
     return {
         mockToken1,

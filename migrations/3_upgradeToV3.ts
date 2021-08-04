@@ -12,6 +12,8 @@ const MassetV3 = artifacts.require("MassetV3");
 const MassetProxy = artifacts.require("MassetProxy");
 const FeesVault = artifacts.require("FeesVault");
 const FeesVaultProxy = artifacts.require("FeesVaultProxy");
+const FeesManager = artifacts.require("FeesManager");
+const FeesManagerProxy = artifacts.require("FeesManagerProxy");
 const RewardsVault = artifacts.require("RewardsVault");
 const RewardsVaultProxy = artifacts.require("RewardsVaultProxy");
 const RewardsManager = artifacts.require("RewardsManager");
@@ -137,9 +139,17 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
 
         const rewardsManagerFake = await RewardsManager.at(rewardsManagerProxy.address);
 
+        const feesManager = await conditionalDeploy(FeesManager, `${symbol}_FeesManager`, { from: default_ }, deploy);
+        const feesManagerProxy = await conditionalDeploy(FeesManagerProxy, `${symbol}_FeesManagerProxy`, { from: default_ }, deploy);
+
+        await conditionalInitialize(`${symbol}_FeesManagerProxy`,
+            async () => feesManagerProxy.initialize(feesManager.address, _admin, "0x")
+        );
+        const feesManagerFake = await FeesManager.at(feesManagerProxy.address);
+
         const masset = await conditionalDeploy(MassetV3, `${symbol}_MassetV3`, { from: default_ }, deploy);
         const massetProxy = await MassetProxy.at(massetFake.address);
-            
+
         await rewardsVaultFake.addApprover(massetFake.address);
 
         await massetProxy.upgradeTo(masset.address, { from: _admin });
@@ -152,7 +162,8 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             withdrawFee,
             withdrawBridgeFee,
             rewardsManagerFake.address,
-            rewardsVaultFake.address
+            rewardsVaultFake.address,
+            feesManagerFake.address
         );
     }
 
