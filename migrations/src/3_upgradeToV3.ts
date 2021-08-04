@@ -80,20 +80,22 @@ export default async (
         let promises: Array<Promise<any>> = [];
         if (await basketManagerProxy.admin() === _admin) {
             const existingAssets = await basketManagerFake.getBassets();
-            const addAsset = (index) => {
+            const addAsset = async (index: number) => {
                 console.log('adding asset: ',
                     addressesForInstance.bassets[index],
                     addressesForInstance.factors[index],
                     addressesForInstance.bridges[index]);
-                promises.push(basketManagerFake.addBasset(
+                await basketManagerFake.addBasset(
                     addressesForInstance.bassets[index],
                     addressesForInstance.factors[index],
-                    addressesForInstance.bridges[index], 0, MAX_VALUE, false));
+                    addressesForInstance.bridges[index], 0, MAX_VALUE, false
+                );
             };
 
             for (let i = 0; i < addressesForInstance.bassets.length; i++) {
                 if (!existingAssets.find(ta => ta === addressesForInstance.bassets[i])) {
-                    addAsset(i);
+                    // eslint-disable-next-line no-await-in-loop
+                    await addAsset(i);
                 }
             }
 
