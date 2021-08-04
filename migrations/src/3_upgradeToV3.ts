@@ -101,7 +101,7 @@ export default async (
 
             await Promise.all(promises);
 
-            if (network !== 'development') {
+            if (addressesForInstance.multisig) {
                 if (await basketManagerFake.owner() == default_) {
                     await basketManagerFake.transferOwnership(addressesForInstance.multisig);
                 }
