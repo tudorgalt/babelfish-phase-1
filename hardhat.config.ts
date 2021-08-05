@@ -38,55 +38,52 @@ const config: HardhatUserConfig = {
             gasPrice: 1000000000, // 100 GWei,
             gas: 70000000,
             timeout: 160000
-            // provider() {
-            //     return new HDWalletProvider("seek danger physical menu pen arrest clutch blade weird detect digital frog",
-            //         `wss://ropsten.infura.io/ws/v3/42af85fbc97845a0974cbbf003834c28`, 0, 3);
-            // },
-            // network_id: 3,
-            // skipDryRun: true,
         },
-        // rinkeby: {
-        //     accounts: {
-        //         mnemonic: "seek danger physical menu pen arrest clutch blade weird detect digital frog",
-        //         initialIndex: 0,
-        //         count: 3
-        //     },
-        //     url: "https://rinkeby.infura.io/v3/4326f844557341a89a24bdcfc571fc10",
-        //     chainId: 4,
-        //     gasPrice: 1000000000, // 100 GWei,
-        //     gas: 2000000,
-        //     timeout: 160000
-        // }
-        // kovan: {
-        //     provider() {
-        //         return new HDWalletProvider("seek danger physical menu pen arrest clutch blade weird detect digital frog",
-        //             "wss://kovan.infura.io/ws/v3/42af85fbc97845a0974cbbf003834c28", 0, 42);
-        //     },
-        //     network_id: 42,
-        //     gasPrice: 20000000000, // 20 GWei,
-        //     skipDryRun: true,
-        //     gas: 2000000
-        // },
-        // rskTestnet: {
-        //     provider() {
-        //         return new HDWalletProvider('chimney toss kit now firm true scan laundry hazard buffalo tiny west',
-        //             'https://testnet.sovryn.app/rpc', 0, 31);
-        //     },
-        //     network_id: 31,
-        //     gasPrice: 71680400, // 71GWei,
-        //     skipDryRun: true,
-        //     networkCheckTimeout: 1e9
-        // },
-        // rsk: {
-        //     provider() {
-        //         return new HDWalletProvider('chimney toss kit now firm true scan laundry hazard buffalo tiny west', // totally bogus
-        //             'wss://mainnet.sovryn.app/ws', 0, 30);
-        //     },
-        //     network_id: 30,
-        //     gasPrice: 71680400, // 71GWei,
-        //     skipDryRun: true,
-        //     networkCheckTimeout: 1e9
-        // },
+        rinkeby: {
+            accounts: {
+                mnemonic: "seek danger physical menu pen arrest clutch blade weird detect digital frog",
+                initialIndex: 0,
+                count: 3
+            },
+            url: "https://rinkeby.infura.io/v3/4326f844557341a89a24bdcfc571fc10",
+            chainId: 4,
+            gasPrice: 1000000000, // 100 GWei,
+            gas: 2000000,
+            timeout: 160000
+        },
+        kovan: {
+            accounts: {
+                mnemonic: "seek danger physical menu pen arrest clutch blade weird detect digital frog",
+                initialIndex: 0,
+                count: 42
+            },
+            url: "wss://kovan.infura.io/ws/v3/42af85fbc97845a0974cbbf003834c28",
+            chainId: 42,
+            gasPrice: 20000000000, // 20 GWei,
+            gas: 2000000
+        },
+        rskTestnet: {
+            accounts: {
+                mnemonic: "chimney toss kit now firm true scan laundry hazard buffalo tiny west",
+                initialIndex: 0,
+                count: 31
+            },
+            url: 'https://testnet.sovryn.app/rpc',
+            chainId: 31,
+            gasPrice: 71680400, // 71GWei,
+            timeout: 1e9
+        },
+        rsk: {
+            accounts: {
+                mnemonic: "chimney toss kit now firm true scan laundry hazard buffalo tiny west",
+                initialIndex: 0,
+                count: 30
+            },
+            url: 'wss://mainnet.sovryn.app/ws',
+            chainId: 30,
+            gasPrice: 71680400, // 71GWei,
+            timeout: 1e9
+        }
     },
     solidity: {
         version: "0.5.16",
