@@ -143,8 +143,9 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
         const feesManagerProxy = await conditionalDeploy(FeesManagerProxy, `${symbol}_FeesManagerProxy`, { from: default_ }, deploy);
 
         await conditionalInitialize(`${symbol}_FeesManagerProxy`,
-            async () => feesManagerProxy.initialize(feesManager.address, _admin, "0x")
+            async () => { await feesManagerProxy.methods["initialize(address,address,bytes)"](feesManager.address, _admin, "0x"); }
         );
+
         const feesManagerFake = await FeesManager.at(feesManagerProxy.address);
 
         const masset = await conditionalDeploy(MassetV3, `${symbol}_MassetV3`, { from: default_ }, deploy);

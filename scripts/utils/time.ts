@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import humanizeDuration from "humanize-duration";
-import { BN } from "../../../test-utils/tools";
+import { BN } from "../../test-utils/tools";
 
 export const nowSimple = (): number => Math.ceil(Date.now() / 1000);
 
