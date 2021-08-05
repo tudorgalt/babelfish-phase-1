@@ -60,7 +60,7 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
         await conditionalInitialize(`${symbol}_MassetProxy`, async () => {
             await dMassetProxy.methods["initialize(address,address,bytes)"](
                 dMasset.address,
-                !isDevelopmentNetwork(network.name) ? addressesForInstance.multisig : _admin,
+                addressesForInstance.multisig || _admin,
                 initdata,
             );
         });

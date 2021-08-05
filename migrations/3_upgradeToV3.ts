@@ -2,7 +2,7 @@ import { ZERO_ADDRESS } from "@utils/constants";
 import { tokens } from "@utils/tools";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { MassetV3Instance } from "types/generated";
-import addresses, { BassetInstanceDetails, isDevelopmentNetwork } from './utils/addresses';
+import addresses, { BassetInstanceDetails, hasMultisigAddress, isDevelopmentNetwork } from './utils/addresses';
 import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "./utils/state";
 
 const ERC20Mintable = artifacts.require("ERC20Mintable");
@@ -122,7 +122,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
 
             await Promise.all(promises);
 
-            if(!isDevelopmentNetwork(network.name)) {
+            if(hasMultisigAddress(addressesForInstance)) {
                 if (await basketManagerFake.owner() === default_) {
                     await basketManagerFake.transferOwnership(addressesForInstance.multisig);
                 }

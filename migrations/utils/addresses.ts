@@ -23,6 +23,10 @@ export const isDevelopmentNetwork = (networkName: string): networkName is Develo
     return developmentNetworks.includes(networkName as DevelopmentNetworks);
 };
 
+export const hasMultisigAddress = (bassetDetails: BassetInstanceDetails): bassetDetails is Required<BassetInstanceDetails> => {
+    return typeof bassetDetails.multisig === "string";
+};
+
 const addresses: Addresses = {
     hardhat: {
         XUSD: {
