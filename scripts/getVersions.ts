@@ -1,22 +1,30 @@
 /* eslint-disable no-console */
 import hre from "hardhat";
+import Logs from "node-logs";
 import { getDeployed, setNetwork } from "migrations/utils/state";
 
 const MassetV3 = artifacts.require("MassetV3");
 const BasketManagerV3 = artifacts.require("BasketManagerV3");
 
+const logger = new Logs().showInConsole(true);
+
 const getVersions = async () => {
     const { network } = hre;
     setNetwork(network.name);
-    
+
     const logVersionsForInstance = async (symbol: string) => {
-        console.info(`\n---------- ${symbol} ----------\n`);
+        logger.warn(`-------------------- ${symbol} --------------------\n`);
 
-        const massetMock = await getDeployed(MassetV3, `${symbol}_MassetProxy`);
-        console.info(`Masset version: `, await massetMock.getVersion());
+        try {
+            const massetMock = await getDeployed(MassetV3, `${symbol}_MassetProxy`);
+            logger.success(`-- Masset version: ${await massetMock.getVersion()}`);
 
-        const basketManagerMock = await getDeployed(BasketManagerV3, `${symbol}_MassetProxy`);
-        console.info(`Basket Manager version: `, await basketManagerMock.getVersion());
+            const basketManagerMock = await getDeployed(BasketManagerV3, `${symbol}_MassetProxy`);
+            logger.success(`-- Basket Manager version: ${await basketManagerMock.getVersion()}\n`);
+        } catch (e) {
+            logger.err("error", ["bold"]);
+            console.log(e);
+        }
     };
 
     await logVersionsForInstance('XUSD');

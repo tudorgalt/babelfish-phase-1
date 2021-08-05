@@ -77,6 +77,7 @@
     "hardhat": "^2.0.3",
     "hardhat-gas-reporter": "^1.0.1",
     "hardhat-typechain": "^0.3.3",
+    "node-logs": "^1.1.0",
     "sol-merger": "^3.0.1",
     "solidity-coverage": "^0.7.12",
     "ts-generator": "^0.1.1",
