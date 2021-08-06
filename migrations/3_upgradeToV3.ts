@@ -87,7 +87,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             await basset1.mint(default_, tokens(1000));
 
             addressesForInstance.bassets = [basset1.address, basset2.address, basset3.address];
-            addressesForInstance.factors = [1, 1, 1];
+            addressesForInstance.factors = [-10, 1, 1];
             addressesForInstance.bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
             addressesForInstance.ratios = [300, 300, 400];
         }
