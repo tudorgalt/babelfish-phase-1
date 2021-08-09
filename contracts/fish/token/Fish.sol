@@ -1,12 +1,12 @@
 pragma solidity ^0.5.17;
 
-import "../openzeppelin/ERC20Detailed.sol";
-import "../openzeppelin/ERC20.sol";
-import "../openzeppelin/Ownable.sol";
+import "@openzeppelin/ERC20Detailed.sol";
+import "@openzeppelin/ERC20.sol";
+import "@openzeppelin/Ownable.sol";
 import "./IApproveAndCall.sol";
 
 /**
- * @title Sovryn Token: SOV is an ERC-20 token contract for Sovryn governance.
+ * @title Fish Token: FSH is an ERC-20 token contract for BabelFish governance.
  *
  * @notice This contract accounts for all holders' balances.
  *
@@ -14,9 +14,9 @@ import "./IApproveAndCall.sol";
  *   The owner of the token contract can mint/burn tokens to/from any account
  *   based upon previous governance voting and approval.
  * */
-contract SOV is ERC20, ERC20Detailed, Ownable {
-	string constant NAME = "Sovryn Token";
-	string constant SYMBOL = "SOV";
+contract Fish is ERC20, ERC20Detailed, Ownable {
+	string constant NAME = "Fish Token";
+	string constant SYMBOL = "FSH";
 	uint8 constant DECIMALS = 18;
 
 	/**

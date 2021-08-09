@@ -6,8 +6,8 @@ pragma solidity ^0.5.17;
  */
 interface IApproveAndCall {
 	/**
-	 * @notice Receives approval from SOV token.
-	 * @param _sender The sender of SOV.approveAndCall function.
+	 * @notice Receives approval from Fish token.
+	 * @param _sender The sender of Fish.approveAndCall function.
 	 * @param _amount The amount was approved.
 	 * @param _token The address of token.
 	 * @param _data The data will be used for low level call.
