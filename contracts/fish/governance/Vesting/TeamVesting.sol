@@ -1,14 +1,14 @@
 pragma solidity ^0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "../../openzeppelin/Ownable.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "../../interfaces/IERC20.sol";
 import "../Staking/Staking.sol";
 import "../IFeeSharingProxy.sol";
 import "./IVesting.sol";
 import "../ApprovalReceiver.sol";
 import "./VestingStorage.sol";
-import "../../proxy/Proxy.sol";
+import "../proxy/Proxy.sol";
 
 /**
  * @title Team Vesting Contract.

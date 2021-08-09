@@ -13,7 +13,7 @@ export default {
         localhost: { url: "http://localhost:87545" },
     },
     solidity: {
-        version: "0.5.16",
+        version: "0.5.17",
         settings: {
             optimizer: {
                 enabled: false,

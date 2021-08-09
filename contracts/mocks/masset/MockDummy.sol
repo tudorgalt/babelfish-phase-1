@@ -1,4 +1,4 @@
-pragma solidity 0.5.16;
+pragma solidity ^0.5.16;
 
 contract IMockDummy {
     function getVersion() external pure returns(string memory);

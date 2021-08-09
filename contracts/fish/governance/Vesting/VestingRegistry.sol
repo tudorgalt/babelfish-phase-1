@@ -1,13 +1,13 @@
 pragma solidity ^0.5.17;
 
-import "../../openzeppelin/Ownable.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "../../interfaces/IERC20.sol";
 import "../Staking/IStaking.sol";
 import "../IFeeSharingProxy.sol";
 import "./IVestingFactory.sol";
 import "./IVesting.sol";
 import "./ITeamVesting.sol";
-import "../../openzeppelin/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * @title Vesting Registry contract.

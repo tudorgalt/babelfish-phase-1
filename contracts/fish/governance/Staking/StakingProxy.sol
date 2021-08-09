@@ -1,7 +1,7 @@
 pragma solidity ^0.5.17;
 
 import "./StakingStorage.sol";
-import "../../proxy/UpgradableProxy.sol";
+import "../proxy/UpgradableProxy.sol";
 
 /**
  * @title Staking Proxy contract.

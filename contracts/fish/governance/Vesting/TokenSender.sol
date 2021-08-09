@@ -1,6 +1,6 @@
 pragma solidity ^0.5.17;
 
-import "../../openzeppelin/Ownable.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "../../interfaces/IERC20.sol";
 
 /**

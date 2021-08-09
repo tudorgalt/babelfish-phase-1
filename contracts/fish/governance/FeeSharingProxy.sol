@@ -1,8 +1,8 @@
 pragma solidity ^0.5.17;
 
 import "./Staking/SafeMath96.sol";
-import "../openzeppelin/SafeMath.sol";
-import "../openzeppelin/SafeERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "./IFeeSharingProxy.sol";
 import "./Staking/IStaking.sol";
 

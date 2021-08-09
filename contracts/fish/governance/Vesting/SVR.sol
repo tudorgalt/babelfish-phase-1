@@ -1,9 +1,9 @@
 pragma solidity ^0.5.17;
 
-import "../../openzeppelin/ERC20Detailed.sol";
-import "../../openzeppelin/IERC20_.sol";
-import "../../openzeppelin/ERC20.sol";
-import "../../openzeppelin/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "../Staking/SafeMath96.sol";
 import "../Staking/IStaking.sol";
 import "../../token/IApproveAndCall.sol";
@@ -35,7 +35,7 @@ contract SVR is ERC20, ERC20Detailed, Ownable, SafeMath96, ApprovalReceiver {
 	uint96 constant DIRECT_TRANSFER_PART = 14;
 
 	/// @notice The SOV token contract.
-	IERC20_ public SOV;
+	IERC20 public SOV;
 	/// @notice The staking contract.
 	IStaking public staking;
 
@@ -55,7 +55,7 @@ contract SVR is ERC20, ERC20Detailed, Ownable, SafeMath96, ApprovalReceiver {
 		require(_SOV != address(0), "SVR::SOV address invalid");
 		require(_staking != address(0), "SVR::staking address invalid");
 
-		SOV = IERC20_(_SOV);
+		SOV = IERC20(_SOV);
 		staking = IStaking(_staking);
 	}
 

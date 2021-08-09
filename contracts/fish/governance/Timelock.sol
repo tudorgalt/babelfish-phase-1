@@ -1,6 +1,6 @@
 pragma solidity ^0.5.17;
 
-import "../openzeppelin/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./ErrorDecoder.sol";
 
 interface ITimelock {

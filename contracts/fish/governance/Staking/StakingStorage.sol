@@ -1,7 +1,7 @@
 pragma solidity ^0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "../../openzeppelin/Ownable.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "../../interfaces/IERC20.sol";
 import "../IFeeSharingProxy.sol";
 
