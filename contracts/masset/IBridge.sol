@@ -1,5 +1,11 @@
 pragma solidity 0.5.16;
 
+/**
+ * @title IBridge
+ * @dev Interface of the Bridge contract.
+ * Allows to exchange tokens from the other chains.
+ */
+
 interface IBridge {
     function version() external pure returns (string memory);
 

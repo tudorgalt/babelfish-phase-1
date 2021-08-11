@@ -30,7 +30,7 @@
     "prettify": "prettier --write test/*.ts test/**/*.ts types/generated/*.ts types/*.ts artifacts/*.ts",
     "flatten": "sol-merger \"./contracts/**/*.sol\" ./_flat",
     "prepublishOnly": "yarn run compile",
-    "docgen": "yarn run hardhat docgen"
+    "docgen": "yarn hardhat compile --force && yarn run hardhat docgen"
   },
   "repository": {
     "type": "git",
