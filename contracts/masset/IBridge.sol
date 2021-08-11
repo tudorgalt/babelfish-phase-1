@@ -2,8 +2,7 @@ pragma solidity 0.5.16;
 
 /**
  * @title IBridge
- * @dev Interface of the Bridge contract.
- * Allows to exchange tokens from the other chains.
+ * @dev Interface of the bridge. Bridge is used to exchange basset tokens from another blockchains.
  */
 
 interface IBridge {

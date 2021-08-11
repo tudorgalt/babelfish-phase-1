@@ -13,6 +13,13 @@ import { BasketManagerV3 } from "./BasketManagerV3.sol";
 import { FeesVault } from "../vault/FeesVault.sol";
 import "./Token.sol";
 
+/**
+ * @title MassetV3
+ * @dev Contract is responsible for managing mAsset and bAsset.
+ * Used for minting and burning tokens, calculating fees and calling the bridge 
+ * if transaction based on token from another blockchain.
+ */
+
 contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard {
 
     using SafeMath for uint256;
@@ -43,6 +50,9 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 bassetQuantity
     );
 
+    /**
+     * @dev Event emitted when tokensReceived method is called by the bridge
+     */
     event onTokensReceivedCalled(
         address operator,
         address from,
@@ -100,7 +110,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     /**
      * @dev Calculate and return fee amount based on massetAmount
      * @param massetAmount  amount of masset to deposit / withdraw
-     * @return fee          calculated   amount of fee
+     * @return fee          calculated amount of fee
      */
     function calculateFee(uint256 massetAmount, uint256 feeAmount) internal pure returns(uint256 fee) {
         return massetAmount.mul(feeAmount).div(FEE_PRECISION);
@@ -108,6 +118,12 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // public
 
+    /**
+   * @dev Contract initializer.
+   * @param _basketManagerAddress           Address of the basket manager
+   * @param _tokenAddress                   Address of the mAsset token
+   * @param _registerAsERC777RecipientFlag  bool determine if contract should be register as ERC777 recipient
+   */
     function initialize(
         address _basketManagerAddress,
         address _tokenAddress,
@@ -156,7 +172,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      *      must have approval to spend the senders bAsset
      * @param _bAsset         Address of the bAsset to mint
      * @param _bAssetQuantity Quantity in bAsset units
-     * @param _recipient receipient of the newly minted mAsset tokens
+     * @param _recipient      Receipient of the newly minted mAsset tokens
      * @return massetMinted   Number of newly minted mAssets
      */
     function mintTo(
@@ -367,6 +383,15 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return abi.encode(_address);
     }
 
+    /**
+     * @dev This is called by the bridge to let us know tokens have been received
+     * @param _operator         Address operator requesting the transfer
+     * @param _from             Address token holder address
+     * @param _to               Address recipient address
+     * @param _amount           uint256 amount of tokens to transfer
+     * @param _userData         Bytes extra information provided by the token holder (if any)
+     * @param _operatorData     Bytes extra information provided by the operator (if any)
+     */
     function tokensReceived(
         address _operator,
         address _from,

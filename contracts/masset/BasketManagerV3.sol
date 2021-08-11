@@ -4,17 +4,49 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 
+
+/**
+ * @title BasketManagerV3
+ * @dev Contract is responsible for mAsset and bAsset exchange process and 
+ * managing basket with bAsset tokens. 
+ * Allows to add and/or remove bAsset, calculate balances, converts tokens quantity
+ * to adjust precisions or set/get parameters: bridge, factor, range and paused.
+ */
+
 contract BasketManagerV3 is InitializableOwnable {
 
     using SafeMath for uint256;
 
     // Events
 
+    /**
+     * @dev Event emitted when basset added
+     */
     event BassetAdded (address basset);
+
+    /**
+     * @dev Event emitted when basset removed
+     */
     event BassetRemoved (address basset);
+
+    /**
+     * @dev Event emitted when factor changes 
+     */
     event FactorChanged (address basset, int256 factor);
+
+    /**
+     * @dev Event emitted when bridge changes 
+     */
     event BridgeChanged (address basset, address bridge);
+
+    /**
+     * @dev Event emitted when range changes
+     */
     event RangeChanged (address basset, uint256 min, uint256 max);
+
+    /**
+     * @dev Event emitted when paused changes
+     */
     event PausedChanged (address basset, bool paused);
 
     uint256 constant MAX_VALUE = 1000;
@@ -49,7 +81,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     /**
     * @dev Prevents a contract from making actions on paused bassets.
-    * this method is called and separated from modifier to optimize bytecode and save gas.
+    * This method is called and separated from modifier to optimize bytecode and save gas.
     */
     function _notPaused(address _basset) internal view {
         require(!pausedMap[_basset], "basset is paused");
@@ -58,7 +90,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     /**
     * @dev Prevents a contract from making actions on invalid bassets.
-    * this method is called and separated from modifier to optimize bytecode and save gas.
+    * This method is called and separated from modifier to optimize bytecode and save gas.
     */
     function _validBasset(address _basset) internal view {
         require(factorMap[_basset] != 0, "invalid basset");
@@ -66,6 +98,10 @@ contract BasketManagerV3 is InitializableOwnable {
 
     // Initializer
 
+    /**
+   * @dev Contract initializer.
+   * @param _masset     Address of the mAsset
+   */
     function initialize(address _masset) external {
         require(masset == address(0), "already initialized");
         _initialize();
