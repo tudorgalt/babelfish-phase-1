@@ -4,7 +4,7 @@ import { InitializableAdminUpgradeabilityProxy } from "../helpers/InitializableA
 
 /**
  * @title BasketManagerProxy
- * @dev This contract implements a proxy that allows to change the
+ * @dev Implements a proxy that allows to change the
  * BasketManager contract address.
  */
 contract BasketManagerProxy is InitializableAdminUpgradeabilityProxy {}

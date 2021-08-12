@@ -4,7 +4,7 @@ import { InitializableAdminUpgradeabilityProxy } from "../helpers/InitializableA
 
 /**
  * @title FeesVaultProxy
- * @dev This contract implements a proxy that allows to change the
+ * @dev Implements a proxy that allows to change the
  * FeesVault contract address.
  */
 contract FeesVaultProxy is InitializableAdminUpgradeabilityProxy {}

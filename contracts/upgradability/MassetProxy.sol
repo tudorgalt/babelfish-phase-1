@@ -4,7 +4,7 @@ import { InitializableAdminUpgradeabilityProxy } from "../helpers/InitializableA
 
 /**
  * @title MassetProxy
- * @dev This contract implements a proxy that allows to change the
- * Masset contract address.
+ * @dev Implements a proxy that allows to change the
+ * mAsset contract address.
  */
 contract MassetProxy is InitializableAdminUpgradeabilityProxy {}
