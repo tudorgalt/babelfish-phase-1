@@ -1,5 +1,18 @@
 ## **1. Project overview**
-Sovryn is a decentralized protocol for Bitcoin lending and margin trading. The protocol is built on Bitcoin-based smart contract platform RSK. It can be accessed through a web3 portal or integrated into new existing exchanges. 
+Sovryn is a non-custodial and permission-less smart contract based system for bitcoin lending, borrowing and margin trading. With Sovryn, you send your Bitcoin to a smart contract that allows you to keep custody of your private keys, allowing you to withdraw your funds at any time. Sovryn is permissionless in the sense that no one can censor a transaction, ban your account or require you to undergo KYC before trading.
+Sovryn is built on the Rootstock(RSK) platform, which is a Bitcoin sidechain compatible with the Ethereum Virtual Machine that can support the smart contracts protocol.
+
+Currently Available Features: 
+- Spot-Exchange - a low cost, low-slippage, AMM allowing instant trades between tokens.
+- Margin Trading - Creates up to 5X long/short trades, allowing users to borrow leverage from the lending pool.
+- Lending Pool - Allows HODLers to earn interest by lending tokens to margin traders and borrowers.
+- FastBTC Relay - Allows use of bitcoin almost instantly with smart contracts and decentralized products, from any bitcoin wallet.
+     
+Future Features:
+- Borrow - Allows users and smart contracts to borrow tokens from the lending pool. All lending is over-collateralized.
+- Perpetual Swaps - BTC backed perpetual swaps allowing trades with up to 20X leverage.
+- Bitcoin-backed stablecoin - users can use a USD-pegged token, backed by overcollateralized bitcoin.
+
 
 ## **2. Diagram**
 
@@ -46,8 +59,9 @@ Sources:
 * vault/
   - FeesVault 
 
-## **4. yarn commands**
-There are some commands which improve work with the code. All of them can be found in _pachage.json_ file. To execute command it enough to write _yarn command_, eg _'yarn migrate'_.
+## **4. yarn scripts**
+Some scripts were defined in _pachage.json_ file. To execute the script run the following command: _yarn command_, for example _'yarn migrate'_. 
+Here is the list of available scripts:
 -    "migrate" - run migrations development network
 -    "migrate:ropsten" - run migrations ropsten network
 -    "migrate:kovan" - run migrations kowan network
