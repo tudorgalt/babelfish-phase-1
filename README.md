@@ -1,5 +1,5 @@
 ## **1. Project overview**
-Sovryn is a decentralized protocol for Bitcoin lending and margin trading. The protocol is built on Bitcoin-based smart contract platform RSK.
+Sovryn is a decentralized protocol for Bitcoin lending and margin trading. The protocol is built on Bitcoin-based smart contract platform RSK. It can be accessed through a web3 portal or integrated into new existing exchanges. 
 
 ## **2. Diagram**
 
@@ -46,7 +46,7 @@ Sources:
 * vault/
   - FeesVault 
 
-**4. yarn commands**
+## **4. yarn commands**
 There are some commands which improve work with the code. All of them can be found in _pachage.json_ file. To execute command it enough to write _yarn command_, eg _'yarn migrate'_.
 -    "migrate" - run migrations development network
 -    "migrate:ropsten" - run migrations ropsten network
