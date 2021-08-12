@@ -47,3 +47,23 @@ Sources:
   - FeesVault 
 
 **4. yarn commands**
+There are some commands which improve work with the code. All of them can be found in _pachage.json_ file. To execute command it enough to write 'yarn <command>', eg _'yarn migrate'_.
+    "migrate"
+    "migrate:ropsten"
+    "migrate:kovan"
+    "migrate:rskTestnet"
+    "lint"
+    "lint-ts"
+    "lint-sol"
+    "coverage"
+    "script"
+    "script:rskTestnet"
+    "script:rsk"
+    "test"
+    "test-file"
+    "test:fork"
+    "compile"
+    "prettify"
+    "flatten"
+    "prepublishOnly"
+    "docgen"
