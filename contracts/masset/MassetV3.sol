@@ -33,7 +33,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param minter            Address of the minter.
      * @param recipient         Address of the recipient.
      * @param massetQuantity    Masset quantity.
-     * @param basset            Address of the bAsset.
+     * @param bAsset            Address of the bAsset.
      * @param bassetQuantity    Basset quantity.
      */
     event Minted(
@@ -49,7 +49,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param redeemer          Address of the redeemer.
      * @param recipient         Address of the recipient.
      * @param massetQuantity    Masset quantity.
-     * @param basset            Address of the bAsset.
+     * @param bAsset            Address of the bAsset.
      * @param bassetQuantity    Basset quantity.
      */
     event Redeemed(
