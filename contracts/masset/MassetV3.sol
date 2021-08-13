@@ -30,6 +30,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev Emitted when deposit is completed.
+     * @param minter            Address of the minter.
+     * @param recipient         Address of the recipient.
+     * @param massetQuantity    Masset quantity.
+     * @param basset            Address of the bAsset.
+     * @param bassetQuantity    Basset quantity.
      */
     event Minted(
         address indexed minter,
@@ -41,6 +46,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev Emitted when withdrawal is completed.
+     * @param redeemer          Address of the redeemer.
+     * @param recipient         Address of the recipient.
+     * @param massetQuantity    Masset quantity.
+     * @param basset            Address of the bAsset.
+     * @param bassetQuantity    Basset quantity.
      */
     event Redeemed(
         address indexed redeemer,
@@ -52,6 +62,12 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev Emitted when tokensReceived method is called by the bridge.
+     * @param operator         Address operator requesting the transfer.
+     * @param from             Address token holder address.
+     * @param to               Address recipient address.
+     * @param amount           uint256 amount of tokens to transfer.
+     * @param userData         Bytes extra information provided by the token holder (if any).
+     * @param operatorData     Bytes extra information provided by the operator (if any).
      */
     event onTokensReceivedCalled(
         address operator,
@@ -64,6 +80,10 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev Emitted when onTokensMinted method is called by the bridge.
+     * @param sender           Address of the sender.
+     * @param orderAmount      Units of the masset to redeem.
+     * @param tokenAddress     Address of the bAsset to redeem.
+     * @param userData         Address of the final recipient as ABI encoded bytes.
      */
     event onTokensMintedCalled(
         address indexed sender,
@@ -74,21 +94,25 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev Emitted when deposit fee has changed.
+     * @param depositFee            Amount of the fee.
      */
     event DepositFeeChanged (uint256 depositFee);
 
     /**
      * @dev Emitted when deposit bridge fee has changed.
+     * @param depositBridgeFee      Amount of the fee.
      */
     event DepositBridgeFeeChanged (uint256 depositBridgeFee);
 
     /**
      * @dev Emitted when withdrawal fee has changed.
+     * @param withdrawalFee         Amount of the fee.
      */
     event WithdrawalFeeChanged (uint256 withdrawalFee);
 
     /**
      * @dev Emitted when withdrawal bridge fee has changed.
+     * @param withdrawalBridgeFee   Amount of the fee.
      */
     event WithdrawalBridgeFeeChanged (uint256 withdrawalBridgeFee);
 
@@ -165,9 +189,9 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     ****************************************/
 
     /**
-     * @dev Mint a single bAsset, at a 1:1 ratio with the bAsset. This contract
+     * @dev Mint a single mAsset, at a 1:1 ratio with the bAsset. This contract
      *      must have approval to spend the senders bAsset.
-     * @param _bAsset         Address of the bAsset to mint.
+     * @param _bAsset         Address of the bAsset.
      * @param _bAssetQuantity Quantity in bAsset units.
      * @return massetMinted   Number of newly minted mAssets.
      */
@@ -183,11 +207,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     }
 
     /**
-     * @dev Mint a single bAsset, at a 1:1 ratio with the bAsset. This contract
-     *      must have approval to spend the senders bAsset.
-     * @param _bAsset         Address of the bAsset to mint.
+     * @dev Mint a single mAsset to recipient address, at a 1:1 ratio with the bAsset.
+     *      This contract must have approval to spend the senders bAsset.
+     * @param _bAsset         Address of the bAsset.
      * @param _bAssetQuantity Quantity in bAsset units.
-     * @param _recipient      Receipient of the newly minted mAsset tokens
+     * @param _recipient      Receipient of the newly minted mAsset tokens.
      * @return massetMinted   Number of newly minted mAssets.
      */
     function mintTo(
@@ -266,7 +290,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
-     *      relative Masset quantity from the sender. Sender also incurs a small fee, if any.
+     *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
      * @param _bAsset           Address of the bAsset to redeem.
      * @param _massetQuantity   Units of the masset to redeem.
      * @param _recipient        Address to credit with withdrawn bAssets.

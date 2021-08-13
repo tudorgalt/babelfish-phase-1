@@ -21,31 +21,42 @@ contract BasketManagerV3 is InitializableOwnable {
 
     /**
      * @dev Event emitted when basset added.
+     * @param basset Address of the bAsset contract.
      */
     event BassetAdded (address basset);
 
     /**
      * @dev Event emitted when basset removed.
+     * @param basset Address of the bAsset contract.
      */
     event BassetRemoved (address basset);
 
     /**
      * @dev Event emitted when factor changes.
+     * @param basset Address of the bAsset contract.
+     * @param factor Factor of fees.
      */
     event FactorChanged (address basset, int256 factor);
 
     /**
      * @dev Event emitted when bridge changes.
+     * @param basset Address of the bAsset contract.
+     * @param bridge Address of bridge.
      */
     event BridgeChanged (address basset, address bridge);
 
     /**
      * @dev Event emitted when range changes.
+     * @param basset    Address of the bAsset contract.
+     * @param min       Minimal value of range.
+     * @param max       Maximal value of range.
      */
     event RangeChanged (address basset, uint256 min, uint256 max);
 
     /**
      * @dev Event emitted when paused changes.
+     * @param basset    Address of the bAsset contract.
+     * @param paused    Determine if paused or not.
      */
     event PausedChanged (address basset, bool paused);
 
