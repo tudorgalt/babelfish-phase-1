@@ -6,6 +6,7 @@ require("@tenderly/hardhat-tenderly");
 
 require("ts-node/register");
 require("tsconfig-paths/register");
+require('hardhat-docgen');
 
 export default {
     networks: {
@@ -36,4 +37,9 @@ export default {
         username: "mStable",
         project: "mStable-contracts",
     },
+    docgen: {
+        path: './docs',
+        clear: true,
+        runOnCompile: true,
+      }
 };

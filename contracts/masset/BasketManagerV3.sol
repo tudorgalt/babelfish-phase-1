@@ -4,17 +4,60 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 
+
+/**
+ * @title BasketManagerV3
+ * @dev Contract is responsible for mAsset and bAsset exchange process and 
+ * managing basket with bAsset tokens. 
+ * Allows to add and/or remove bAsset, calculate balances, converts tokens quantity
+ * to adjust precisions or set/get parameters: bridge, factor, range and paused.
+ */
+
 contract BasketManagerV3 is InitializableOwnable {
 
     using SafeMath for uint256;
 
     // Events
 
+    /**
+     * @dev Event emitted when basset added.
+     * @param basset Address of the bAsset contract.
+     */
     event BassetAdded (address basset);
+
+    /**
+     * @dev Event emitted when basset removed.
+     * @param basset Address of the bAsset contract.
+     */
     event BassetRemoved (address basset);
+
+    /**
+     * @dev Event emitted when factor changes.
+     * @param basset Address of the bAsset contract.
+     * @param factor Factor of fees.
+     */
     event FactorChanged (address basset, int256 factor);
+
+    /**
+     * @dev Event emitted when bridge changes.
+     * @param basset Address of the bAsset contract.
+     * @param bridge Address of bridge.
+     */
     event BridgeChanged (address basset, address bridge);
+
+    /**
+     * @dev Event emitted when range changes.
+     * @param basset    Address of the bAsset contract.
+     * @param min       Minimal value of range.
+     * @param max       Maximal value of range.
+     */
     event RangeChanged (address basset, uint256 min, uint256 max);
+
+    /**
+     * @dev Event emitted when paused changes.
+     * @param basset    Address of the bAsset contract.
+     * @param paused    Determine if paused or not.
+     */
     event PausedChanged (address basset, bool paused);
 
     uint256 constant MAX_VALUE = 1000;
@@ -49,7 +92,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     /**
     * @dev Prevents a contract from making actions on paused bassets.
-    * this method is called and separated from modifier to optimize bytecode and save gas.
+    * This method is called and separated from modifier to optimize bytecode and save gas.
     */
     function _notPaused(address _basset) internal view {
         require(!pausedMap[_basset], "basset is paused");
@@ -58,7 +101,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     /**
     * @dev Prevents a contract from making actions on invalid bassets.
-    * this method is called and separated from modifier to optimize bytecode and save gas.
+    * This method is called and separated from modifier to optimize bytecode and save gas.
     */
     function _validBasset(address _basset) internal view {
         require(factorMap[_basset] != 0, "invalid basset");
@@ -66,6 +109,10 @@ contract BasketManagerV3 is InitializableOwnable {
 
     // Initializer
 
+    /**
+   * @dev Contract initializer.
+   * @param _masset     Address of the mAsset
+   */
     function initialize(address _masset) external {
         require(masset == address(0), "already initialized");
         _initialize();
@@ -76,17 +123,17 @@ contract BasketManagerV3 is InitializableOwnable {
     // Methods for Masset logic
 
     /**
-     * @dev Checks if bAasset is valid by checking its presence in the bassets list
+     * @dev Checks if bAasset is valid by checking its presence in the bassets list.
      */
     function isValidBasset(address _basset) public view returns(bool) {
         return (factorMap[_basset] != 0);
     }
 
     /**
-     * @dev Checks if ratio of bAssets in basket is appropriate to make a deposit of specific asset
-     * @param _basset           address of bAsset to deposit
-     * @param _bassetQuantity   amount of bAssets to deposit
-     * @return Flag indicating whether a deposit can be made
+     * @dev Checks if ratio of bAssets in basket is within limits to make a deposit of specific asset.
+     * @param _basset           Address of bAsset to deposit.
+     * @param _bassetQuantity   Amount of bAssets to deposit.
+     * @return Flag indicating whether a deposit can be made.
      */
     function checkBasketBalanceForDeposit(
         address _basset,
@@ -105,10 +152,10 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     /**
-     * @dev Checks if ratio of bAssets in basket is appropriate to make a withdrawal of specific asset
-     * @param _basset           address of bAsset to redeem
-     * @param _bassetQuantity   amount of bAssets to redeem
-     * @return Flag indicating whether a withdrawal can be made
+     * @dev Checks if ratio of bAssets in basket is within limits to make a withdrawal of specific asset.
+     * @param _basset           Address of bAsset to redeem.
+     * @param _bassetQuantity   Amount of bAssets to redeem.
+     * @return Flag indicating whether a withdrawal can be made.
      */
     function checkBasketBalanceForWithdrawal(
         address _basset,
@@ -131,12 +178,12 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     /**
-     * @dev Converts bAsset to mAsset quantity. This is used to adjust precisions.
-     *      Despite bAssets and mAssets are in 1:1 ratio, they may have diffrent factors.
+     * @dev Converts bAsset to mAsset quantity. This is used to adjust precision.
+     *      Despite bAssets and mAssets having 1:1 ratio, they may have diffrent decimal factors.
      *      Since the ratio may cause fractions, the bAsset is adjusted to match nearest non fraction amount and returned.
-     * @param _basset           address of bAsset
-     * @param _bassetQuantity   amount of bAssets to check
-     * @return Calculated amount of mAssets and Adjusted amount of bAssets
+     * @param _basset           Address of bAsset.
+     * @param _bassetQuantity   Amount of bAssets to check.
+     * @return Calculated amount of mAssets and Adjusted amount of bAssets.
      */
     function convertBassetToMassetQuantity(
         address _basset,
@@ -154,11 +201,11 @@ contract BasketManagerV3 is InitializableOwnable {
 
     /**
      * @dev Converts mAsset to bAsset quantity. This is used to adjust precisions.
-     *      Despite bAssets and mAssets are in 1:1 ratio, they may have diffrent factors.
+     *      Despite bAssets and mAssets having 1:1 ratio, they may have diffrent decimal factors.
      *      Since the ratio may cause fractions, the mAsset is adjusted to match nearest non fraction amount and returned.
-     * @param _basset           address of bAsset
-     * @param _massetQuantity   amount of mAssets to check
-     * @return Calculated amount of bAssets and Adjusted amount of mAssets
+     * @param _basset           Address of bAsset.
+     * @param _massetQuantity   Amount of mAssets to check.
+     * @return Calculated amount of bAssets and Adjusted amount of mAssets.
      */
     function convertMassetToBassetQuantity(
         address _basset,
@@ -177,8 +224,8 @@ contract BasketManagerV3 is InitializableOwnable {
     // Getters
 
     /**
-     * @dev Calculates total mAsset balance
-     * @return Calculated total balance
+     * @dev Calculates total mAsset balance.
+     * @return Calculated total balance.
      */
     function getTotalMassetBalance() public view returns (uint256 total) {
         for(uint i=0; i<bassetsArray.length; i++) {
@@ -221,13 +268,13 @@ contract BasketManagerV3 is InitializableOwnable {
     // Admin methods
 
     /**
-     * @dev Adds a new bAsset
-     * @param _basset       address of bAsset
-     * @param _factor       factor  amount
-     * @param _bridge       address of bridge
-     * @param _min          minimum ratio in basket
-     * @param _max          maximum ratio in basket
-     * @param _paused       flag to determine if basset should be paused
+     * @dev Adds a new bAsset.
+     * @param _basset       Address of bAsset.
+     * @param _factor       Factor amount.
+     * @param _bridge       Address of bridge.
+     * @param _min          Minimum ratio in basket.
+     * @param _max          Maximum ratio in basket.
+     * @param _paused       Flag to determine if basset should be paused.
      */
     function addBasset(address _basset, int256 _factor, address _bridge, uint256 _min, uint256 _max, bool _paused) public onlyOwner {
         require(_basset != address(0), "invalid basset address");
@@ -245,8 +292,8 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     /**
-     * @dev Adds multiple bAssets
-     * @notice All parameters must be arrays with proper order
+     * @dev Adds multiple bAssets.
+     * @notice All parameters must be arrays with proper order.
      */
     function addBassets(
         address[] memory _bassets, int256[] memory _factors, address[] memory _bridges,
@@ -275,6 +322,11 @@ contract BasketManagerV3 is InitializableOwnable {
         emit RangeChanged(_basset, _min, _max);
     }
 
+    /**
+     * @dev Returns true if the number is power of ten.
+     * @param x     Number to be checked.
+     * @return      Is the number power of ten.
+     */
     function isPowerOfTen(int256 x) public pure returns (bool result) {
         uint256 number;
 
@@ -310,7 +362,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     /**
      * @dev Removes bAsset
-     * @param _basset       Address of bAsset to remove
+     * @param _basset       Address of bAsset to remove.
      */
     function removeBasset(address _basset) public validBasset(_basset) onlyOwner {
         require(getBassetBalance(_basset) == 0, "balance not zero");

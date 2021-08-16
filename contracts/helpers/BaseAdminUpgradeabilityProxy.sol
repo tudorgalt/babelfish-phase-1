@@ -4,7 +4,7 @@ import "@openzeppelin/upgrades/contracts/upgradeability/UpgradeabilityProxy.sol"
 
 // This is copied from @openzeppelin with some modifications
 // to _willFallback() to allow fall-through when caller is admin.
-// Without this modification it will be imp[ossible to use a single multisig wallet
+// Without this modification it will be impossible to use a single multisig wallet
 // or governance contract to both upgrade a contract and call ownerOnly functions on it.
 
 /**

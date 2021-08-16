@@ -2,4 +2,9 @@ pragma solidity 0.5.16;
 
 import { InitializableAdminUpgradeabilityProxy } from "../helpers/InitializableAdminUpgradeabilityProxy.sol";
 
+/**
+ * @title MassetProxy
+ * @dev Implements a proxy that allows to change the
+ * mAsset contract address.
+ */
 contract MassetProxy is InitializableAdminUpgradeabilityProxy {}

@@ -11,7 +11,7 @@ import "./BaseAdminUpgradeabilityProxy.sol";
 contract InitializableAdminUpgradeabilityProxy is BaseAdminUpgradeabilityProxy, InitializableUpgradeabilityProxy {
   /**
    * Contract initializer.
-   * @param _logic address of the initial implementation.
+   * @param _logic Address of the initial implementation.
    * @param _admin Address of the proxy administrator.
    * @param _data Data to send as msg.data to the implementation to initialize the proxied contract.
    * It should include the signature and the parameters of the function to be called, as described in
