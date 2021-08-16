@@ -3,6 +3,7 @@
 Documentation for contracts can be found in /docs directory.
 To generate documentation use "yarn docgen" command.
 
+The letest version is published here: https://babelfishprotocol.github.io/babelfish-phase-1/#/
 ## **2. Scripts**
 
 Project scripts are defined in _pachage.json_ file. To execute the script run the following command: _yarn command_, for example _'yarn migrate'_. 
