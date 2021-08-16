@@ -120,7 +120,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev Factor of fees.
-     * @notice 1000 means that fees are in promils.
+     * @notice 1000 means that fees are in per mille.
      */
     uint256 constant private FEE_PRECISION = 1000;
     bytes32 constant ERC777_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
@@ -149,7 +149,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     /**
      * @dev Calculate and return fee amount based on massetAmount.
      * @param massetAmount  Amount of masset to deposit / withdraw.
-     * @return fee          Calculated amount of fee.
+     * @return fee          Calculated fee amount.
      */
     function calculateFee(uint256 massetAmount, uint256 feeAmount) internal pure returns(uint256 fee) {
         return massetAmount.mul(feeAmount).div(FEE_PRECISION);
@@ -230,6 +230,14 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
               MINTING (INTERNAL)
     ****************************************/
 
+    /**
+     * @dev Mint a single mAsset to recipient address, at a 1:1 ratio with the bAsset.
+     *      This contract must have approval to spend the senders bAsset.
+     * @param _basset         Address of the bAsset.
+     * @param _bassetQuantity Quantity in bAsset units.
+     * @param _recipient      Receipient of the newly minted mAsset tokens.
+     * @return massetMinted   Number of newly minted mAssets.
+     */
     function _mintTo(
         address _basset,
         uint256 _bassetQuantity,
@@ -308,6 +316,15 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
               REDEMPTION (INTERNAL)
     ****************************************/
 
+    /**
+     * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
+     *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
+     * @param _basset           Address of the bAsset to redeem.
+     * @param _massetQuantity   Units of the masset to redeem.
+     * @param _recipient        Address to credit with withdrawn bAssets.
+     * @param bridgeFlag        Flag that indicates if the reedem proces is used with conjunction with bridge.
+     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+     */
     function _redeemTo(
         address _basset,
         uint256 _massetQuantity,

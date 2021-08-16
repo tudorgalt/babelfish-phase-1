@@ -130,7 +130,7 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     /**
-     * @dev Checks if ratio of bAssets in basket is appropriate to make a deposit of specific asset.
+     * @dev Checks if ratio of bAssets in basket is within limits to make a deposit of specific asset.
      * @param _basset           Address of bAsset to deposit.
      * @param _bassetQuantity   Amount of bAssets to deposit.
      * @return Flag indicating whether a deposit can be made.
@@ -152,7 +152,7 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     /**
-     * @dev Checks if ratio of bAssets in basket is appropriate to make a withdrawal of specific asset.
+     * @dev Checks if ratio of bAssets in basket is within limits to make a withdrawal of specific asset.
      * @param _basset           Address of bAsset to redeem.
      * @param _bassetQuantity   Amount of bAssets to redeem.
      * @return Flag indicating whether a withdrawal can be made.
@@ -178,8 +178,8 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     /**
-     * @dev Converts bAsset to mAsset quantity. This is used to adjust precisions.
-     *      Despite bAssets and mAssets are in 1:1 ratio, they may have diffrent factors.
+     * @dev Converts bAsset to mAsset quantity. This is used to adjust precision.
+     *      Despite bAssets and mAssets having 1:1 ratio, they may have diffrent decimal factors.
      *      Since the ratio may cause fractions, the bAsset is adjusted to match nearest non fraction amount and returned.
      * @param _basset           Address of bAsset.
      * @param _bassetQuantity   Amount of bAssets to check.
@@ -201,7 +201,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     /**
      * @dev Converts mAsset to bAsset quantity. This is used to adjust precisions.
-     *      Despite bAssets and mAssets are in 1:1 ratio, they may have diffrent factors.
+     *      Despite bAssets and mAssets having 1:1 ratio, they may have diffrent decimal factors.
      *      Since the ratio may cause fractions, the mAsset is adjusted to match nearest non fraction amount and returned.
      * @param _basset           Address of bAsset.
      * @param _massetQuantity   Amount of mAssets to check.
