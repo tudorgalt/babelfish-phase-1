@@ -63,7 +63,10 @@ export async function readState(): Promise<any> {
         const emptyState = {};
 
         fs.readFile(filePath, (readErr, data) => {
-            if (!readErr) resolve(JSON.parse(data.toString('utf-8')));
+            if (!readErr) {
+                resolve(JSON.parse(data.toString('utf-8')));
+                return;
+            }
  
             fs.writeFile(filePath, JSON.stringify(emptyState), (writeErr) => {
                 if(writeErr) reject(writeErr);
