@@ -5,9 +5,9 @@ import { getDeployed, getInfo, setNetwork } from "../../migrations/state";
 
 export default async function getVersions(truffle: Truffle, networkName: string): Promise<void> {
     setNetwork(networkName);
-    const web3 = new Web3("http://localhost:7545");
 
     const artifacts: Truffle.Artifacts = truffle.artifacts;
+    const web3: Web3 = truffle.web3;
 
     const Timelock = artifacts.require("Timelock");
     const GovernorAlpha = artifacts.require("GovernorAlpha");
