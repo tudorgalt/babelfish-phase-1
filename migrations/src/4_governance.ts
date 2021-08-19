@@ -1,8 +1,7 @@
 import Web3 from 'web3';
-import addresses from '../addresses';
 import { BN } from "@utils/tools";
-import { FishInstance, GovernorAlphaInstance, MultiSigWalletInstance, StakingInstance, StakingProxyInstance, TimelockInstance, VestingFactoryInstance, VestingLogicInstance, VestingRegistry3Instance } from "types/generated";
-import { conditionalDeploy, conditionalInitialize, getDeployed, printState, setInfo } from "../state";
+import { FishInstance, GovernorAlphaInstance, MultiSigWalletInstance, StakingInstance, StakingProxyInstance, TimelockInstance, VestingFactoryInstance, VestingLogicInstance } from "types/generated";
+import { conditionalDeploy, conditionalInitialize, printState, setInfo } from "../state";
 
 
 export default async (
@@ -11,8 +10,7 @@ export default async (
   network,
   accounts
 ): Promise<void> => {
-  const [default_, _admin] = accounts;
-  const addressesForNetwork = addresses[network];
+  const [default_] = accounts;
 
   const web3 = new Web3("http://localhost:7545");
 
@@ -27,7 +25,7 @@ export default async (
   const GovernorAlpha = artifacts.require("GovernorAlpha");
 
   const initialAmount = new BN(1000000);
-  const timelockDelay = 100000;
+  const timelockDelay = 1;
   const quorumPercentageVotes = 1;
   const majorityPercentageVotes = 20;
   const feeSharingAddress = "0x0000000000000000000000000000000000000001";

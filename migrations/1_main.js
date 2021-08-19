@@ -12,8 +12,9 @@ const state = require(`./state.ts`).default;
 // with `web3`, `artifacts` and so on, and pass in all CLI arguments.
 module.exports = async (deployer, network, accounts) => {
     await state.setNetwork(deployer.network);
+
     await initialMigration(this, deployer);
-    // await systemMigration(this, deployer, network, accounts);
-    // await upgradeToV3Migration(this, deployer, network, accounts);
+    await systemMigration(this, deployer, network, accounts);
+    await upgradeToV3Migration(this, deployer, network, accounts);
     await governanceMigration(this, deployer, network, accounts);
 };
