@@ -1,9 +1,23 @@
-import { ZERO_ADDRESS } from "@utils/constants";
-import { BasketManagerV3Instance, FishInstance, GovernorAlphaInstance, MassetV3Instance, StakingInstance } from "types/generated";
+/* eslint-disable prefer-destructuring */
 import Web3 from "web3";
+import Logs from "node-logs";
+import { ZERO_ADDRESS } from "@utils/constants";
+import { BasketManagerV3Instance, FishInstance, GovernorAlphaInstance, StakingInstance } from "types/generated";
 import { getDeployed, getInfo, setNetwork } from "../../migrations/state";
+import { waitForBlock } from "./utils/time";
 
 enum ProposalState { Pending, Active, Canceled, Defeated, Succeeded, Queued, Expired, Executed }
+
+const logger = new Logs().showInConsole(true);
+
+const assert = (condition: boolean, message?: string): void => {
+    if (!condition) {
+        const errorMessage = message || "Assertion failed";
+
+        logger.err(`err: ${errorMessage}`);
+        throw new Error(errorMessage);
+    }
+};
 
 export default async function e2e(truffle, networkName: string): Promise<void> {
     const web3: Web3 = truffle.web3;
@@ -18,12 +32,13 @@ export default async function e2e(truffle, networkName: string): Promise<void> {
     const Staking = artifacts.require("Staking");
     const Fish = artifacts.require("Fish");
 
-    const MassetV3 = artifacts.require("MassetV3");
-
     const governorAlpha: GovernorAlphaInstance = await getDeployed(GovernorAlpha, `GovernorAlpha`);
     const basketManager: BasketManagerV3Instance = await getDeployed(BasketManagerV3, `XUSD_BasketManagerProxy`);
     const staking: StakingInstance = await getDeployed(Staking, `StakingProxy`);
     const fish: FishInstance = await getDeployed(Fish, `Fish`);
+
+    const votingDelay = await governorAlpha.votingDelay();
+    const votingPeriod = await governorAlpha.votingPeriod();
 
     const stakeAddress: string = await getInfo("StakingProxy", "address");
     const basketManagerAddress: string = await getInfo("XUSD_BasketManagerProxy", "address");
@@ -36,40 +51,46 @@ export default async function e2e(truffle, networkName: string): Promise<void> {
     await fish.approve(stakeAddress, stakeAmount);
     await staking.stake(stakeAmount, stakeUntilDate, ZERO_ADDRESS, ZERO_ADDRESS);
 
+    const initialPausedValue = await basketManager.getPaused(basset);
+
     const targets = [basketManagerAddress];
     const values = [0];
     const signatures = ["setPaused(address,bool)"];
-    const calldatas = [web3.eth.abi.encodeParameters(["address", "bool"], [basset, true])];
+    const calldatas = [web3.eth.abi.encodeParameters(["address", "bool"], [basset, !initialPausedValue])];
 
-    // await governorAlpha.propose(targets, values, signatures, calldatas, "test propsal");
-
+    await governorAlpha.propose(targets, values, signatures, calldatas, "test propsal");
     const latestProposal = await governorAlpha.latestProposalIds(defaultAccount);
 
-    let proposalState = await governorAlpha.state(latestProposal);
+    let proposalState = (await governorAlpha.state(latestProposal)).toNumber();
+    assert(proposalState === ProposalState.Pending, "proposal should be pending");
 
-    console.log({
-        latestProposal: latestProposal.toString(),
-        proposalState: proposalState.toString()
-    });
+    await waitForBlock(truffle, votingDelay.toNumber() + 1);
 
-    // await new Promise((resolve) => truffle.setTimeout(resolve, 2000));
+    proposalState = (await governorAlpha.state(latestProposal)).toNumber();
+    assert(proposalState === ProposalState.Active, "proposal should be active");
 
-    // await governorAlpha.castVote(latestProposal, true);
+    await governorAlpha.castVote(latestProposal, true);
 
-    // return;
+    proposalState = (await governorAlpha.state(latestProposal)).toNumber();
+    assert(proposalState === ProposalState.Active, "proposal should be active until the end of voting period");
 
-    proposalState = await governorAlpha.state(latestProposal);
-    console.log("proposalState", proposalState.toString());
+    await waitForBlock(truffle, votingPeriod.toNumber());
+
+    proposalState = (await governorAlpha.state(latestProposal)).toNumber();
+    assert(proposalState === ProposalState.Succeeded, "proposal should be succeeded");
 
     await governorAlpha.queue(latestProposal);
 
-    proposalState = await governorAlpha.state(latestProposal);
-    console.log("proposalState", proposalState.toString());
+    proposalState = (await governorAlpha.state(latestProposal)).toNumber();
+    assert(proposalState === ProposalState.Queued, "proposal should be queued");
 
     await governorAlpha.execute(latestProposal);
-    proposalState = await governorAlpha.state(latestProposal);
-    console.log("proposalState", proposalState.toString());
+
+    proposalState = (await governorAlpha.state(latestProposal)).toNumber();
+    assert(proposalState === ProposalState.Executed, "proposal should be executed");
 
     const paused = await basketManager.getPaused(basset);
-    console.log({ paused });
+    assert(paused === !initialPausedValue, "paused value should be changed after executed proposal");
+
+    logger.success("Test Completed!");
 }

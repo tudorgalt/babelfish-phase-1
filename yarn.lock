@@ -2799,7 +2799,7 @@ colorette@^1.2.2:
   resolved "https://registry.yarnpkg.com/colorette/-/colorette-1.2.2.tgz#cbcc79d5e99caea2dbf10eb3a26fd8b3e6acfa94"
   integrity sha512-MKGMzyfeuutC/ZJ1cba9NqcNpfeqMUcYmyF1ZFY6/Cn7CNSAKx6a+s48sqLqyAiZuaP2TcqMhoo+dlwFnVxT9w==
 
-colors@^1.1.2:
+colors@1.4.0, colors@^1.1.2:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/colors/-/colors-1.4.0.tgz#c50491479d4c1bdaed2c9ced32cf7c7dc2360f78"
   integrity sha512-a+UqTh4kgZg/SlGvfbzDHpgRu7AAQOmmqRHJnxhRZICKFUT91brVhNNt58CMWU9PsBbv3PDCZUHbVxuDiH2mtA==
@@ -7373,6 +7373,13 @@ node-libs-browser@^2.0.0:
     url "^0.11.0"
     util "^0.11.0"
     vm-browserify "^1.0.1"
+
+node-logs@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/node-logs/-/node-logs-1.1.0.tgz#edb2b4ce1abab60def46a76b629df094c2259d72"
+  integrity sha512-Vcsfyx500UwUtfY+JHfxA7mhZSdFC2FSBSDyjj+RPqoiUglvJqdEukKAvWq8fxrf4D4e0S+Z1/01GFoG0KHKMA==
+  dependencies:
+    colors "1.4.0"
 
 node-releases@^1.1.71:
   version "1.1.73"

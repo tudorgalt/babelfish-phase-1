@@ -1,7 +1,10 @@
+import Logs from 'node-logs';
 import Truffle from 'truffle';
 import Web3 from 'web3';
 
 import { getDeployed, getInfo, setNetwork } from "../../migrations/state";
+
+const logger = new Logs().showInConsole(true);
 
 export default async function getVersions(truffle: Truffle, networkName: string): Promise<void> {
     setNetwork(networkName);
@@ -20,7 +23,7 @@ export default async function getVersions(truffle: Truffle, networkName: string)
 
     if (eta > currentTime) {
         const etaTime = new Date(eta * 1000).toString();
-        console.error("Invalid time for transfering admin. ETA FOR ADMIN TRANSFER: ", etaTime);
+        logger.error(`Invalid time for transfering admin. ETA FOR ADMIN TRANSFER: ${etaTime}`);
     }
 
     const signature = "setPendingAdmin(address)";
@@ -28,10 +31,10 @@ export default async function getVersions(truffle: Truffle, networkName: string)
 
     await timelock.executeTransaction(timelock.address, 0, signature, abiParameters, eta);
 
-    const pendingAdmin = await timelock.pendingAdmin();
-    console.log({ pendingAdmin, governor: governorAlpha.address });
+    await timelock.pendingAdmin();
     // eslint-disable-next-line no-underscore-dangle
     await governorAlpha.__acceptAdmin();
+
     const admin = await timelock.admin();
-    console.log({ admin, governor: governorAlpha.address });
+    logger.info(`admin: ${admin}`);
 }
