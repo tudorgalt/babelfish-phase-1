@@ -27,7 +27,7 @@ export default async function e2e(truffle, networkName: string): Promise<void> {
     const web3: Web3 = truffle.web3;
     const artifacts: Truffle.Artifacts = truffle.artifacts;
 
-    const defaultAccount = (await web3.eth.getAccounts())[0];
+    const [owner, voter1, voter2] = (await web3.eth.getAccounts());
 
     setNetwork(networkName);
 
@@ -51,8 +51,17 @@ export default async function e2e(truffle, networkName: string): Promise<void> {
     const stakeAmount = 1000000;
     const stakeUntilDate = Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7 * 3);
 
+    const stake = async (address: string, amount: number): Promise<void> => {
+        await fish.transfer(address, amount, { from: owner });
+        await fish.approve(stakeAddress, amount, { from: address });
+        await staking.stake(amount, stakeUntilDate, ZERO_ADDRESS, ZERO_ADDRESS, { from: address });
+    };
+
     await fish.approve(stakeAddress, stakeAmount);
     await staking.stake(stakeAmount, stakeUntilDate, ZERO_ADDRESS, ZERO_ADDRESS);
+
+    await stake(voter1, stakeAmount / 500);
+    await stake(voter2, stakeAmount);
 
     const targets = [basketManagerAddress];
     const values = [0];
@@ -66,7 +75,7 @@ export default async function e2e(truffle, networkName: string): Promise<void> {
     )];
 
     await governorAlpha.propose(targets, values, signatures, calldatas, "test propsal");
-    const latestProposal = await governorAlpha.latestProposalIds(defaultAccount);
+    const latestProposal = await governorAlpha.latestProposalIds(owner);
 
     let proposalState = (await governorAlpha.state(latestProposal)).toNumber();
     assert(proposalState === ProposalState.Pending, "proposal should be pending");
@@ -77,6 +86,16 @@ export default async function e2e(truffle, networkName: string): Promise<void> {
     assert(proposalState === ProposalState.Active, "proposal should be active");
 
     await governorAlpha.castVote(latestProposal, true);
+    await governorAlpha.castVote(latestProposal, true, { from: voter1 });
+    await governorAlpha.castVote(latestProposal, false, { from: voter2 });
+
+    const [, startBlock, , forVotes, againstVotes, , , , startTime] = await governorAlpha.proposals(latestProposal);
+    const ownerForVotes = await staking.getPriorVotes(owner, startBlock, startTime);
+    const voter1ForVotes = await staking.getPriorVotes(voter1, startBlock, startTime);
+    const voter2AgainstVotes = await staking.getPriorVotes(voter2, startBlock, startTime);
+
+    assert(forVotes.eq(ownerForVotes.add(voter1ForVotes)), "not a proper number of for votes");
+    assert(againstVotes.eq(voter2AgainstVotes), "not a proper number of against votes");
 
     proposalState = (await governorAlpha.state(latestProposal)).toNumber();
     assert(proposalState === ProposalState.Active, "proposal should be active until the end of voting period");
