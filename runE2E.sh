@@ -2,6 +2,8 @@
 
 rm -f state_development.json
 yarn migrate
+yarn migrate-governance
+
 yarn script transferAdmin
 yarn script transferOwnership
 

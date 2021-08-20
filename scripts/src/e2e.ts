@@ -1,8 +1,12 @@
 /* eslint-disable prefer-destructuring */
+/* eslint-disable @typescript-eslint/triple-slash-reference,spaced-comment */
+/// <reference path="../../types/generated/index.d.ts" />
+/// <reference path="../../types/generated/types.d.ts" />
+
 import Web3 from "web3";
 import Logs from "node-logs";
 import { ZERO_ADDRESS } from "@utils/constants";
-import { BasketManagerV3Instance, FishInstance, GovernorAlphaInstance, StakingInstance } from "types/generated";
+import { BasketManagerV3Instance, FishInstance, GovernorAlphaInstance, StakingInstance, TokenInstance } from "types/generated";
 import { getDeployed, getInfo, setNetwork } from "../../migrations/state";
 import { waitForBlock } from "./utils/time";
 
@@ -31,6 +35,7 @@ export default async function e2e(truffle, networkName: string): Promise<void> {
     const GovernorAlpha = artifacts.require("GovernorAlpha");
     const Staking = artifacts.require("Staking");
     const Fish = artifacts.require("Fish");
+    const Token = artifacts.require("Token");
 
     const governorAlpha: GovernorAlphaInstance = await getDeployed(GovernorAlpha, `GovernorAlpha`);
     const basketManager: BasketManagerV3Instance = await getDeployed(BasketManagerV3, `XUSD_BasketManagerProxy`);
@@ -43,20 +48,22 @@ export default async function e2e(truffle, networkName: string): Promise<void> {
     const stakeAddress: string = await getInfo("StakingProxy", "address");
     const basketManagerAddress: string = await getInfo("XUSD_BasketManagerProxy", "address");
 
-    const [basset] = await basketManager.getBassets();
-
     const stakeAmount = 1000000;
     const stakeUntilDate = Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7 * 3);
 
     await fish.approve(stakeAddress, stakeAmount);
     await staking.stake(stakeAmount, stakeUntilDate, ZERO_ADDRESS, ZERO_ADDRESS);
 
-    const initialPausedValue = await basketManager.getPaused(basset);
-
     const targets = [basketManagerAddress];
     const values = [0];
-    const signatures = ["setPaused(address,bool)"];
-    const calldatas = [web3.eth.abi.encodeParameters(["address", "bool"], [basset, !initialPausedValue])];
+    // address _basset, int256 _factor, address _bridge, uint256 _min, uint256 _max, bool _paused
+    const newBasset: TokenInstance = await Token.new("TEST", "TST", 18);
+
+    const signatures = ["addBasset(address,int256,address,uint256,uint256,bool)"];
+    const calldatas = [web3.eth.abi.encodeParameters(
+        ["address", "int256", "address", "uint256", "uint256", "bool"],
+        [newBasset.address, 1, ZERO_ADDRESS, 0, 1000, false]
+    )];
 
     await governorAlpha.propose(targets, values, signatures, calldatas, "test propsal");
     const latestProposal = await governorAlpha.latestProposalIds(defaultAccount);
@@ -89,8 +96,9 @@ export default async function e2e(truffle, networkName: string): Promise<void> {
     proposalState = (await governorAlpha.state(latestProposal)).toNumber();
     assert(proposalState === ProposalState.Executed, "proposal should be executed");
 
-    const paused = await basketManager.getPaused(basset);
-    assert(paused === !initialPausedValue, "paused value should be changed after executed proposal");
+    const bassetsList = await basketManager.getBassets();
+
+    assert(bassetsList.includes(newBasset.address), "new basset should be added");
 
     logger.success("Test Completed!");
 }

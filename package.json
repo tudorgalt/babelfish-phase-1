@@ -12,10 +12,14 @@
     "/types/**/*.ts"
   ],
   "scripts": {
-    "migrate": "truffle migrate --network development --reset",
-    "migrate:ropsten": "truffle migrate --network ropsten --reset",
-    "migrate:kovan": "truffle migrate --network kovan --reset",
-    "migrate:rskTestnet": "truffle migrate --network rskTestnet --reset",
+    "migrate": "truffle migrate --network development --reset -f 1 --to 1",
+    "migrate:ropsten": "truffle migrate --network ropsten --reset -f 1 --to 1",
+    "migrate:kovan": "truffle migrate --network kovan --reset -f 1 --to 1",
+    "migrate:rskTestnet": "truffle migrate --network rskTestnet --reset -f 1 --to 1",
+    "migrate-governance": "truffle migrate --network development --reset -f 2 --to 2",
+    "migrate-governance:ropsten": "truffle migrate --network ropsten --reset -f 2 --to 2",
+    "migrate-governance:kovan": "truffle migrate --network kovan --reset -f 2 --to 2",
+    "migrate-governance:rskTestnet": "truffle migrate --network rskTestnet --reset -f 2 --to 2",
     "lint": "yarn run lint-ts; yarn run lint-sol",
     "lint-ts": "yarn eslint ./test --ext .ts,.js --fix --quiet",
     "lint-sol": "solium -d contracts/ --fix ",

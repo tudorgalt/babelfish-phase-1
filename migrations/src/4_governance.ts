@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/triple-slash-reference,spaced-comment */
+/// <reference path="../../types/generated/index.d.ts" />
+/// <reference path="../../types/generated/types.d.ts" />
+
 import Web3 from 'web3';
 import { BN } from "@utils/tools";
 import { FishInstance, GovernorAlphaInstance, MultiSigWalletInstance, StakingInstance, StakingProxyInstance, TimelockInstance, VestingFactoryInstance, VestingLogicInstance } from "types/generated";
