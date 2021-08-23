@@ -1,3 +1,4 @@
+/* eslint-disable no-continue */
 /* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
@@ -11,11 +12,13 @@
 
 import Web3 from "web3";
 import Logs from "node-logs";
+import { performance } from "perf_hooks";
 import { promises as fsPromises } from "fs";
 import { StakingInstance } from "types/generated";
 import { BN } from "@utils/tools";
+import { ZERO_ADDRESS } from "@utils/constants";
 
-const stakingContractAddress = "0x5684a06CaB22Db16d901fEe2A5C081b4C91eA40e"
+const stakingContractAddress = "0x5684a06CaB22Db16d901fEe2A5C081b4C91eA40e";
 
 const logger = new Logs().showInConsole(true);
 let fd: fsPromises.FileHandle;
@@ -29,13 +32,16 @@ export default async function snapshot(truffle, networkName: string): Promise<vo
     const staking = await Staking.at(stakingContractAddress);
 
     const addressMap: { [address: string]: number } = {};
-    const fromBlock = 3100260;
-    const toBlock = 3616883;
-    const batchSize = 20;
+    const batchSize = 50;
+    const fromBlock = 3070260; // 3070260 3100260
+    const toBlock = 3454083; // June 21
 
-    fd = await fsPromises.open("addressList_1", "a+");
+    const stakingKickoff = await staking.kickoffTS();
+
+    fd = await fsPromises.open("addressList_final", "a+");
 
     for (let pointer = fromBlock; pointer <= toBlock; pointer += batchSize) {
+        const start = performance.now();
         const events = await staking.getPastEvents("TokensStaked", {
             fromBlock: pointer,
             toBlock: pointer + batchSize
@@ -43,24 +49,36 @@ export default async function snapshot(truffle, networkName: string): Promise<vo
 
         for (const event of events) {
             const stakerAddress = event.returnValues.staker;
+
             if (addressMap[stakerAddress] !== 1) {
                 addressMap[stakerAddress] = 1;
-                await saveStaker(stakerAddress, staking);
+                await saveStaker(stakerAddress, stakingKickoff, staking, web3, toBlock);
             }
         }
-
-        logger.info(`current block: ${pointer}, ${(pointer - fromBlock) / (toBlock - fromBlock)}`);
+        const duration = performance.now() - start;
+        const speed = batchSize / duration * 1000;
+        logger.info(`block: ${pointer}, ${((pointer - fromBlock) / (toBlock - fromBlock)).toFixed(3)}, bps: ${Math.round(speed)}`);
     }
 }
 
-async function saveStaker(address: string, staking: StakingInstance) {
-    const balance = await staking.balanceOf(address);
-    if (!balance.gt(new BN(0))) {
+async function saveStaker(address: string, timeStamp: BN, staking: StakingInstance, web3: Web3, toBlock: number) {
+    const votes = await staking.getPriorVotes(address, toBlock, timeStamp);
+    console.log({ votes: votes.toString() });
+    if (!votes.gt(new BN(0))) {
+        return;
+    }
+
+    const code = await web3.eth.getCode(address, "latest");
+    if (code.length > 3) {
+        return;
+    }
+
+    if (address === ZERO_ADDRESS) {
         return;
     }
 
     fd.write(`${address}\n`);
 
-    logger.info(`New staker: ${address}. Balance: ${balance.toString()}`);
+    logger.info(`New staker: ${address}. Votes: ${votes.toString()}`);
 }
 
