@@ -32,8 +32,8 @@ export default async function snapshot(truffle, networkName: string): Promise<vo
     const staking = await Staking.at(stakingContractAddress);
 
     const addressMap: { [address: string]: number } = {};
-    let fromBlock = 3070260;
-
+    const originalFromBlock = 3070260;
+    let fromBlock = originalFromBlock;
     const toBlock = 3454083;
     const batchSize = 10;
 
@@ -74,7 +74,7 @@ export default async function snapshot(truffle, networkName: string): Promise<vo
             }
         }
 
-        logger.info(`current block: ${pointer}, ${(pointer - fromBlock) / (toBlock - fromBlock)}`);
+        logger.info(`current block: ${pointer} events: ${events.length} progress: ${((pointer - originalFromBlock) / (toBlock - originalFromBlock)).toFixed(3)}`);
         lastBlockfd.write(pointer.toString(), 0);
     }
 }
