@@ -41,7 +41,7 @@ contract GovernorAlpha is SafeMath96 {
 
 	/// @notice The duration of voting on a proposal, in blocks.
 	function votingPeriod() public pure returns (uint256) {
-		return 2880;
+		return 70;
 	} // ~1 day in blocks (assuming 30s blocks)
 
 	/// @notice The address of the Sovryn Protocol Timelock.

@@ -38,6 +38,22 @@ export async function conditionalInitialize(key: string, initfunc) {
     await writeState(state);
 }
 
+export async function setInfo(contract: string, key: string, value: any) {
+    if (!state) {
+        state = await readState();
+    }
+    if (!state[contract]) state[contract] = {};
+    state[contract][key] = value;
+    await writeState(state);
+}
+
+export async function getInfo(contract: string, key: string): Promise<any> {
+    if (!state) {
+        state = await readState();
+    }
+    return state[contract][key];
+}
+
 export async function getDeployed(contract: Truffle.Contract, key: string): Truffle.Contract {
     if (!state) {
         state = await readState();
@@ -63,10 +79,13 @@ export async function readState(): Promise<any> {
         const emptyState = {};
 
         fs.readFile(filePath, (readErr, data) => {
-            if (!readErr) resolve(JSON.parse(data.toString('utf-8')));
- 
+            if (!readErr) {
+                resolve(JSON.parse(data.toString('utf-8')));
+                return;
+            }
+
             fs.writeFile(filePath, JSON.stringify(emptyState), (writeErr) => {
-                if(writeErr) reject(writeErr);
+                if (writeErr) reject(writeErr);
                 resolve(emptyState);
             });
         });

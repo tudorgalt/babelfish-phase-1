@@ -70,5 +70,25 @@
   },
   "BNBs_MassetV3": {
     "address": "0x35d1ea0518d26c291567ee5882F898dBFc250540"
+  },
+  "Fish": {
+    "address": "0xeA1598B40832CC353e1Db4D13f9bCA783A951E86"
+  },
+  "MultiSigWallet": {
+    "address": "0x7e1BF65161C26CB04F19E96786aeB14893e429C0",
+    "initialized": true
+  },
+  "StakingLogic": {
+    "address": "0x37955395e788Adc937582746Fc87c126F75B85B6"
+  },
+  "StakingProxy": {
+    "address": "0x553D9D2fF1e3c3633A58e37862fD7391a696c873",
+    "initialized": true
+  },
+  "Staking": {
+    "initialized": true
+  },
+  "VestingLogic": {
+    "address": "0x3D476db087e998190569dB6d9fb699AEC1A46fF8"
   }
 }

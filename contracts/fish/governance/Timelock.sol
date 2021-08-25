@@ -71,7 +71,7 @@ contract Timelock is ErrorDecoder, ITimelock {
 	using SafeMath for uint256;
 
 	uint256 public constant GRACE_PERIOD = 14 days;
-	uint256 public constant MINIMUM_DELAY = 3 hours;
+	uint256 public constant MINIMUM_DELAY = 0;
 	uint256 public constant MAXIMUM_DELAY = 30 days;
 
 	address public admin;
