@@ -4,7 +4,7 @@
 
 import Web3 from 'web3';
 import { BN } from "@utils/tools";
-import { FishInstance, GovernorAlphaInstance, MultiSigWalletInstance, StakingInstance, StakingProxyInstance, TimelockInstance, VestingFactoryInstance, VestingLogicInstance } from "types/generated";
+import { FishInstance, GovernorAlphaContract, GovernorAlphaInstance, MultiSigWalletInstance, StakingInstance, StakingProxyInstance, TimelockContract, TimelockInstance, VestingFactoryInstance, VestingLogicInstance } from "types/generated";
 import { conditionalDeploy, conditionalInitialize, printState, setInfo } from "../state";
 
 
@@ -24,7 +24,9 @@ export default async (
     const VestingFactory = artifacts.require("VestingFactory");
     const VestingRegistry3 = artifacts.require("VestingRegistry3");
     const Timelock = artifacts.require("Timelock");
+    const TimelockMock = artifacts.require("TimelockMock");
     const GovernorAlpha = artifacts.require("GovernorAlpha");
+    const GovernorAlphaMock = artifacts.require("GovernorAlphaMock");
 
     const initialAmount = new BN(1000000000);
     const timelockDelay = 1;
@@ -76,12 +78,30 @@ export default async (
         () => deployer.deploy(VestingRegistry3, vestingFactory.address, fishToken.address, staking.address, feeSharingAddress, multiSigWallet.address)
     );
 
-    const timelock: TimelockInstance = await conditionalDeploy(Timelock, `Timelock`,
-        () => deployer.deploy(Timelock, default_, timelockDelay)
+    let timelockContract: TimelockContract;
+
+    if (network === 'development') {
+        TimelockMock.contractName = "Timelock";
+        timelockContract = TimelockMock;
+    } else {
+        timelockContract = Timelock;
+    }
+
+    const timelock: TimelockInstance = await conditionalDeploy(timelockContract, `Timelock`,
+        () => deployer.deploy(timelockContract, default_, timelockDelay)
     );
 
-    const governorAlpha: GovernorAlphaInstance = await conditionalDeploy(GovernorAlpha, `GovernorAlpha`,
-        () => deployer.deploy(GovernorAlpha, timelock.address, staking.address, default_, quorumPercentageVotes, majorityPercentageVotes)
+    let governorAlphaContract: GovernorAlphaContract;
+
+    if (network === 'development') {
+        GovernorAlphaMock.contractName = "GovernorAlpha";
+        governorAlphaContract = GovernorAlphaMock;
+    } else {
+        governorAlphaContract = GovernorAlpha;
+    }
+
+    const governorAlpha: GovernorAlphaInstance = await conditionalDeploy(governorAlphaContract, `GovernorAlpha`,
+        () => deployer.deploy(governorAlphaContract, timelock.address, staking.address, default_, quorumPercentageVotes, majorityPercentageVotes)
     );
 
     await conditionalInitialize("GovernorAlpha",
