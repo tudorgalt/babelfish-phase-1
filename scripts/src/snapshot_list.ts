@@ -41,7 +41,7 @@ export default async function snapshot(truffle, networkName: string): Promise<vo
 
     fd = await fsPromises.open("addressList_1", "a+");
     const csvContent = await fd.readFile();
-    if(csvContent.length == 0) {
+    if (csvContent.length === 0) {
         fd.write("Address,VotingPower\n");
         logger.info(`Initializing CSV`);
     }
@@ -49,13 +49,13 @@ export default async function snapshot(truffle, networkName: string): Promise<vo
     lastBlockfd = await fsPromises.open("last_block", "r+");
 
     const content = await lastBlockfd.readFile();
-    if(content.length > 0) {
+    if (content.length > 0) {
         fromBlock = parseInt(content.toString());
         fromBlock += batchSize;
         logger.info(`Resuming from block ${fromBlock}`);
     }
 
-    if(fromBlock > toBlock) {
+    if (fromBlock > toBlock) {
         logger.info('Finished!');
         exit(0);
     }
@@ -81,11 +81,11 @@ export default async function snapshot(truffle, networkName: string): Promise<vo
 
 async function saveStaker(address: string, fromBlock: string | number | BN, date: string | number | BN, staking: StakingInstance, web3: Web3) {
     const code = await web3.eth.getCode(address);
-    if(code.length > 3) {
+    if (code.length > 3) {
         return;
     }
 
-    if(address == ZERO_ADDRESS) {
+    if (address === ZERO_ADDRESS) {
         return;
     }
 
