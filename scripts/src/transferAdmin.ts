@@ -6,7 +6,7 @@ import { getDeployed, getInfo, setNetwork } from "../../migrations/state";
 
 const logger = new Logs().showInConsole(true);
 
-export default async function getVersions(truffle: Truffle, networkName: string): Promise<void> {
+export default async function transferAdmin(truffle: Truffle, networkName: string): Promise<void> {
     setNetwork(networkName);
 
     const artifacts: Truffle.Artifacts = truffle.artifacts;
