@@ -1,77 +1,17 @@
 pragma solidity ^0.5.17;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./ErrorDecoder.sol";
-
-interface ITimelock {
-	function delay() external view returns (uint256);
-
-	function GRACE_PERIOD() external view returns (uint256);
-
-	function acceptAdmin() external;
-
-	function queuedTransactions(bytes32 hash) external view returns (bool);
-
-	function queueTransaction(
-		address target,
-		uint256 value,
-		string calldata signature,
-		bytes calldata data,
-		uint256 eta
-	) external returns (bytes32);
-
-	function cancelTransaction(
-		address target,
-		uint256 value,
-		string calldata signature,
-		bytes calldata data,
-		uint256 eta
-	) external;
-
-	function executeTransaction(
-		address target,
-		uint256 value,
-		string calldata signature,
-		bytes calldata data,
-		uint256 eta
-	) external payable returns (bytes memory);
-}
+import "../ErrorDecoder.sol";
+import { ITimelock } from "../Timelock.sol";
 
 /**
- * @title Sovryn Protocol Timelock contract, based on Compound system.
- *
- * @notice This contract lets Sovryn governance system set up its
- * own Time Lock instance to execute transactions proposed through the
- * GovernorAlpha contract instance.
- *
- * The Timelock contract allows its admin (Sovryn governance on
- * GovernorAlpha contract) to add arbitrary function calls to a
- * queue. This contract can only execute a function call if the
- * function call has been in the queue for at least 3 hours.
- *
- * Anytime the Timelock contract makes a function call, it must be the
- * case that the function call was first made public by having been publicly
- * added to the queue at least 3 hours prior.
- *
- * The intention is to provide GovernorAlpha contract the functionality to
- * queue proposal actions. This would mean that any changes made by Sovryn
- * governance of any contract would necessarily come with at least an
- * advanced warning. This makes the Sovryn system follow a “time-delayed,
- * opt-out” upgrade pattern (rather than an “instant, forced” upgrade pattern).
- *
- * Time-delaying admin actions gives users a chance to exit system if its
- * admins become malicious or compromised (or make a change that the users
- * do not like). Downside is that honest admins would be unable
- * to lock down functionality to protect users if a critical bug was found.
- *
- * Delayed transactions reduce the amount of trust required by users of Sovryn
- * and the overall risk for contracts building on top of it, as GovernorAlpha.
+ * @dev This contract is a copy of `Timelock.sol` with changed value of MINIMUM_DELAY for tests purposes
  * */
-contract Timelock is ErrorDecoder, ITimelock {
+contract TimelockMock is ErrorDecoder, ITimelock {
 	using SafeMath for uint256;
 
 	uint256 public constant GRACE_PERIOD = 14 days;
-	uint256 public constant MINIMUM_DELAY = 3 hours;
+	uint256 public constant MINIMUM_DELAY = 0;
 	uint256 public constant MAXIMUM_DELAY = 30 days;
 
 	address public admin;

@@ -1,29 +1,16 @@
 pragma solidity ^0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "./Staking/SafeMath96.sol";
-import "./Timelock.sol";
-import "./Staking/Staking.sol";
-import "../rsk/RSKAddrValidator.sol";
+import "../Staking/SafeMath96.sol";
+import "../Timelock.sol";
+import "../Staking/Staking.sol";
+import "../../rsk/RSKAddrValidator.sol";
+import { StakingInterface, TimelockInterface } from "../GovernorAlpha.sol";
 
 /**
- * @title Governance Contract.
- * @notice This is an adapted clone of compound’s governance model. In general,
- * the process is the same: Token holders can make (executable) proposals if
- * they possess enough voting power, vote on proposals during a predefined
- * voting period and in the end evaluate the outcome. If successful, the
- * proposal will be scheduled on the timelock contract. Only after sufficient
- * time passed, it can be executed. A minimum voting power is required for
- * making a proposal as well as a minimum quorum.
- *
- * Voting power in the Bitocracy:
- * Stakers will receive voting power in the Bitocracy in return for their
- * staking commitment. This voting power is weighted by how much SOV is staked
- * and for how long the staking period is - staking more SOV over longer staking
- * periods results in higher voting power. With this voting power, users can
- * vote for or against any SIP in bitocracy.sovryn.app.
+ * @dev This contract is a copy of `GovernorAlpha.sol` with changed value of votingPeriod for tests purposes
  * */
-contract GovernorAlpha is SafeMath96 {
+contract GovernorAlphaMock is SafeMath96 {
 	/* Storage */
 
 	/// @notice The name of this contract.
@@ -41,7 +28,7 @@ contract GovernorAlpha is SafeMath96 {
 
 	/// @notice The duration of voting on a proposal, in blocks.
 	function votingPeriod() public pure returns (uint256) {
-		return 2880;
+		return 70;
 	} // ~1 day in blocks (assuming 30s blocks)
 
 	/// @notice The address of the Sovryn Protocol Timelock.
@@ -585,50 +572,4 @@ contract GovernorAlpha is SafeMath96 {
 		}
 		return chainId;
 	}
-}
-
-/* Interfaces */
-
-interface TimelockInterface {
-	function delay() external view returns (uint256);
-
-	function GRACE_PERIOD() external view returns (uint256);
-
-	function acceptAdmin() external;
-
-	function queuedTransactions(bytes32 hash) external view returns (bool);
-
-	function queueTransaction(
-		address target,
-		uint256 value,
-		string calldata signature,
-		bytes calldata data,
-		uint256 eta
-	) external returns (bytes32);
-
-	function cancelTransaction(
-		address target,
-		uint256 value,
-		string calldata signature,
-		bytes calldata data,
-		uint256 eta
-	) external;
-
-	function executeTransaction(
-		address target,
-		uint256 value,
-		string calldata signature,
-		bytes calldata data,
-		uint256 eta
-	) external payable returns (bytes memory);
-}
-
-interface StakingInterface {
-	function getPriorVotes(
-		address account,
-		uint256 blockNumber,
-		uint256 date
-	) external view returns (uint96);
-
-	function getPriorTotalVotingPower(uint32 blockNumber, uint256 time) external view returns (uint96);
 }
