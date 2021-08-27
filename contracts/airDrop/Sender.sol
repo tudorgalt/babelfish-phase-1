@@ -5,36 +5,49 @@ import "../fish/interfaces/IERC20.sol";
 import {Table} from "./Table.sol";
 
 contract Sender is Ownable {
-    uint256 index;
+    uint256 public index;
 
-    IERC20 token;
+    IERC20 public token;
     address[] private tables;
-    uint256 total;
-    uint256 batchSize;
+    uint256 public total;
+    uint256 public batchSize;
 
-    constructor(address[] memory _tables, address _token, uint256 _totalSize, uint256 _batchSize) public {
+    constructor(address[] memory _tables, address _token) public {
         tables = _tables;
         token = IERC20(_token);
-        total = _totalSize;
-        batchSize = _batchSize;
+        batchSize = Table(_tables[0]).getSize();
+
+        uint256 numberOfAddresses = 0;
+        for (uint256 i = 0; i < tables.length; i++) {
+            numberOfAddresses += Table(tables[i]).getSize();
+        }
+
+        total = numberOfAddresses;
     }
 
     function sendTokens (uint256 _numberOfTransfers) public onlyOwner {
         uint256 i = index;
-        uint256 toIndex = _numberOfTransfers + index > total
-            ? total
-            : _numberOfTransfers + index;
+        uint256 toIndex = _numberOfTransfers + index;
+        if (toIndex > total) {
+            toIndex = total;
+        }
 
         for (;i < toIndex; i++) {
             uint256 contractIndex = i / batchSize;
             uint256 insideIndex = i % batchSize;
 
+            require(tables[contractIndex] != address(0), "Invalid table address");
             Table table = Table(tables[contractIndex]);
 
             address recipient = table.addresses(insideIndex);
             uint256 value = table.amounts(insideIndex);
+
+            require(recipient != address(0), "Invalid address");
+            require(value > 0, "Value should be > 0");
             require(token.transfer(recipient, value), "transfer failed");
         }
+
+        index = i;
     }
 
     function addressAtIndex (uint256 _index) public view onlyOwner returns(address) {
@@ -48,7 +61,6 @@ contract Sender is Ownable {
         address recipient = table.addresses(insideIndex);
         return recipient;
     }
-
 
     function amountAtIndex (uint256 _index) public view onlyOwner returns(uint256) {
         uint256 i = _index;
