@@ -16,6 +16,10 @@ Here is the list of available scripts:
      "migrate-governance:ropsten" - run migrations of governance contracts, ropsten network
      "migrate-governance:kovan" - run migrations of governance contracts, kovan network
      "migrate-governance:rskTestnet" - run migrations of governance contracts, rskTestnet network
+     "migrate-tokens" - run migrations of airdrop table contracts, development network
+     "migrate-tokens:ropsten" - run migrations of airdrop table contracts, ropsten network
+     "migrate-tokens:kovan" - run migrations of airdrop table contracts, kovan network
+     "migrate-tokens:rskTestnet" - run migrations of airdrop table contracts, rskTestnet network
 -    "lint" - run linter
 -    "lint-ts" - run typescript linter
 -    "lint-sol" - run solidity linter
