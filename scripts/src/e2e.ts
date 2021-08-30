@@ -9,19 +9,11 @@ import { ZERO_ADDRESS } from "@utils/constants";
 import { BasketManagerV3Instance, FishInstance, GovernorAlphaInstance, StakingInstance, TokenInstance } from "types/generated";
 import { getDeployed, getInfo, setNetwork } from "../../migrations/state";
 import { waitForBlock } from "./utils/time";
+import assert from "./utils/assert";
 
 enum ProposalState { Pending, Active, Canceled, Defeated, Succeeded, Queued, Expired, Executed }
 
 const logger = new Logs().showInConsole(true);
-
-const assert = (condition: boolean, message?: string): void => {
-    if (!condition) {
-        const errorMessage = message || "Assertion failed";
-
-        logger.err(`err: ${errorMessage}`);
-        throw new Error(errorMessage);
-    }
-};
 
 export default async function e2e(truffle, networkName: string): Promise<void> {
     const web3: Web3 = truffle.web3;
