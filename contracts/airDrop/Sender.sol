@@ -9,7 +9,8 @@ contract Sender is Ownable {
 
     IERC20 public token;
     address[] private tables;
-    uint256 public total;
+    uint256 public totalLength;
+    uint256 public totalAmount;
     uint256 public batchSize;
 
     constructor(address[] memory _tables, address _token) public {
@@ -18,32 +19,38 @@ contract Sender is Ownable {
         batchSize = Table(_tables[0]).getSize();
 
         uint256 numberOfAddresses = 0;
+        uint256 totalValue = 0;
         for (uint256 i = 0; i < tables.length; i++) {
             numberOfAddresses += Table(tables[i]).getSize();
+            totalValue += Table(tables[i]).totalAmount();
         }
 
-        total = numberOfAddresses;
+        totalLength = numberOfAddresses;
+        totalAmount = totalValue;
     }
 
     function sendTokens (uint256 _numberOfTransfers) public onlyOwner {
         uint256 i = index;
         uint256 toIndex = _numberOfTransfers + index;
-        if (toIndex > total) {
-            toIndex = total;
+        if (toIndex > totalLength) {
+            toIndex = totalLength;
         }
 
+        address[] memory tablesList = tables;
+
         for (;i < toIndex; i++) {
-            uint256 contractIndex = i / batchSize;
+            uint256 contractIndex = i / batchSize; //totalLength/contractIndex
             uint256 insideIndex = i % batchSize;
 
-            require(tables[contractIndex] != address(0), "Invalid table address");
-            Table table = Table(tables[contractIndex]);
+            Table table = Table(tablesList[contractIndex]);
 
-            address recipient = table.addresses(insideIndex);
-            uint256 value = table.amounts(insideIndex);
+            (address recipient, uint256 value, bool isLast) = table.getRecipentInfo(insideIndex);
 
-            require(recipient != address(0), "Invalid address");
-            require(value > 0, "Value should be > 0");
+            // destroy contract with transfered funds to get some gas back
+            if (isLast) {
+                table.destroy();
+            }
+
             require(token.transfer(recipient, value), "transfer failed");
         }
 

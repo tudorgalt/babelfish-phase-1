@@ -208,13 +208,33 @@ contract Table_24 is Table {
 106304864420610284871
     ];
 
-    function totalAmount() public view returns(uint256 total) {
-        for (uint256 index = 0; index < amounts.length; index ++) {
-            total += amounts[index];
+    uint256 public totalValue;
+    uint256 public totalLength;
+
+    constructor () public {
+        totalLength = addresses.length;
+
+        uint256 total = 0;
+        for (uint256 i = 0; i < totalLength; i ++) {
+            total += amounts[i];
         }
+
+        totalValue = total;
+    }
+
+    function getRecipentInfo(uint256 index) public view returns(address, uint256, bool) {
+        return (addresses[index], amounts[index], index == totalLength -1);
+    } 
+
+    function totalAmount() public view returns(uint256 total) {
+        return totalValue;
     }
 
     function getSize() public view returns(uint256 size) {
-        return addresses.length;
+        return totalLength;
+    }
+
+    function destroy() public onlyOwner {
+        selfdestruct(msg.sender);
     }
 }

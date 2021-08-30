@@ -8,9 +8,6 @@ import readline from "readline";
 
 const logger = new Logs().showInConsole(true);
 
-type StakerInfo = Record<"address" | "power", string>;
-
-
 const main = async (): Promise<void> => {
     const fileStream = fs.createReadStream("addressList_joined");
     const rl = readline.createInterface({
@@ -61,18 +58,40 @@ contract Table_${index} is Table {
         ${values.join(",\n")}
     ];
 
-    function totalAmount() public view returns(uint256 total) {
-        for (uint256 index = 0; index < amounts.length; index ++) {
-            total += amounts[index];
+    uint256 public totalValue;
+    uint256 public totalLength;
+
+    constructor () public {
+        totalLength = addresses.length;
+
+        uint256 total = 0;
+        for (uint256 i = 0; i < totalLength; i ++) {
+            total += amounts[i];
         }
+
+        totalValue = total;
+    }
+
+    function getRecipentInfo(uint256 index) public view returns(address, uint256, bool) {
+        return (addresses[index], amounts[index], index == totalLength -1);
+    } 
+
+    function totalAmount() public view returns(uint256 total) {
+        return totalValue;
     }
 
     function getSize() public view returns(uint256 size) {
-        return addresses.length;
+        return totalLength;
+    }
+
+    function destroy() public onlyOwner {
+        selfdestruct(msg.sender);
     }
 }`;
 
     await fsPromises.writeFile(`contracts/airDrop/tables/Table_${index}.sol`, buffor);
+
+    logger.info(`Created cotract with ${addresses.length} stakers`);
 };
 
 const isLineValid = (address: string, power: string): boolean => {

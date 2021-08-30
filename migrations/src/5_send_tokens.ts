@@ -22,10 +22,12 @@ export default async (
 ): Promise<void> => {
     const [default_] = accounts;
 
+    const tablesContracts: TableInstance[] = [];
+
     const FishToken = artifacts.require("Fish");
     const Sender = artifacts.require("Sender");
 
-    const numberOfTables = await countTables();;
+    const numberOfTables = await countTables();
 
     const tables = [];
 
@@ -36,6 +38,7 @@ export default async (
         const table: TableInstance = await conditionalDeploy(TableContract, Name,
             () => deployer.deploy(TableContract)
         );
+        tablesContracts.push(table);
         tables.push(table.address);
     }
 
@@ -47,6 +50,11 @@ export default async (
         () => deployer.deploy(Sender, tables, token.address)
     );
     await token.mint(sender.address, tokens("1000000000000000000"));
+
+    // eslint-disable-next-line no-restricted-syntax
+    for await (const table of tablesContracts) {
+        await table.transferOwnership(sender.address);
+    }
 };
 
 const countTables = async (): Promise<number> => {
