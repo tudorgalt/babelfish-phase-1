@@ -10,6 +10,7 @@ import Logs from "node-logs";
 import { SenderInstance } from "types/generated";
 
 const logger = new Logs().showInConsole(true);
+const batchSize = 150;
 
 const main = async (truffle, networkName): Promise<void> => {
     setNetwork(networkName);
@@ -19,7 +20,6 @@ const main = async (truffle, networkName): Promise<void> => {
     const Sender = truffle.artifacts.require("Sender");
     const sender: SenderInstance = await getDeployed(Sender, "Sender");
 
-    const batchSize = 150;
     const total = await sender.totalLength();
     const totalValue = await sender.totalAmount();
 

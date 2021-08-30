@@ -8,15 +8,17 @@ import readline from "readline";
 
 const logger = new Logs().showInConsole(true);
 
+const batchSize = 100;
+const fileName = "addressList_joined";
+
 const main = async (): Promise<void> => {
-    const fileStream = fs.createReadStream("addressList_joined");
+    const fileStream = fs.createReadStream(fileName);
     const rl = readline.createInterface({
         input: fileStream,
         crlfDelay: Infinity
     });
 
     let iterator = 1;
-    const batchSize = 100;
 
     let addresses: string[] = [];
     let values: string[] = [];

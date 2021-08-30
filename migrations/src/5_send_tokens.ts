@@ -7,7 +7,7 @@
 
 import Web3 from 'web3';
 import { toWei } from 'web3-utils';
-import fs, { promises } from "fs";
+import { promises } from "fs";
 import { BN } from "@utils/tools";
 import { FishInstance, SenderInstance, TableInstance } from "types/generated";
 import { conditionalDeploy } from 'migrations/state';
