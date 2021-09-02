@@ -3,10 +3,12 @@
 /// <reference path="../../types/generated/types.d.ts" />
 
 import Web3 from 'web3';
+import Logs from 'node-logs';
 import { BN } from "@utils/tools";
 import { FishInstance, GovernorAlphaContract, GovernorAlphaInstance, MultiSigWalletInstance, StakingInstance, StakingProxyInstance, TimelockContract, TimelockInstance, VestingFactoryInstance, VestingLogicInstance } from "types/generated";
 import { conditionalDeploy, conditionalInitialize, printState, setInfo } from "../state";
 
+const logger = new Logs().showInConsole(true);
 
 export default async (
     { artifacts, web3 }: { artifacts: Truffle.Artifacts, web3: Web3 },
@@ -29,7 +31,6 @@ export default async (
     const GovernorAlphaMock = artifacts.require("GovernorAlphaMock");
 
     const initialAmount = new BN(1000000000);
-    const timelockDelay = 1;
     const quorumPercentageVotes = 1;
     const majorityPercentageVotes = 20;
     const feeSharingAddress = "0x0000000000000000000000000000000000000001";
@@ -80,11 +81,14 @@ export default async (
 
     let timelockContract: TimelockContract;
 
+    let timelockDelay: number;
     if (network === 'development') {
         TimelockMock.contractName = "Timelock";
         timelockContract = TimelockMock;
+        timelockDelay = 50;
     } else {
         timelockContract = Timelock;
+        timelockDelay = 3 * 60 * 60;
     }
 
     const timelock: TimelockInstance = await conditionalDeploy(timelockContract, `Timelock`,
@@ -107,7 +111,7 @@ export default async (
     await conditionalInitialize("GovernorAlpha",
         async () => {
             const recentBlock = await web3.eth.getBlock("latest");
-            const blockTimestamp = Number(recentBlock.timestamp) + 1 + timelockDelay;
+            const blockTimestamp = Number(recentBlock.timestamp) + timelockDelay;
 
             const signature = "setPendingAdmin(address)";
             const abiParameters = web3.eth.abi.encodeParameter("address", governorAlpha.address);
@@ -117,7 +121,7 @@ export default async (
             await setInfo("Timelock", "setAdminEta", blockTimestamp);
             const etaTime = new Date(blockTimestamp * 1000).toString();
 
-            console.log("ETA FOR ADMIN TRANSFER: ", etaTime);
+            logger.warn(`Eta for admin: ${etaTime}`);
         }
     );
 
