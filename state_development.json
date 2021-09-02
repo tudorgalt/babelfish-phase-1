@@ -1,94 +1,155 @@
 {
-  "Migrations": {
-    "address": "0x3Be1395C67243cEd02f184Dd7415B5B4725e2273"
+  "Table_1": {
+    "address": "0x839730d2b6DC061F03A1Cee049684AaCBdd3A734"
   },
-  "ETHs_Token": {
-    "address": "0x94BBFFC5f551cA67d31b9523c7BE5fd488D3eAfb"
+  "Table_2": {
+    "address": "0x78B4fdbc0Ad32632a87643aEf7c28014be94C5B9"
   },
-  "ETHs_Masset": {
-    "address": "0x31880573791D953effACcd535fdC92cF845700AF"
+  "Table_3": {
+    "address": "0xc61dbb362FDe15c837c2E38e943B7c02a798d1D9"
   },
-  "ETHs_MassetProxy": {
-    "address": "0x64838c5890933144e05173056Fc8C992B73a9f8f",
-    "initialized": true
+  "Table_4": {
+    "address": "0xE9845d8122A99d88a13A5b56873d38C4ed023603"
   },
-  "ETHs_BasketManager": {
-    "address": "0xE98F32Cd02DFa30E99f8E9758aBf44018Aa5f28b"
+  "Table_5": {
+    "address": "0x3B0E67B65cC53B21244D2e608D1D32cE4C7a5f03"
   },
-  "XUSD_Token": {
-    "address": "0x6E42c87a5fD0461Ec9e461cb06B078A97ac9fA9A"
+  "Table_6": {
+    "address": "0xf206E4BD739c54720B10DF0F9d628406EfB7D692"
   },
-  "XUSD_Masset": {
-    "address": "0x2C3232BbdD6b83205B2F48E6eB3c3e9FA51e1f3d"
+  "Table_7": {
+    "address": "0x7e43FFBA6115A9dAe7A62c4f59f2402ffDE78C7d"
   },
-  "XUSD_MassetProxy": {
-    "address": "0x5330595c331e80aE13c922aA0FeEc93Dd0125119",
-    "initialized": true
+  "Table_8": {
+    "address": "0xdbcdFD8DC715858B958Dcb446BFdC1eb08004f9b"
   },
-  "XUSD_BasketManager": {
-    "address": "0x66d8783940212e4Fd2edCF39957c92DF6fcf57a2"
+  "Table_9": {
+    "address": "0x1fEbb26B824e2c7179984FFd33BAE6f18B0BFA42"
   },
-  "BNBs_Token": {
-    "address": "0x3ed4a753Bcc514940BAD31c1bF20Fa844dA55d0c"
+  "Table_10": {
+    "address": "0x7f02ae9E67216c1b87A5d138AdF3262ef6404baF"
   },
-  "BNBs_Masset": {
-    "address": "0xE8f1f8971611fcCb998597C7810fB7C33F4F6d5F"
+  "Table_11": {
+    "address": "0x46a3d31Cdc74c3b43aDab3aE3fdB096eC19dC5A8"
   },
-  "BNBs_MassetProxy": {
-    "address": "0x9E0a667CD3c1791542156a247012fc5c027C4F63",
-    "initialized": true
+  "Table_12": {
+    "address": "0x9D83c5517d912A7B7163E6D90F3036860bAef055"
   },
-  "BNBs_BasketManager": {
-    "address": "0xFD8b1A012fF96272adD468EFEFD89221a4bFCCb6"
+  "Table_13": {
+    "address": "0x9c3a596Cc7F2864348ad7BD5cBd8B3e0edC3a664"
   },
-  "ETHs_BasketManagerV3": {
-    "address": "0xa6142658D7B4d18a3444875dC3Cf6DA2672866BD"
+  "Table_14": {
+    "address": "0x60ebe1bE7Bde14A56A3a3E63436F847e9516b434"
   },
-  "ETHs_BasketManagerProxy": {
-    "address": "0xb65C81a6A9D0152662Edfd3acEded62269C51eF0",
-    "initialized": true
+  "Table_15": {
+    "address": "0x4C0D8bbeAd6307004858c00F42c34daa0470896E"
   },
-  "ETHs_MassetV3": {
-    "address": "0xAeFE54d58586E52a32b3331D2a6C9cf595B1a17a"
+  "Table_16": {
+    "address": "0x8ce0F4cFd88D520d098177B5B376cF143a80EDae"
   },
-  "XUSD_BasketManagerV3": {
-    "address": "0x4437D8e9594c673fd4Fa7bdD5fb1073861320D0E"
+  "Table_17": {
+    "address": "0xfD6CE0b8fC7ecc40493c2d072D1F4579Fd47E178"
   },
-  "XUSD_BasketManagerProxy": {
-    "address": "0x99e4FCE0768430B45Bd322F5A0466cd122D33f83",
-    "initialized": true
+  "Table_18": {
+    "address": "0x35Fee6023db4A617ac4f34d19ab227762BAac87F"
   },
-  "XUSD_MassetV3": {
-    "address": "0x8056Dcf081d72b75AC73917653dB855e2C1df8A4"
+  "Table_19": {
+    "address": "0xC8E794b95a171ED9f895D252A2eC8b63Fa474D5E"
   },
-  "BNBs_BasketManagerV3": {
-    "address": "0x280AA88F322D5e010cE1170795B6118B5825A58F"
+  "Table_20": {
+    "address": "0x03c4c3d526Ed1b71e49dE8e4954cEaC12537AaBd"
   },
-  "BNBs_BasketManagerProxy": {
-    "address": "0x4ecF4dccca4f94581B312454630cD0e4b42DA271",
-    "initialized": true
+  "Table_21": {
+    "address": "0x4ec639E143D398833bf1D95B78367f13F64918B2"
   },
-  "BNBs_MassetV3": {
-    "address": "0x35d1ea0518d26c291567ee5882F898dBFc250540"
+  "Table_22": {
+    "address": "0x3c5339DFB1B7ca084ABC52A04D438fa74e125C44"
   },
-  "Fish": {
-    "address": "0xeA1598B40832CC353e1Db4D13f9bCA783A951E86"
+  "Table_23": {
+    "address": "0x764385BD31458271ADf901E93461f0d8Ea417358"
   },
-  "MultiSigWallet": {
-    "address": "0x7e1BF65161C26CB04F19E96786aeB14893e429C0",
-    "initialized": true
+  "Table_24": {
+    "address": "0x97ccdB6cA9894b87ec496A13A313E86eE3874D50"
   },
-  "StakingLogic": {
-    "address": "0x37955395e788Adc937582746Fc87c126F75B85B6"
+  "Table_25": {
+    "address": "0x88Df6a738741eE421eE0e8bAafc4D9bD9926167a"
   },
-  "StakingProxy": {
-    "address": "0x553D9D2fF1e3c3633A58e37862fD7391a696c873",
-    "initialized": true
+  "Table_26": {
+    "address": "0xEbeCD68bbCaa13fC7e6a0A3B486bC02eECB085f1"
   },
-  "Staking": {
-    "initialized": true
+  "Table_27": {
+    "address": "0x83591871D31284fEf1c735177b65B03a801796c9"
   },
-  "VestingLogic": {
-    "address": "0x3D476db087e998190569dB6d9fb699AEC1A46fF8"
+  "Table_28": {
+    "address": "0x9576Ce0250D7BbB0340d2fB83533f48985198BE9"
+  },
+  "Table_29": {
+    "address": "0x946b43f36D55BFBfF6fb2D731f84136F4F991E30"
+  },
+  "Table_30": {
+    "address": "0xC56eA755EF60F02A4ae6B7865fddC1A65aA5c576"
+  },
+  "Table_31": {
+    "address": "0x88a84896A6C7841eabBaB45cDFe2443332eC91dC"
+  },
+  "Table_32": {
+    "address": "0x0b721452aa94CA368c8107c44fAb416495342d0F"
+  },
+  "Table_33": {
+    "address": "0x126bA576FB6DB94cB9DcE8949d8b6E905ce52b86"
+  },
+  "Table_34": {
+    "address": "0x25dfd4862D0090E77c05ECdF7eba927741Ba8c21"
+  },
+  "Table_35": {
+    "address": "0xD2E8a9dC3a3737d51254534B3D6e4edC8fF50f10"
+  },
+  "Table_36": {
+    "address": "0x8ab12868FDE221eC1702460ad75fC97d2123F9f6"
+  },
+  "Table_37": {
+    "address": "0x96aF10D816ec1223152A7A55fD52f0D517E4A220"
+  },
+  "Table_38": {
+    "address": "0x9C79A2984e5ACc5B0dB58263e249c0Dbd478Beda"
+  },
+  "Table_39": {
+    "address": "0x16a44fD9048af411Ab7bCD010a2653E9260c0217"
+  },
+  "Table_40": {
+    "address": "0x0F6C65CA0877c4A969232260e8083eda1Efa9020"
+  },
+  "Table_41": {
+    "address": "0x8f51106ab8a01dd54b25552D00Dff9053b5915FB"
+  },
+  "Table_42": {
+    "address": "0x36C819062e42093feDa764C40F272Ab5D3cD6982"
+  },
+  "Table_43": {
+    "address": "0x35259201F0f4f0e51B0BE94213Ae4E7BF5C848F3"
+  },
+  "Table_44": {
+    "address": "0xDF12D824A30fEB8B2DaEE2e299E93B5517fc484B"
+  },
+  "Table_45": {
+    "address": "0x38549C86456837a3831dEe477d5aDF6a56a66494"
+  },
+  "Table_46": {
+    "address": "0x580Fce719864E47d4739f217b9Dc072Ff91c291b"
+  },
+  "Table_47": {
+    "address": "0xAa2713f2873d7281cc991C1038502ae292F6e44d"
+  },
+  "Table_48": {
+    "address": "0xc9098d188e75821D2Ff5469b248e638131504b0a"
+  },
+  "Table_49": {
+    "address": "0xb9f22b17A6e162f39FD79904b25181f764a5d6EA"
+  },
+  "FishToken": {
+    "address": "0x1D8Bb5917918062f8f6DA205449B3065FD339bb7"
+  },
+  "Sender": {
+    "address": "0xe9f76a9d2a8E5EF0340B4CCe3428f46B7E46546F"
   }
 }

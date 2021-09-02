@@ -32,14 +32,14 @@ export default async function snapshot(truffle, networkName: string): Promise<vo
     const staking = await Staking.at(stakingContractAddress);
 
     const addressMap: { [address: string]: number } = {};
-    const originalFromBlock = 3070260;
+    const originalFromBlock = 3454083;
     let fromBlock = originalFromBlock;
-    const toBlock = 3454083;
+    const toBlock = 3632151;
     const batchSize = 10;
 
     const startTimestamp = await staking.kickoffTS();
 
-    fd = await fsPromises.open("addressList_1", "a+");
+    fd = await fsPromises.open("addressList_extend", "a+");
     const csvContent = await fd.readFile();
     if (csvContent.length === 0) {
         fd.write("Address,VotingPower\n");

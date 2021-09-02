@@ -13,7 +13,7 @@ const main = async (): Promise<void> => {
     const stakers: StakerInfo[] = [];
     const addresses: string[] = [];
 
-    const fileStream = fs.createReadStream("addressList_joined");
+    const fileStream = fs.createReadStream("addressList_2_unique");
     const rl = readline.createInterface({
         input: fileStream,
         crlfDelay: Infinity
@@ -33,7 +33,7 @@ const main = async (): Promise<void> => {
     logger.error({ duplicateAddresses });
 };
 
-const  findDuplicates = (arr: string[]): string[] => arr.filter((item, index) => arr.indexOf(item) !== index);
+const findDuplicates = (arr: string[]): string[] => arr.filter((item, index) => arr.indexOf(item) !== index);
 
 const isLineValid = (address: string, power: string): boolean => {
     if (!address || !power) return false; // ignore empty lines

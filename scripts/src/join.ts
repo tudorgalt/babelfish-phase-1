@@ -13,7 +13,7 @@ let fd: fsPromises.FileHandle;
 const newStakersJoined: string[] = [];
 
 const main = async (): Promise<void> => {
-    fd = await fsPromises.open("addressList_joined", "a+");
+    fd = await fsPromises.open("addressList_joined_test", "a+");
     const csvContent = await fd.readFile();
     if (csvContent.length === 0) {
         fd.write("Address,VotingPower\n");
