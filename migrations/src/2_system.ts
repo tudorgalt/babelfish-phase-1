@@ -53,7 +53,7 @@ export default async (
         await conditionalInitialize(`${symbol}_MassetProxy`, () => {
             return dMassetProxy.methods["initialize(address,address,bytes)"](
                 dMasset.address,
-                deployer.network !== 'development' ? addressesForInstance.multisig : _admin,
+                addressesForInstance.multisig || _admin,
                 initdata,
             );
         });

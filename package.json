@@ -37,7 +37,8 @@
     "compile": "yarn install && yarn hardhat compile --force",
     "prettify": "prettier --write test/*.ts test/**/*.ts types/generated/*.ts types/*.ts artifacts/*.ts",
     "flatten": "sol-merger \"./contracts/**/*.sol\" ./_flat",
-    "prepublishOnly": "yarn run compile"
+    "prepublishOnly": "yarn run compile",
+    "docgen": "yarn hardhat compile --force && yarn run hardhat docgen"
   },
   "repository": {
     "type": "git",
@@ -70,6 +71,7 @@
     "eslint-plugin-jsx-a11y": "^6.2.3",
     "eslint-plugin-react": "^7.18.3",
     "ethlint": "^1.2.5",
+    "hardhat-docgen": "^1.1.1",
     "humanize-duration": "^3.21.0",
     "mocha": "^7.0.1",
     "parse-duration": "^0.1.2",
