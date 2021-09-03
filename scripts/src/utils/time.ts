@@ -75,3 +75,9 @@ export const waitForBlock = async (truffle, offset: number): Promise<void> => {
         interval = truffle.setInterval(check, 500);
     });
 };
+
+export const wait = (timeout: number, truffle): Promise<void> => new Promise((resolve) => {
+    truffle.setTimeout(() => {
+        resolve();
+    }, timeout);
+});

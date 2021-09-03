@@ -1,16 +1,9 @@
 import { ZERO_ADDRESS } from "@utils/constants";
 import { MassetV3Instance, FeesVaultInstance, FeesVaultProxyInstance } from "types/generated";
-import addresses from '../addresses';
+import addresses, { BassetInstanceDetails } from '../addresses';
 import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "../state";
 
 const MAX_VALUE = 1000;
-
-class BassetInstanceDetails {
-    bassets: Array<string>;
-    factors: Array<number>;
-    bridges: Array<string>;
-    multisig: string;
-}
 
 export default async (
     { artifacts }: { artifacts: Truffle.Artifacts },
@@ -85,10 +78,14 @@ export default async (
                     addressesForInstance.bassets[index],
                     addressesForInstance.factors[index],
                     addressesForInstance.bridges[index]);
+
                 await basketManagerFake.addBasset(
                     addressesForInstance.bassets[index],
                     addressesForInstance.factors[index],
-                    addressesForInstance.bridges[index], 0, MAX_VALUE, false
+                    addressesForInstance.bridges[index],
+                    0,
+                    MAX_VALUE,
+                    false
                 );
             };
 
@@ -102,7 +99,7 @@ export default async (
             await Promise.all(promises);
 
             if (addressesForInstance.multisig) {
-                if (await basketManagerFake.owner() == default_) {
+                if (await basketManagerFake.owner() === default_) {
                     await basketManagerFake.transferOwnership(addressesForInstance.multisig);
                 }
                 await basketManagerProxy.changeAdmin(addressesForInstance.multisig, { from: _admin });
@@ -110,8 +107,8 @@ export default async (
         }
 
         const masset = await conditionalDeploy(MassetV3, `${symbol}_MassetV3`,
-            () => deployer.deploy(MassetV3));
-
+            () => deployer.deploy(MassetV3)
+        );
 
         const massetProxy = await MassetProxy.at(massetFake.address);
 

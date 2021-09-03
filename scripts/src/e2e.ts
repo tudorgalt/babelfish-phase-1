@@ -6,9 +6,9 @@
 import Web3 from "web3";
 import Logs from "node-logs";
 import { ZERO_ADDRESS } from "@utils/constants";
-import { BasketManagerV3Instance, FishInstance, GovernorAlphaInstance, StakingInstance, TokenInstance } from "types/generated";
+import { BasketManagerV3Instance, FishInstance, GovernorAlphaInstance, StakingInstance, TimelockInstance, TokenInstance } from "types/generated";
 import { getDeployed, getInfo, setNetwork } from "../../migrations/state";
-import { waitForBlock } from "./utils/time";
+import { wait, waitForBlock } from "./utils/time";
 import assert from "./utils/assert";
 
 enum ProposalState { Pending, Active, Canceled, Defeated, Succeeded, Queued, Expired, Executed }
@@ -23,19 +23,22 @@ export default async function e2e(truffle, networkName: string): Promise<void> {
 
     setNetwork(networkName);
 
-    const BasketManagerV3 = artifacts.require("BasketManagerV3");
+    const BasketManagerV4 = artifacts.require("BasketManagerV4");
     const GovernorAlpha = artifacts.require("GovernorAlpha");
     const Staking = artifacts.require("Staking");
     const Fish = artifacts.require("Fish");
     const Token = artifacts.require("Token");
+    const Timelock = artifacts.require("Timelock");
 
     const governorAlpha: GovernorAlphaInstance = await getDeployed(GovernorAlpha, `GovernorAlpha`);
-    const basketManager: BasketManagerV3Instance = await getDeployed(BasketManagerV3, `XUSD_BasketManagerProxy`);
+    const basketManager: BasketManagerV3Instance = await getDeployed(BasketManagerV4, `XUSD_BasketManagerProxy`);
     const staking: StakingInstance = await getDeployed(Staking, `StakingProxy`);
     const fish: FishInstance = await getDeployed(Fish, `Fish`);
+    const timelock: TimelockInstance = await getDeployed(Timelock, 'Timelock');
 
     const votingDelay = await governorAlpha.votingDelay();
     const votingPeriod = await governorAlpha.votingPeriod();
+    const timelockDelay = await timelock.delay();
 
     const stakeAddress: string = await getInfo("StakingProxy", "address");
     const basketManagerAddress: string = await getInfo("XUSD_BasketManagerProxy", "address");
@@ -57,13 +60,12 @@ export default async function e2e(truffle, networkName: string): Promise<void> {
 
     const targets = [basketManagerAddress];
     const values = [0];
-    // address _basset, int256 _factor, address _bridge, uint256 _min, uint256 _max, bool _paused
     const newBasset: TokenInstance = await Token.new("TEST", "TST", 18);
 
-    const signatures = ["addBasset(address,int256,address,uint256,uint256,bool)"];
+    const signatures = ["addBasset(address,int256,address,uint256,uint256,uint256,bool)"];
     const calldatas = [web3.eth.abi.encodeParameters(
-        ["address", "int256", "address", "uint256", "uint256", "bool"],
-        [newBasset.address, 1, ZERO_ADDRESS, 0, 1000, false]
+        ["address", "int256", "address", "uint256", "uint256", "uint256", "bool"],
+        [newBasset.address, 1, ZERO_ADDRESS, 0, 1000, 100, false]
     )];
 
     await governorAlpha.propose(targets, values, signatures, calldatas, "test propsal");
@@ -101,6 +103,11 @@ export default async function e2e(truffle, networkName: string): Promise<void> {
 
     proposalState = (await governorAlpha.state(latestProposal)).toNumber();
     assert(proposalState === ProposalState.Queued, "proposal should be queued");
+
+    const delay = timelockDelay.toNumber() * 1000;
+    logger.info(`Waiting ${delay / 1000} seconds to surpass delay`);
+
+    await wait(delay, truffle);
 
     await governorAlpha.execute(latestProposal);
 

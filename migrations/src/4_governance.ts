@@ -111,7 +111,7 @@ export default async (
     await conditionalInitialize("GovernorAlpha",
         async () => {
             const recentBlock = await web3.eth.getBlock("latest");
-            const blockTimestamp = Number(recentBlock.timestamp) + timelockDelay;
+            const blockTimestamp = Number(recentBlock.timestamp) + timelockDelay + 30;
 
             const signature = "setPendingAdmin(address)";
             const abiParameters = web3.eth.abi.encodeParameter("address", governorAlpha.address);

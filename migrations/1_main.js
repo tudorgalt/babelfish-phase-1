@@ -5,6 +5,8 @@
 const initialMigration = require(`./src/1_initial_migration.ts`).default;
 const systemMigration = require(`./src/2_system.ts`).default;
 const upgradeToV3Migration = require(`./src/3_upgradeToV3.ts`).default;
+const upgradeTo43Migration = require(`./src/5_upgradeToV4`).default;
+
 const state = require(`./state.ts`).default;
 
 // Bind the first argument of the script to the global truffle argument,
@@ -15,4 +17,5 @@ module.exports = async (deployer, network, accounts) => {
     await initialMigration(this, deployer);
     await systemMigration(this, deployer, network, accounts);
     await upgradeToV3Migration(this, deployer, network, accounts);
+    await upgradeTo43Migration(this, deployer, network, accounts);
 };
