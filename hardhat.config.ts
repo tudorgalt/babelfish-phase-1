@@ -8,6 +8,7 @@ import "hardhat-deploy";
 import "ts-node/register";
 import "tsconfig-paths/register";
 import "hardhat-typechain";
+import "hardhat-docgen"
 
 const config: HardhatUserConfig = {
     networks: {
@@ -86,7 +87,7 @@ const config: HardhatUserConfig = {
         }
     },
     solidity: {
-        version: "0.5.16",
+        version: "0.5.17",
         settings: {
             optimizer: {
                 enabled: false,
@@ -114,7 +115,11 @@ const config: HardhatUserConfig = {
         username: "mStable",
         project: "mStable-contracts",
     },
-
+    docgen: {
+        path: './docs',
+        clear: true,
+        runOnCompile: true,
+      }
 };
 
 export default config;

@@ -1,4 +1,4 @@
-pragma solidity 0.5.16;
+pragma solidity 0.5.17;
 
 import { Token } from "../masset/Token.sol";
 import { ApproverRole } from "../roles/ApproverRole.sol";

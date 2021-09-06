@@ -1,28 +1,40 @@
-pragma solidity 0.5.16;
+pragma solidity ^0.5.17;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IERC777Recipient } from "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import { IERC1820Registry } from "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
-import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
-import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancyGuard.sol";
-import { IBridge } from "./IBridge.sol";
+import { InitializableOwnable } from "../../helpers/InitializableOwnable.sol";
+import { InitializableReentrancyGuard } from "../../helpers/InitializableReentrancyGuard.sol";
+import { IBridge } from "../IBridge.sol";
 import { BasketManagerV3 } from "./BasketManagerV3.sol";
-import { RewardsManager } from "./RewardsManager.sol";
-import { FeesManager } from "./FeesManager.sol";
-import { FeesVault } from "../vault/FeesVault.sol";
-import { RewardsVault } from "../vault/RewardsVault.sol";
-import "./Token.sol";
+import { FeesVault } from "../../vault/FeesVault.sol";
+import "../Token.sol";
+
+/**
+ * @title MassetV3
+ * @dev Contract is responsible for managing mAsset and bAsset.
+ * Used for minting and burning tokens, calculating fees and calling the bridge 
+ * if transaction based on token from another blockchain.
+ */
 
 contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard {
 
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+    using SafeERC20 for Token;
 
-    // Events
+    // events
 
     /**
-     * @dev Event emitted when deposit is completed
+     * @dev Emitted when deposit is completed.
+     * @param minter            Address of the minter.
+     * @param recipient         Address of the recipient.
+     * @param massetQuantity    Masset quantity.
+     * @param bAsset            Address of the bAsset.
+     * @param bassetQuantity    Basset quantity.
      */
     event Minted(
         address indexed minter,
@@ -33,7 +45,12 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     );
 
     /**
-     * @dev Event emitted when withdrawal is completed
+     * @dev Emitted when withdrawal is completed.
+     * @param redeemer          Address of the redeemer.
+     * @param recipient         Address of the recipient.
+     * @param massetQuantity    Masset quantity.
+     * @param bAsset            Address of the bAsset.
+     * @param bassetQuantity    Basset quantity.
      */
     event Redeemed(
         address indexed redeemer,
@@ -43,6 +60,15 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 bassetQuantity
     );
 
+    /**
+     * @dev Emitted when tokensReceived method is called by the bridge.
+     * @param operator         Address operator requesting the transfer.
+     * @param from             Address token holder address.
+     * @param to               Address recipient address.
+     * @param amount           uint256 amount of tokens to transfer.
+     * @param userData         Bytes extra information provided by the token holder (if any).
+     * @param operatorData     Bytes extra information provided by the operator (if any).
+     */
     event onTokensReceivedCalled(
         address operator,
         address from,
@@ -53,7 +79,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     );
 
     /**
-     * @dev Event emitted when onTokensMinted method is called by the bridge
+     * @dev Emitted when onTokensMinted method is called by the bridge.
+     * @param sender           Address of the sender.
+     * @param orderAmount      Units of the masset to redeem.
+     * @param tokenAddress     Address of the bAsset to redeem.
+     * @param userData         Address of the final recipient as ABI encoded bytes.
      */
     event onTokensMintedCalled(
         address indexed sender,
@@ -62,13 +92,38 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         bytes userData
     );
 
+    /**
+     * @dev Emitted when deposit fee has changed.
+     * @param depositFee            Amount of the fee.
+     */
+    event DepositFeeChanged (uint256 depositFee);
+
+    /**
+     * @dev Emitted when deposit bridge fee has changed.
+     * @param depositBridgeFee      Amount of the fee.
+     */
+    event DepositBridgeFeeChanged (uint256 depositBridgeFee);
+
+    /**
+     * @dev Emitted when withdrawal fee has changed.
+     * @param withdrawalFee         Amount of the fee.
+     */
+    event WithdrawalFeeChanged (uint256 withdrawalFee);
+
+    /**
+     * @dev Emitted when withdrawal bridge fee has changed.
+     * @param withdrawalBridgeFee   Amount of the fee.
+     */
+    event WithdrawalBridgeFeeChanged (uint256 withdrawalBridgeFee);
+
     // state
 
     /**
-     * @dev factor of fees
-     * @notice 1000 means that fees are in promils
+     * @dev Factor of fees.
+     * @notice 1000 means that fees are in per mille.
      */
     uint256 constant private FEE_PRECISION = 1000;
+    bytes32 constant ERC777_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
 
     string private version;
 
@@ -87,19 +142,18 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // internal
 
+    /**
+     * @dev Register this contracts as implementer of the "ERC777 Tokens Recipient" interface in the ERC1820 registry.
+     */
     function registerAsERC777Recipient() internal {
         IERC1820Registry ERC1820 = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
-        ERC1820.setInterfaceImplementer(address(this), keccak256("ERC777TokensRecipient"), address(this));
+        ERC1820.setInterfaceImplementer(address(this), ERC777_RECIPIENT_INTERFACE_HASH, address(this));
     }
 
     /**
-     * @dev this method collects / transfers rewards and return the amount of massets that will be left for user.
-     * @notice All amount in this methods are in masset!
-     * @param _basset               address of basset to perform deposit/redeem on.
-     * @param _massetAmount         amount of deposit/redeem. Must be in masset precision.
-     * @param  isDeposit            Flag to determine offset direction(deposit/redeem).
-     * @param _recipient            Address to credit/take reward from.
-     * @return massetsLeft          amount of funds that is left to user in masset precision.
+     * @dev Calculate and return fee amount based on massetAmount.
+     * @param massetAmount  Amount of masset to deposit / withdraw.
+     * @return fee          Calculated fee amount.
      */
     function _collectAndCalculateRewards(
         address _basset,
@@ -131,6 +185,12 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // public
 
+    /**
+   * @dev Contract initializer.
+   * @param _basketManagerAddress           Address of the basket manager.
+   * @param _tokenAddress                   Address of the mAsset token.
+   * @param _registerAsERC777RecipientFlag  Bool determine if contract should be register as ERC777 recipient.
+   */
     function initialize(
         address _basketManagerAddress,
         address _tokenAddress,
@@ -157,11 +217,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     ****************************************/
 
     /**
-     * @dev Mint a single bAsset, at a 1:1 ratio with the bAsset. This contract
-     *      must have approval to spend the senders bAsset
-     * @param _bAsset         Address of the bAsset to mint
-     * @param _bAssetQuantity Quantity in bAsset units
-     * @return massetMinted   Number of newly minted mAssets
+     * @dev Mint a single mAsset, at a 1:1 ratio with the bAsset. This contract
+     *      must have approval to spend the senders bAsset.
+     * @param _bAsset         Address of the bAsset.
+     * @param _bAssetQuantity Quantity in bAsset units.
+     * @return massetMinted   Number of newly minted mAssets.
      */
     function mint(
         address _bAsset,
@@ -175,12 +235,12 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     }
 
     /**
-     * @dev Mint a single bAsset, at a 1:1 ratio with the bAsset. This contract
-     *      must have approval to spend the senders bAsset
-     * @param _bAsset         Address of the bAsset to mint
-     * @param _bAssetQuantity Quantity in bAsset units
-     * @param _recipient receipient of the newly minted mAsset tokens
-     * @return massetMinted   Number of newly minted mAssets
+     * @dev Mint a single mAsset to recipient address, at a 1:1 ratio with the bAsset.
+     *      This contract must have approval to spend the senders bAsset.
+     * @param _bAsset         Address of the bAsset.
+     * @param _bAssetQuantity Quantity in bAsset units.
+     * @param _recipient      Receipient of the newly minted mAsset tokens.
+     * @return massetMinted   Number of newly minted mAssets.
      */
     function mintTo(
         address _bAsset,
@@ -198,6 +258,14 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
               MINTING (INTERNAL)
     ****************************************/
 
+    /**
+     * @dev Mint a single mAsset to recipient address, at a 1:1 ratio with the bAsset.
+     *      This contract must have approval to spend the senders bAsset.
+     * @param _basset         Address of the bAsset.
+     * @param _bassetQuantity Quantity in bAsset units.
+     * @param _recipient      Receipient of the newly minted mAsset tokens.
+     * @return massetMinted   Number of newly minted mAssets.
+     */
     function _mintTo(
         address _basset,
         uint256 _bassetQuantity,
@@ -212,24 +280,24 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(basketManager.isValidBasset(_basset), "invalid basset");
         require(basketManager.checkBasketBalanceForDeposit(_basset, _bassetQuantity), "invalid basket");
 
-        uint256 massetQuantity = basketManager.convertBassetToMassetQuantity(_basset, _bassetQuantity);
+        (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(_basset, _bassetQuantity);
 
-        IERC20(_basset).transferFrom(msg.sender, address(this), _bassetQuantity);
+        IERC20(_basset).safeTransferFrom(msg.sender, address(this), bassetQuantity);
 
         uint256 massetsSubFee = _mintAndCalulateFee(massetQuantity, depositFee);
         uint256 massetsToMint = _collectAndCalculateRewards(_basset, massetsSubFee, true, _recipient);
 
         token.mint(_recipient, massetsToMint);
 
-        emit Minted(msg.sender, _recipient, massetsToMint, _basset, _bassetQuantity);
+        emit Minted(msg.sender, _recipient, massetsToMint, _basset, bassetQuantity);
 
-        return massetQuantity;
+        return massetsToMint;
     }
 
     /**
-     * @dev this method mints fee to vault contract and return the amount of massets that goes to the user
-     * @param massetQuantity    amount of massets
-     * @return massetsToMint    amount of massets that is left to mint for user
+     * @dev Mints fee to vault contract and return the amount of massets that goes to the user.
+     * @param massetQuantity    Amount of massets.
+     * @return massetsToMint    Amount of massets that is left to mint for user.
      */
     function _mintAndCalulateFee(uint256 massetQuantity, uint256 feeAmount) internal returns (uint256 massetsToMint) {
         uint256 fee = feesManager.calculateFee(massetQuantity, feeAmount);
@@ -247,9 +315,9 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     /**
      * @dev Credits the sender with a certain quantity of selected bAsset, in exchange for burning the
      *      relative mAsset quantity from the sender. Sender also incurs a small mAsset fee, if any.
-     * @param _bAsset           Address of the bAsset to redeem
-     * @param _massetQuantity   Units of the masset to redeem
-     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets
+     * @param _bAsset           Address of the bAsset to redeem.
+     * @param _massetQuantity   Units of the masset to redeem.
+     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
      */
     function redeem(
         address _bAsset,
@@ -260,11 +328,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
-     *      relative Masset quantity from the sender. Sender also incurs a small fee, if any.
-     * @param _bAsset           Address of the bAsset to redeem
-     * @param _massetQuantity   Units of the masset to redeem
-     * @param _recipient        Address to credit with withdrawn bAssets
-     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets
+     *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
+     * @param _bAsset           Address of the bAsset to redeem.
+     * @param _massetQuantity   Units of the masset to redeem.
+     * @param _recipient        Address to credit with withdrawn bAssets.
+     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
      */
     function redeemTo(
         address _bAsset,
@@ -278,6 +346,15 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
               REDEMPTION (INTERNAL)
     ****************************************/
 
+    /**
+     * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
+     *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
+     * @param _basset           Address of the bAsset to redeem.
+     * @param _massetQuantity   Units of the masset to redeem.
+     * @param _recipient        Address to credit with withdrawn bAssets.
+     * @param bridgeFlag        Flag that indicates if the reedem proces is used with conjunction with bridge.
+     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+     */
     function _redeemTo(
         address _basset,
         uint256 _massetQuantity,
@@ -292,11 +369,12 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         // massetsToBurn is the amount of massets that is left to burn after the fee was taken.
         // It is used to calculate amount of bassets that are transfered to user.
-        uint256 massetsToBurn = _transferAndCalulateFee(_massetQuantity, feeAmount, msg.sender);
-        uint256 bassetQuantity = basketManager.convertMassetToBassetQuantity(_basset, massetsToBurn);
+        uint256 massetsAfterFee = _transferAndCalulateFee(_massetQuantity, feeAmount, msg.sender);
+        (uint256 bassetQuantity, uint256 massetsToBurn) = basketManager.convertMassetToBassetQuantity(_basset, massetsAfterFee);
 
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
 
+        token.burn(msg.sender, massetsToBurn);
         // In case of withdrawal to bridge the receiveTokensAt is called instead of transfer.
         if(bridgeFlag) {
             address bridgeAddress = basketManager.getBridge(_basset);
@@ -306,30 +384,26 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
                 IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
                 "call to bridge failed");
         } else {
-            uint256 massetsToTransfer = _collectAndCalculateRewards(_basset, massetsToBurn, false, _recipient);
-            uint256 bassetsToTransfer = basketManager.convertMassetToBassetQuantity(_basset, massetsToTransfer);
-
-            IERC20(_basset).transfer(_recipient, bassetsToTransfer);
+            IERC20(_basset).safeTransfer(_recipient, bassetQuantity);
         }
 
-        token.burn(msg.sender, massetsToBurn);
         emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity);
 
-        return _massetQuantity;
+        return massetsToBurn;
     }
 
     /**
-     * @dev this method transfers fee to vault contract and return the amount of massets that will be burned
-     *      must have approval to spend the senders Masset
-     * @param massetQuantity        amount of massets to withdraw
-     * @param sender                owner of massets
-     * @return massetsToBurn        amount of massets that is left to burn
+     * @dev Transfers fee to vault contract and return the amount of massets that will be burned
+     *      must have approval to spend the senders Masset.
+     * @param massetQuantity        Amount of massets to withdraw.
+     * @param sender                Owner of massets.
+     * @return massetsToBurn        Amount of massets that is left to burn.
      */
     function _transferAndCalulateFee(uint256 massetQuantity, uint256 feeAmount, address sender) internal returns (uint256 massetsToBurn) {
         uint256 fee = feesManager.calculateFee(massetQuantity, feeAmount);
         massetsToBurn = massetQuantity.sub(fee);
 
-        require(token.transferFrom(sender, feesVaultAddress, fee), "fee transfer failed");
+        token.safeTransferFrom(sender, feesVaultAddress, fee);
 
         return massetsToBurn;
     }
@@ -341,11 +415,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      *      relative Masset quantity from the sender. Sender also incurs a small fee, if any.
      *      This function is designed to also call the bridge in order to have the basset tokens sent to
      *      another blockchain.
-     * @param _basset           Address of the bAsset to redeem
-     * @param _massetQuantity   Units of the masset to redeem
-     * @param _recipient        Address to credit with withdrawn bAssets
-     * @param _bridgeAddress    This is ignored and is left here for backward compatibility with the FE
-     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets
+     * @param _basset           Address of the bAsset to redeem.
+     * @param _massetQuantity   Units of the masset to redeem.
+     * @param _recipient        Address to credit with withdrawn bAssets.
+     * @param _bridgeAddress    This is ignored and is left here for backward compatibility with the FE.
+     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
      */
     function redeemToBridge(
         address _basset,
@@ -361,10 +435,10 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      *      relative Masset quantity from the sender. Sender also incurs a small fee, if any.
      *      This function is designed to also call the bridge in order to have the basset tokens sent to
      *      another blockchain.
-     * @param _basset           Address of the bAsset to redeem
-     * @param _massetQuantity   Units of the masset to redeem
-     * @param _recipient        Address to credit with withdrawn bAssets
-     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets
+     * @param _basset           Address of the bAsset to redeem.
+     * @param _massetQuantity   Units of the masset to redeem.
+     * @param _recipient        Address to credit with withdrawn bAssets.
+     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
      */
     function redeemToBridge(
         address _basset,
@@ -374,17 +448,36 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return _redeemTo(_basset, _massetQuantity, _recipient, true);
     }
 
+    /**
+     * @dev Decode bytes data to address.
+     * @param data              Data to decode.
+     * @return address          Decoded address.
+     */
     function _decodeAddress(bytes memory data) private pure returns (address) {
         address addr = abi.decode(data, (address));
         require(addr != address(0), "Converter: Error decoding extraData");
         return addr;
     }
 
+    /**
+     * @dev Encode address to bytes data.
+     * @param _address          Address to encode.
+     * @return address          Decoded address.
+     */
     function _encodeAddress(address _address) private pure returns (bytes memory) {
         require(_address != address(0), "Converter: Error encoding extraData");
         return abi.encode(_address);
     }
 
+    /**
+     * @dev This is called by the bridge to let us know tokens have been received.
+     * @param _operator         Address operator requesting the transfer.
+     * @param _from             Address token holder address.
+     * @param _to               Address recipient address.
+     * @param _amount           uint256 amount of tokens to transfer.
+     * @param _userData         Bytes extra information provided by the token holder (if any).
+     * @param _operatorData     Bytes extra information provided by the operator (if any).
+     */
     function tokensReceived(
         address _operator,
         address _from,
@@ -406,9 +499,9 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     /**
      * @dev This is called by the bridge to let us know the user has sent tokens through it and
      *      into the masset.
-     * @param _orderAmount      Units of the masset to redeem
-     * @param _tokenAddress     Address of the bAsset to redeem
-     * @param _userData         Address of the final recipient as ABI encoded bytes
+     * @param _orderAmount      Units of the masset to redeem.
+     * @param _tokenAddress     Address of the bAsset to redeem.
+     * @param _userData         Address of the final recipient as ABI encoded bytes.
      */
     function onTokensMinted(
         uint256 _orderAmount,
@@ -428,11 +521,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(basketManager.isValidBasset(basset), "invalid basset");
         require(basketManager.checkBasketBalanceForDeposit(basset, _orderAmount), "basket out of balance");
 
-        uint256 massetQuantity = basketManager.convertBassetToMassetQuantity(basset, _orderAmount);
+        (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(basset, _orderAmount);
         uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, depositBridgeFee);
         token.mint(recipient, massetsToMint);
 
-        emit Minted(msg.sender, recipient, massetsToMint, basset, _orderAmount);
+        emit Minted(msg.sender, recipient, massetsToMint, basset, bassetQuantity);
     }
 
     // Getters
@@ -475,27 +568,38 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // Governance methods
 
-    function setDepositFee (uint256 amount) public onlyOwner {
-        require(amount >= 0, "fee amount should be greater or equal zero");
-        depositFee = amount;
+    function setDepositFee (uint256 _amount) public onlyOwner {
+        require(_amount >= 0, "fee amount should be greater or equal zero");
+        depositFee = _amount;
+
+        emit DepositFeeChanged(_amount);
     }
 
-    function setDepositBridgeFee (uint256 amount) public onlyOwner {
-        require(amount >= 0, "fee amount should be greater or equal zero");
-        depositBridgeFee = amount;
+    function setDepositBridgeFee (uint256 _amount) public onlyOwner {
+        require(_amount >= 0, "fee amount should be greater or equal zero");
+        depositBridgeFee = _amount;
+
+        emit DepositBridgeFeeChanged(_amount);
     }
 
-    function setWithdrawalFee (uint256 amount) public onlyOwner {
-        require(amount >= 0, "fee amount should be greater or equal zero");
-        withdrawalFee = amount;
+    function setWithdrawalFee (uint256 _amount) public onlyOwner {
+        require(_amount >= 0, "fee amount should be greater or equal zero");
+        withdrawalFee = _amount;
+
+        emit WithdrawalFeeChanged(_amount);
     }
 
-    function setWithdrawalBridgeFee (uint256 amount) public onlyOwner {
-        require(amount >= 0, "fee amount should be greater or equal zero");
-        withdrawalBridgeFee = amount;
+    function setWithdrawalBridgeFee (uint256 _amount) public onlyOwner {
+        require(_amount >= 0, "fee amount should be greater or equal zero");
+        withdrawalBridgeFee = _amount;
+
+        emit WithdrawalBridgeFeeChanged(_amount);
     }
 
     // Temporary migration
+    /**
+     * @dev Temporary migration to V3 version.
+     */
     function upgradeToV3(
         address _basketManagerAddress,
         address _tokenAddress,

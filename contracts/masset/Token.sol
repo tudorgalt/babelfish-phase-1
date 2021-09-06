@@ -1,8 +1,15 @@
-pragma solidity 0.5.16;
+pragma solidity ^0.5.17;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
+
+/**
+ * @title Token
+ * @dev Implementation of masset Token.
+ * Inherits from ERC20 and ERC20Detailed with implemented 
+ * mint and burn functions.
+ */
 
 contract Token is ERC20, ERC20Detailed, Ownable {
 

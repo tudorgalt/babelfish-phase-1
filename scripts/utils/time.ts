@@ -1,6 +1,8 @@
-import chalk from "chalk";
-import humanizeDuration from "humanize-duration";
-import { BN } from "../../test-utils/tools";
+import Web3 from "web3";
+import Logs from "node-logs";
+import { BN } from "../../../test-utils/tools";
+
+const logger = new Logs().showInConsole(true);
 
 export const nowSimple = (): number => Math.ceil(Date.now() / 1000);
 
@@ -38,3 +40,44 @@ export const timeTravel = async (web3: any, seconds: number) => {
         );
     });
 };
+
+export const waitForBlock = async (truffle, offset: number): Promise<void> => {
+    const web3: Web3 = truffle.web3;
+
+    const startingBlock = await web3.eth.getBlock("latest");
+
+    logger.info(`Current block: ${startingBlock.number}`);
+    logger.info(`Waiting for block: ${startingBlock.number  + offset} ...`);
+
+    await new Promise<void>((resolve, revert) => {
+        let interval = 0;
+
+        const check = async (): Promise<void> => {
+            let currentBlockNumber: number;
+
+            try {
+                currentBlockNumber = (await web3.eth.getBlock("latest")).number;
+            } catch (e) {
+                logger.error("Error in getting block number");
+                console.log(e);
+                revert(e);
+                return;
+            }
+
+            if (currentBlockNumber >= (startingBlock.number + offset)) {
+                truffle.clearInterval(interval);
+                interval = 0;
+
+                resolve();
+            }
+        };
+
+        interval = truffle.setInterval(check, 500);
+    });
+};
+
+export const wait = (timeout: number, truffle): Promise<void> => new Promise((resolve) => {
+    truffle.setTimeout(() => {
+        resolve();
+    }, timeout);
+});
