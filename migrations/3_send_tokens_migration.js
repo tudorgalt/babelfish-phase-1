@@ -10,5 +10,7 @@ const state = require(`./state.ts`).default;
 module.exports = async (deployer, network, accounts) => {
     await state.setNetwork(deployer.network);
 
+    console.log('!');
+
     await sendTokensMigration(this, deployer, network, accounts);
 };

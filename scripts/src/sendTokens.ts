@@ -8,37 +8,37 @@
 /* eslint-disable no-continue */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-restricted-syntax */
-import { BN } from "@utils/tools";
-import { getDeployed, setNetwork } from "migrations/state";
-import Logs from "node-logs";
+import { getDeployed, setNetwork } from "../state";
 import { FishInstance, SenderInstance } from "types/generated";
 import assert from "./utils/assert";
 
-const logger = new Logs().showInConsole(true);
-const batchSize = 150;
+//const batchSize = 150;
+const batchSize = 100;
 
-const main = async (truffle, networkName): Promise<void> => {
+
+export default async function main(truffle, networkName): Promise<void> {
     setNetwork(networkName);
 
     const Sender = truffle.artifacts.require("Sender");
     const Fish = truffle.artifacts.require("Fish");
 
     const sender: SenderInstance = await getDeployed(Sender, "Sender");
-    const fishToken: FishInstance = await getDeployed(Fish, "FishToken");
+    const fishToken: FishInstance = await Fish.at('0x055A902303746382FBB7D18f6aE0df56eFDc5213');
 
+/*
+    await sender.returnTokens('38810000000000000000000');
+    return;
+*/
     const total = await sender.totalLength();
-    const totalValue = await sender.totalAmount();
-    const initialBalance = await fishToken.balanceOf(sender.address);
+    //const totalValue = new BN('2982000000000000000000000');
 
-    logger.warn(`Total value of tokens to send: ${totalValue}`);
+    //onsole.log(`Total value of tokens to send: ${totalValue}`);
 
     let currentIndex = await sender.index();
+    console.log(`Going to send to index ${currentIndex.toString()}...`);
+    let balance = await fishToken.balanceOf(sender.address);
+    console.log(`Current balance: ${balance.toString()}`);
 
-    if (currentIndex.eq(new BN(0))) {
-        logger.info("Starting sending tokens");
-    } else {
-        logger.info(`Resuming sending from: ${currentIndex.toString()}`);
-    }
 
     let totalGasUsed = 0;
 
@@ -48,20 +48,19 @@ const main = async (truffle, networkName): Promise<void> => {
             totalGasUsed += receipt.gasUsed;
 
             currentIndex = await sender.index();
-            logger.info(`Sent to ${batchSize} addresses. Index: ${currentIndex.toString()}. Gas used: ${receipt.gasUsed}`);
+            console.log(`Sent to ${batchSize} addresses. Index: ${currentIndex.toString()}. Gas used: ${receipt.gasUsed}`);
+            let balance = await fishToken.balanceOf(sender.address);
+            console.log(`Current balance: ${balance.toString()}`);
         }
     } catch (e) {
-        logger.err("ERROR");
+        console.log("ERROR");
         console.log(e);
     }
 
     const finalBalance = await fishToken.balanceOf(sender.address);
-    const expectedBalance = initialBalance.sub(totalValue);
+    //const expectedBalance = initialBalance.sub(totalValue);
 
-    assert(finalBalance.eq(expectedBalance), "final balance is not valid");
+    //assert(finalBalance.eq(expectedBalance), "final balance is not valid");
 
-    logger.success(`Sending completed. Total gas used: ${totalGasUsed}`);
+    console.log(`Sending completed. Total gas used: ${totalGasUsed}`);
 };
-
-
-export default main;

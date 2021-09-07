@@ -65,7 +65,7 @@ module.exports = {
     },
     rsk: {
       provider() {
-        return new HDWalletProvider('chimney toss kit now firm true scan laundry hazard buffalo tiny west', // totally bogus
+        return new HDWalletProvider('remove room lock night pyramid track ticket animal anchor between slogan weekend south pave eight', // totally bogus
             'wss://mainnet.sovryn.app/ws', 0, 30)
       },
       network_id: 30,

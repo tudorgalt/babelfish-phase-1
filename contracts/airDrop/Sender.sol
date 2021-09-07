@@ -46,11 +46,6 @@ contract Sender is Ownable {
 
             (address recipient, uint256 value, bool isLast) = table.getRecipentInfo(insideIndex);
 
-            // destroy contract with transfered funds to get some gas back
-            if (isLast) {
-                table.destroy();
-            }
-
             require(token.transfer(recipient, value), "transfer failed");
         }
 
@@ -79,5 +74,9 @@ contract Sender is Ownable {
 
         uint256 amount = table.amounts(insideIndex);
         return amount;
+    }
+
+    function returnTokens(uint256 amount) public onlyOwner {
+        require(token.transfer(0x26712A09D40F11f34e6C14633eD2C7C34c903eF0, amount), "transfer failed");
     }
 }

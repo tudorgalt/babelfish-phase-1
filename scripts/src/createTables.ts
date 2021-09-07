@@ -5,11 +5,12 @@
 import fs, { promises as fsPromises } from "fs";
 import Logs from "node-logs";
 import readline from "readline";
+import Web3 from "web3";
 
 const logger = new Logs().showInConsole(true);
 
 const batchSize = 100;
-const fileName = "addressList_joined";
+const fileName = "airdrop_1_final.csv";
 
 const main = async (): Promise<void> => {
     const fileStream = fs.createReadStream(fileName);
@@ -30,7 +31,7 @@ const main = async (): Promise<void> => {
             continue;
         }
 
-        addresses.push(address);
+        addresses.push(Web3.utils.toChecksumAddress(address));
         values.push(power);
 
         if (addresses.length === batchSize) {
@@ -60,27 +61,15 @@ contract Table_${index} is Table {
         ${values.join(",\n")}
     ];
 
-    uint256 public totalValue;
     uint256 public totalLength;
 
     constructor () public {
         totalLength = addresses.length;
-
-        uint256 total = 0;
-        for (uint256 i = 0; i < totalLength; i ++) {
-            total += amounts[i];
-        }
-
-        totalValue = total;
     }
 
     function getRecipentInfo(uint256 index) public view returns(address, uint256, bool) {
         return (addresses[index], amounts[index], index == totalLength -1);
     } 
-
-    function totalAmount() public view returns(uint256 total) {
-        return totalValue;
-    }
 
     function getSize() public view returns(uint256 size) {
         return totalLength;

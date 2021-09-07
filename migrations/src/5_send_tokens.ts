@@ -24,10 +24,16 @@ export default async (
 
     const tablesContracts: TableInstance[] = [];
 
+    console.log(1);
+
     const FishToken = artifacts.require("Fish");
     const Sender = artifacts.require("Sender");
 
+    console.log(2);
+
     const numberOfTables = await countTables();
+
+    console.log(3, numberOfTables);
 
     const tables = [];
 
@@ -43,13 +49,13 @@ export default async (
     }
 
     const token: FishInstance = await conditionalDeploy(FishToken, `FishToken`,
-        () => deployer.deploy(FishToken, tokens("1000000000000000000"))
+        () => deployer.deploy(FishToken, 'FISH', 'FISH', 18)
     );
 
     const sender: SenderInstance = await conditionalDeploy(Sender, `Sender`,
         () => deployer.deploy(Sender, tables, token.address)
     );
-    await token.mint(sender.address, tokens("1000000000000000000"));
+    await token.mint(sender.address, tokens("2982000"));
 
     // eslint-disable-next-line no-restricted-syntax
     for await (const table of tablesContracts) {
