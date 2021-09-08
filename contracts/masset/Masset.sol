@@ -350,4 +350,93 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     function migrateV1ToV2() public {
         version = "2.0";
     }
+
+    function migrateV20ToV21() public {
+        require(keccak256(bytes(version)) == keccak256(bytes("2.0")), "wrong version");
+
+        version = "2.1";
+
+        // testnet
+        if (address(this) == 0x0B0Bb5F6b4201Bf60b21FE1780ff59308C8a1cb8) {
+            basketManager = new BasketManager(
+            // assets
+            [
+                // ETH->RSK
+                0xcB92c8d49Ec01b92f2a766C7c3C9C501C45271e0, // DAIes
+                0xCc8EEc21aE75f1A2DE4aC7b32a7de888A45cF859, // USDCes
+                0x10C5A7930fc417E728574e334b1488b7895C4b81, // USDTes
+
+                // BSC->RSK
+                0x407Ff7D4760d3a81b4740D268eb04490C7dFE7f2, // bsDAI
+                0x3e2cf87e7fF4048A57F9Cdde9368C9f4bfb43aDf, // bsUSDC
+                0x43bC3f0FfFf6c9BBf3C2EAfe464C314d43f561De, // bsUSDT
+                0x8c9abb6c9D8D15ddB7ada2e50086e1050aB32688, // bsBUSD
+
+                // Non-bridge
+                0x7e2F245F7dc8e78576ECB13AEFc0a101E9BE1AD3, // rDOC
+                0xCB46c0ddc60D18eFEB0E586C17Af6ea36452Dae0  // DOC
+            ],
+            // factors
+            [1, 1, 1, 1, 1, 1, 1, 1, 1],
+            // bridges
+            [
+                // ETH->RSK
+                0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156,
+                0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156,
+                0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156,
+
+                // BSC->RSK
+                0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8,
+                0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8,
+                0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8,
+                0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8,
+
+                // Non-bridge
+                0x0000000000000000000000000000000000000000,
+                0x0000000000000000000000000000000000000000
+            ]);
+        }
+
+        // mainnet
+        if (address(this) == 0xad624f56f80cDb5E1b37d314981672e24F0917EA) {
+            address[] memory assets = [
+            // ETH->RSK
+            address(0x1a37c482465e78E6dabE1eC77b9A24d4236D2A11), // DAIes
+            address(0x8D1F7cBC6391d95E2774380E80a666fEBf655d6B), // USDCes
+            address(0xD9665Ea8F5Ff70CF97e1b1CD1B4Cd0317B0976e8), // USDTes
+
+            // BSC->RSK
+            address(0x6A42FF12215a90F50866a5CE43a9c9c870116E76), // DAIbs
+            address(0x91eDceE9567cD5612C9DeDeAAe24D5e574820Af1), // USDCbs
+            address(0xFf4299bcA0313c20A61dC5Ed597739743bEf3f6D), // USDTbs
+            address(0x61e9604E31a736129D7f5c58964C75935b2D80d6), // BUSDbs
+
+            // non bridge
+            address(0xef213441A85dF4d7ACbDaE0Cf78004e1E486bB96), // RUSDT
+            address(0x2d919F19D4892381D58edeBeca66D5642Cef1a1f), // rDOC
+            address(0xe700691dA7b9851F2F35f8b8182c69c53CcaD9Db)  // DOC
+
+            ];
+            int256[] memory factors = [int256(1), int256(1), int256(1), int256(1), int256(1), int256(1), int256(1), int256(1), int256(1), int256(1)];
+            address[] memory bridges = [
+            // ETH->RSK
+            address(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581),
+            address(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581),
+            address(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581),
+
+            // BSC->RSK
+            address(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350),
+            address(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350),
+            address(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350),
+            address(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350),
+
+            // non bridge
+            address(0x0000000000000000000000000000000000000000),
+            address(0x0000000000000000000000000000000000000000),
+            address(0x0000000000000000000000000000000000000000)
+            ];
+            basketManager = new BasketManager(assets, factors, bridges);
+        }
+    }
 }
+
