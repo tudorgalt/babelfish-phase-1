@@ -15,5 +15,8 @@
   },
   "BasketManager": {
     "address": "0x6D1B85c6D4554E88513BA219EC32710820c5f91E"
+  },
+  "Migrations": {
+    "address": "0x459F869179567a8fF98C60a1eD63384bfb4A6A61"
   }
 }

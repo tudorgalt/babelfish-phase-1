@@ -81,7 +81,7 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
     await state.conditionalInitialize('MassetProxy', () => {
         return d_MassetProxy.methods["initialize(address,address,bytes)"](
             d_Masset.address,
-            addresses.multisig,
+            network == 'rsk' ? addresses.multisig : admin,
             initData2,
         );
     });
