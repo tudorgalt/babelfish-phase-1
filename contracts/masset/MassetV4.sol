@@ -511,6 +511,14 @@ function _redeemTo(
 
     // Getters
 
+    function getFeesVault() external view returns (address) {
+        return feesVaultAddress;
+    }
+
+    function getRewardsVault() external view returns (address) {
+        return address(rewardsVault);
+    }
+
     function getVersion() external view returns (string memory) {
         return version;
     }

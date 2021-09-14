@@ -1,34 +1,48 @@
+import Logs from "node-logs";
 import { DeployFunction } from "hardhat-deploy/dist/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { BasketManagerContract, TokenContract } from "types/generated";
 import addresses, { BassetInstanceDetails, isDevelopmentNetwork } from './utils/addresses';
+import { DeploymentTags } from "./utils/DeploymentTags";
 
-import { conditionalDeploy, conditionalInitialize, printState } from "./utils/state";
+import { conditionalDeploy, conditionalInitialize, contractConstructorArgs, printState } from "./utils/state";
 
 const cToken = artifacts.require("Token");
 const cBasketManager = artifacts.require("BasketManager");
 const cMasset = artifacts.require("Masset");
 const cMassetProxy = artifacts.require("MassetProxy");
 
+const logger = new Logs().showInConsole(true);
 
 const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAccounts }: HardhatRuntimeEnvironment) => {
+    logger.info("Starting system migration");
+
     const [default_, _admin] = await getUnnamedAccounts();
     const { deploy } = deployments;
 
     const addressesForNetwork = addresses[network.name];
 
     async function deployInstance(symbol: string, addressesForInstance: BassetInstanceDetails) {
-        const dToken = await conditionalDeploy(cToken, `${symbol}_Token`, {
-            from: default_,
-            args: [symbol, symbol, 18]
-        }, deploy);
+        const dTokenArgs = contractConstructorArgs<TokenContract>(symbol, symbol, 18);
+        const dToken = await conditionalDeploy({
+            contract: cToken,
+            key: `${symbol}_Token`,
+            deployfunc: deploy,
+            deployOptions: { from: default_, args: dTokenArgs }
+        });
 
-        const dMasset = await conditionalDeploy(cMasset, `${symbol}_Masset`, {
-            from: default_
-        }, deploy);
-
-        const dMassetProxy = await conditionalDeploy(cMassetProxy, `${symbol}_MassetProxy`, {
-            from: default_
-        }, deploy);
+        const dMasset = await conditionalDeploy({
+            contract: cMasset,
+            key: `${symbol}_Masset`,
+            deployfunc: deploy,
+            deployOptions: { from: default_ }
+        });
+        const dMassetProxy = await conditionalDeploy({
+            contract: cMassetProxy,
+            key: `${symbol}_MassetProxy`,
+            deployfunc: deploy,
+            deployOptions: { from: default_ }
+        });
 
         if (await dToken.owner() !== dMassetProxy.address) {
             await dToken.transferOwnership(dMassetProxy.address);
@@ -45,10 +59,13 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
             addressesForInstance.bridges = ['0x0000000000000000000000000000000000000000'];
         }
 
-        const dBasketManager = await conditionalDeploy(cBasketManager, `${symbol}_BasketManager`, {
-            from: default_,
-            args: [addressesForInstance.bassets, addressesForInstance.factors, addressesForInstance.bridges]
-        }, deploy);
+        const dBasketManagerArgs = contractConstructorArgs<BasketManagerContract>(addressesForInstance.bassets, addressesForInstance.factors, addressesForInstance.bridges);
+        const dBasketManager = await conditionalDeploy({
+            contract: cBasketManager,
+            key: `${symbol}_BasketManager`,
+            deployfunc: deploy,
+            deployOptions: { from: default_, args: dBasketManagerArgs }
+        });
 
         const initdata: string = dMasset.contract.methods
             .initialize(
@@ -64,16 +81,19 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
                 initdata,
             );
         });
-
     }
 
     await deployInstance('ETHs', addressesForNetwork.ETHs);
     await deployInstance('XUSD', addressesForNetwork.XUSD);
     await deployInstance('BNBs', addressesForNetwork.BNBs);
 
+    logger.success("Migration completed");
     printState();
 };
 
-deployFunc.tags = ["migration"];
+deployFunc.tags = [
+    DeploymentTags.V2,
+    DeploymentTags.Migration
+];
 
 export default deployFunc;

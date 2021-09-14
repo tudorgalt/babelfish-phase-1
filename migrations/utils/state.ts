@@ -3,10 +3,13 @@
 import fs from 'fs';
 import { DeployOptions } from 'hardhat-deploy/dist/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import Logs from 'node-logs';
 import { Address } from 'types';
 
 let state: AddressesState = null;
 let network = 'localhost';
+
+const logger = new Logs().showInConsole(true);
 
 const emptyState: AddressesState = {};
 
@@ -16,25 +19,38 @@ export function setNetwork(_network: string) {
 
 type DeployFunc = HardhatRuntimeEnvironment['deployments']['deploy'];
 
-export async function conditionalDeploy <T extends Truffle.ContractInstance> (
-    contract: Truffle.Contract<T>,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const contractConstructorArgs = <T extends Truffle.Contract<any>>(
+    ...args: Parameters<T['new']>
+) => args;
+
+export async function conditionalDeploy<T extends Truffle.ContractInstance>(deploymentParams: {
     key: string,
+    deployfunc: DeployFunc,
     deployOptions: DeployOptions,
-    deployfunc: DeployFunc
-): Promise<T> {
+    contract: Truffle.Contract<T>
+}): Promise<T> {
+    const {
+        key,
+        contract,
+        deployfunc,
+        deployOptions
+    } = deploymentParams;
+
     if (!state) {
         state = await readState();
     }
 
-    console.log('Conditional deploy: ', key);
+    logger.log(`Conditional deploy: ${key}`);
     if (!state[key] || !state[key].address) {
         const { address } = await deployfunc(key, {
             contract: contract.contractName,
+            log: true,
             ...deployOptions
         });
 
         state[key] = { address };
-        
+
         await writeState(state);
         const deployedContract = contract.at(address);
 
@@ -49,7 +65,8 @@ export async function conditionalInitialize(key: string, initfunc: () => Promise
     if (!state) {
         state = await readState();
     }
-    console.log('Conditional initialization: ', key);
+    logger.log(`Conditional initialization: ${key}`);
+
     if (!state[key]) state[key] = {};
     if (state[key].initialized) {
         console.log('Already initialized');
@@ -70,13 +87,11 @@ export async function setInfo(contract: string, key: string, value: any) {
 }
 
 export async function getInfo(contract: string, key: string): Promise<any> {
-    if (!state) {
-        state = await readState();
-    }
+    state = await readState();
     return state[contract][key];
 }
 
-export async function getDeployed <T> (contract: Truffle.Contract<T>, key: string) {
+export async function getDeployed<T>(contract: Truffle.Contract<T>, key: string) {
     if (!state) {
         state = await readState();
     }
@@ -105,7 +120,7 @@ export async function readState(): Promise<AddressesState> {
                 resolve(JSON.parse(parsedData));
                 return;
             }
- 
+
             fs.writeFile(filePath, JSON.stringify(emptyState), (writeErr) => {
                 if (writeErr) reject(writeErr);
                 resolve(emptyState);
@@ -128,9 +143,6 @@ export async function printState() {
 }
 
 export async function clearState() {
-    if (!state) {
-        state = await readState();
-    }
     state = emptyState;
     await writeState(state);
 }

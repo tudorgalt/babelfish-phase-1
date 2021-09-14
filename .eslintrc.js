@@ -31,6 +31,7 @@ module.exports = {
         "no-nested-ternary": 0,
         "consistent-return": 0,
         "no-param-reassign": 0,
+        "import/prefer-default-export": 0,
         "lines-between-class-members": 0,
         "@typescript-eslint/explicit-function-return-type": 0
     },

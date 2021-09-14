@@ -1,4 +1,4 @@
-import { deployments, network } from "hardhat";
+import { deployments, network, run } from "hardhat";
 
 import envSetup from "@utils/env_setup";
 import { BN, tokens } from "@utils/tools";
@@ -6,12 +6,13 @@ import { FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { isDevelopmentNetwork } from 'migrations/utils/addresses';
 import { setNetwork, getDeployed, clearState } from "migrations/utils/state";
-import { BasketManagerV3Instance, MassetV3Instance } from "types/generated";
+import { BasketManagerV4Instance, MassetV4Instance } from "types/generated";
+import { DeploymentTags } from "migrations/utils/DeploymentTags";
 
 const ERC20 = artifacts.require("ERC20");
-const MassetV3 = artifacts.require("MassetV3");
+const MassetV4 = artifacts.require("MassetV4");
 const Token = artifacts.require("Token");
-const BasketManagerV3 = artifacts.require("BasketManagerV3");
+const BasketManagerV4 = artifacts.require("BasketManagerV4");
 
 const { expect } = envSetup.configure();
 
@@ -20,8 +21,8 @@ const instance = "XUSD";
 contract("E2E test", async (accounts) => {
     const sa = new StandardAccounts(accounts);
 
-    let massetMock: MassetV3Instance;
-    let basketManagerMock: BasketManagerV3Instance;
+    let massetMock: MassetV4Instance;
+    let basketManagerMock: BasketManagerV4Instance;
 
     before("before all", async () => {
         setNetwork(network.name);
@@ -29,11 +30,11 @@ contract("E2E test", async (accounts) => {
         if (isDevelopmentNetwork(network.name)) {
             // run migrations
             await clearState();
-            await deployments.fixture("migration");
+            await deployments.fixture(DeploymentTags.Migration);
         }
 
-        massetMock = await getDeployed(MassetV3, `${instance}_MassetProxy`);
-        basketManagerMock = await getDeployed(BasketManagerV3, `${instance}_BasketManagerProxy`);
+        massetMock = await getDeployed(MassetV4, `${instance}_MassetProxy`);
+        basketManagerMock = await getDeployed(BasketManagerV4, `${instance}_BasketManagerProxy`);
 
         if (isDevelopmentNetwork(network.name)) {
             // set fees
@@ -66,7 +67,7 @@ contract("E2E test", async (accounts) => {
         // -------------------------------- DEPOSIT -------------------------------- //
 
         const depositAmount = tokens(10);
-        const depositAmountInMasset = await basketManagerMock.convertBassetToMassetQuantity(basset1, depositAmount);
+        const [depositAmountInMasset] = await basketManagerMock.convertBassetToMassetQuantity(basset1, depositAmount);
         const depositFee = depositAmountInMasset.mul(depositFeePromil).div(FEE_PRECISION);
         const depositReward = new BN(0); // !! call to RewardsManagerContract to get proper amount of reward !!
 
@@ -104,7 +105,7 @@ contract("E2E test", async (accounts) => {
 
         const redeemAmount = tokens(5);
         const redeemFee = redeemAmount.mul(redeemFeePromil).div(FEE_PRECISION);
-        const redeemedBassets = await basketManagerMock.convertMassetToBassetQuantity(basset1, redeemAmount.sub(redeemFee));
+        const [redeemedBassets] = await basketManagerMock.convertMassetToBassetQuantity(basset1, redeemAmount.sub(redeemFee));
         const redeemReward = new BN(0); // !! call to RewardsManagerContract to get proper amount of reward !!
 
         await token.approve(massetMock.address, redeemAmount);
@@ -139,10 +140,10 @@ contract("E2E test", async (accounts) => {
             .add(redeemFee)
             .add(vaultRedeemRewardIncome);
 
-        const initialSumOfFunds = (await basketManagerMock.convertBassetToMassetQuantity(basset1, initialUserBasset1Balance))
+        const initialSumOfFunds = (await basketManagerMock.convertBassetToMassetQuantity(basset1, initialUserBasset1Balance))[0]
             .add(initialUserMassetBalance);
 
-        const sumOfUserFundsAfterRedeem = (await basketManagerMock.convertBassetToMassetQuantity(basset1, basset1BalanceAfterRedeem))
+        const sumOfUserFundsAfterRedeem = (await basketManagerMock.convertBassetToMassetQuantity(basset1, basset1BalanceAfterRedeem))[0]
             .add(massetBalanceAfterRedeem);
 
         expect(initialSumOfFunds).bignumber.to.eq(

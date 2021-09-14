@@ -8,7 +8,7 @@ const BasketManagerV3 = artifacts.require("BasketManagerV3");
 
 const logger = new Logs().showInConsole(true);
 
-const getVersions = async () => {
+const main = async () => {
     const { network } = hre;
     setNetwork(network.name);
 
@@ -32,4 +32,10 @@ const getVersions = async () => {
     await logVersionsForInstance('BNBs');
 };
 
-getVersions();
+main()
+    .then(() => process.exit(0))
+    .catch((error) => {
+        logger.err('ERROR');
+        console.error(error);
+        process.exit(1);
+    });

@@ -1,6 +1,9 @@
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-plusplus */
 import Web3 from "web3";
 import Logs from "node-logs";
-import { BN } from "../../../test-utils/tools";
+import { BN } from "@utils/tools";
+import { EthereumProvider } from "hardhat/types";
 
 const logger = new Logs().showInConsole(true);
 
@@ -8,14 +11,14 @@ export const nowSimple = (): number => Math.ceil(Date.now() / 1000);
 
 export const nowExact = (): BN => new BN(nowSimple());
 
-export const blockTimestampExact = async (web3: any, block = "latest"): Promise<BN> => {
-    const timestamp = await blockTimestampSimple(web3, block);
-    return new BN(timestamp);
+export const blockTimestampSimple = async (web3: Web3, block = "latest"): Promise<string> => {
+    const { timestamp } = await web3.eth.getBlock(block);
+    return timestamp.toString();
 };
 
-export const blockTimestampSimple = async (web3: any, block = "latest"): Promise<number> => {
-    const { timestamp } = await web3.eth.getBlock(block);
-    return timestamp;
+export const blockTimestampExact = async (web3: Web3, block = "latest"): Promise<BN> => {
+    const timestamp = await blockTimestampSimple(web3, block);
+    return new BN(timestamp);
 };
 
 export const timeTravel = async (web3: any, seconds: number) => {
@@ -41,16 +44,28 @@ export const timeTravel = async (web3: any, seconds: number) => {
     });
 };
 
-export const waitForBlock = async (truffle, offset: number): Promise<void> => {
-    const web3: Web3 = truffle.web3;
+export const mineBlock = async (provider: EthereumProvider, timestamp: number): Promise<void> => {
+    logger.info(`Forcing mining new block with timestamp: ${timestamp}`);
+    return provider.send('evm_mine', [timestamp]);
+};
 
+export const mineBlocks = async (provider: EthereumProvider, web3: Web3, offset: number): Promise<void> => {
+    logger.info(`Forcing mining ${offset} blocks`);
+
+    for (let i = 0; i < offset; i++) {
+        const currTimestamp = await blockTimestampSimple(web3);
+        await provider.send('evm_mine', [Number(currTimestamp) + 1]);
+    }
+};
+
+export const waitForBlock = async (web3: Web3, offset: number): Promise<void> => {
     const startingBlock = await web3.eth.getBlock("latest");
 
     logger.info(`Current block: ${startingBlock.number}`);
-    logger.info(`Waiting for block: ${startingBlock.number  + offset} ...`);
+    logger.info(`Waiting for block: ${startingBlock.number + offset} ...`);
 
     await new Promise<void>((resolve, revert) => {
-        let interval = 0;
+        let interval: NodeJS.Timeout;
 
         const check = async (): Promise<void> => {
             let currentBlockNumber: number;
@@ -65,19 +80,25 @@ export const waitForBlock = async (truffle, offset: number): Promise<void> => {
             }
 
             if (currentBlockNumber >= (startingBlock.number + offset)) {
-                truffle.clearInterval(interval);
-                interval = 0;
-
+                clearInterval(interval);
                 resolve();
             }
         };
 
-        interval = truffle.setInterval(check, 500);
+        interval = setInterval(check, 500);
     });
 };
 
-export const wait = (timeout: number, truffle): Promise<void> => new Promise((resolve) => {
-    truffle.setTimeout(() => {
+export const waitOrMineBlocks = async (provider: EthereumProvider, web3: Web3, offset: number, isDevelopmentNetwork: boolean): Promise<void> => {
+    if (isDevelopmentNetwork) {
+        await mineBlocks(provider, web3, offset);
+    } else {
+        await waitForBlock(web3, offset);
+    }
+};
+
+export const wait = (timeout: number): Promise<void> => new Promise((resolve) => {
+    setTimeout(() => {
         resolve();
     }, timeout);
 });

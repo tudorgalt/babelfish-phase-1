@@ -8,7 +8,11 @@ import "hardhat-deploy";
 import "ts-node/register";
 import "tsconfig-paths/register";
 import "hardhat-typechain";
-import "hardhat-docgen"
+import "hardhat-docgen";
+import "hardhat-contract-sizer";
+
+import "scripts/tasks/transferOwnership";
+import "scripts/tasks/transferAdmin";
 
 const config: HardhatUserConfig = {
     networks: {
@@ -90,9 +94,10 @@ const config: HardhatUserConfig = {
         version: "0.5.17",
         settings: {
             optimizer: {
-                enabled: false,
-            },
-        },
+                enabled: true,
+                runs: 200
+            }
+        }
     },
     paths: {
         artifacts: "./build/contracts",
@@ -115,11 +120,15 @@ const config: HardhatUserConfig = {
         username: "mStable",
         project: "mStable-contracts",
     },
+    contractSizer: {
+        alphaSort: true,
+        disambiguatePaths: false,
+    },
     docgen: {
         path: './docs',
         clear: true,
         runOnCompile: true,
-      }
+    }
 };
 
 export default config;
