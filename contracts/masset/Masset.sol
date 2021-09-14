@@ -355,15 +355,21 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     int256[] factors;
     address[] bridges;
 
-    function migrateV20ToV21() public {
-        require(keccak256(bytes(version)) == keccak256(bytes("2.0")), "wrong version");
+    function migrateV20ToV22() public {
+        require(
+            keccak256(bytes(version)) == keccak256(bytes("2.0")) ||
+            keccak256(bytes(version)) == keccak256(bytes("2.1")), "wrong version");
 
         uint256 chainId;
         assembly {
             chainId := chainid()
         }
 
-        version = "2.1";
+        assets.length = 0;
+        factors.length = 0;
+        bridges.length = 0;
+
+        version = "2.2";
 
         // testnet
         if (chainId == 31) {
@@ -402,7 +408,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 
             // non bridge
 
-            assets.push(0x7e2F245F7dc8e78576ECB13AEFc0a101E9BE1AD3); // rDOC
+            assets.push(0xC3De9F38581f83e281f260d0DdbaAc0e102ff9F8); // rDOC
             factors.push(int256(1));
             bridges.push(0x0000000000000000000000000000000000000000);
 

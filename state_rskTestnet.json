@@ -6,14 +6,14 @@
     "address": "0xa9262CC3fB54Ea55B1B0af00EfCa9416B8d59570",
     "initialized": true
   },
-  "Masset": {
-    "address": "0xD2Bc4E2f6ebc01CAfbA9B664113aa99bCe612394"
-  },
   "MassetProxy": {
     "address": "0x1572D7E4a78A8AD14AE722E6fE5f5600a2c7A149",
     "initialized": true
   },
   "BasketManager": {
     "address": "0x3c6625beB6b077B40B6A3BB524F3463ab0b933b2"
+  },
+  "Masset": {
+    "address": "0xe382cb0C91a2F35F520E92F3579F3013718D3cD6"
   }
 }
