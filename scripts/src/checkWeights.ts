@@ -13,10 +13,8 @@ import { StakingInstance } from "types/generated";
 const logger = new Logs().showInConsole(true);
 
 const toBlock1 = 3454295;
-const timestamp1 = new Date('2021/06/22 02:59:53 +03:00').getTime() / 1000;
-console.log({ timestamp1: timestamp1 });
+const timestamp1 = 1624319993;
 const precision = new BN('1000000000');
-
 
 let fd: fsPromises.FileHandle;
 const stakingContractAddress = "0x5684a06CaB22Db16d901fEe2A5C081b4C91eA40e";
@@ -33,14 +31,14 @@ const main = async (truffle, networkName: string): Promise<void> => {
     const kickOfTS = await staking.kickoffTS();
     logger.info(`kickOfTS: ${kickOfTS}`);
 
-    fd = await fsPromises.open("weightedStakesList", "a+");
+    fd = await fsPromises.open("weightedStakesList4", "a+");
     const csvContent = await fd.readFile();
     if (csvContent.length === 0) {
         fd.write("Address,Power(Konrad's calculation),WeightedStakes(getPriorWeightedStake),Diff(%)\n");
         logger.info(`Initializing CSV`);
     }
 
-    const fileStream = fs.createReadStream("snap/data/powers.csv");
+    const fileStream = fs.createReadStream("snap/data/powers4.csv");
     const rl = readline.createInterface({
         input: fileStream,
         crlfDelay: Infinity
@@ -68,7 +66,7 @@ const saveData = async (account: string, staking: StakingInstance, power: string
 
     const percentage = difference.toNumber() / fullStake.toNumber() * 100;
 
-    fd.write(`${account},${normalizedPower.toString()},${weightedStake.toString()},${percentage}\n`);
+    fd.write(`${account},${normalizedPower.toString()},${weightedStake.toString()},${Math.round(percentage)}\n`);
     if (weightedStake.eq(normalizedPower)) {
         logger.success("New staker with weightedStake equal power");
         matchedWeights ++;
