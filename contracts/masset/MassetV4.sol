@@ -136,12 +136,13 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     address private feesVaultAddress;
 
+    BasketManagerV4 private basketManager;
+    Token private token;
+
     FeesVault private feesVault;
     RewardsVault private rewardsVault;
     RewardsManager private rewardsManager;
     FeesManager private feesManager;
-    BasketManagerV4 private basketManager;
-    Token private token;
 
     // internal
 
