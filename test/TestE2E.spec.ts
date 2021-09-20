@@ -1,4 +1,4 @@
-import { deployments, network, run } from "hardhat";
+import { deployments, network } from "hardhat";
 
 import envSetup from "@utils/env_setup";
 import { BN, tokens } from "@utils/tools";

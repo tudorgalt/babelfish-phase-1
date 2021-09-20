@@ -19,8 +19,7 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
-      - run: yarn install
-      - run: yarn compile
+      - run: yarn run init
       - run: yarn coverage
 
       - name: Coveralls

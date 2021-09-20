@@ -1,10 +1,10 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import { subtask } from "hardhat/config";
+import { ArgumentType } from "hardhat/types";
 import Logs from "node-logs";
 import { getDeployed, getInfo, setNetwork } from "migrations/utils/state";
 import { OwnableContract } from "types/generated";
-import { ArgumentType } from "hardhat/types";
 
 const logger = new Logs().showInConsole(true);
 
