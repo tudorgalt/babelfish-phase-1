@@ -6,7 +6,7 @@ import { ZERO_ADDRESS } from "@utils/constants";
 import { TransferOwnershipParams } from "scripts/tasks/transferOwnership";
 import { blockTimestampSimple, mineBlock, wait, waitOrMineBlocks } from "scripts/utils/time";
 import { DeploymentTags } from "migrations/utils/DeploymentTags";
-import { isDevelopmentNetwork } from 'migrations/utils/addresses';
+import { isDevelopmentNetwork } from "migrations/utils/addresses";
 import { setNetwork, getDeployed, clearState, getInfo } from "migrations/utils/state";
 
 const Token = artifacts.require("Token");
@@ -19,7 +19,16 @@ const Timelock = artifacts.require("Timelock");
 const { expect } = envSetup.configure();
 const logger = new Logs().showInConsole(true);
 
-enum ProposalState { Pending, Active, Canceled, Defeated, Succeeded, Queued, Expired, Executed };
+enum ProposalState {
+    Pending,
+    Active,
+    Canceled,
+    Defeated,
+    Succeeded,
+    Queued,
+    Expired,
+    Executed
+}
 const instance = "XUSD";
 
 contract("Governance", async (accounts) => {
@@ -41,9 +50,7 @@ contract("Governance", async (accounts) => {
 
             // transfer ownership of selected contracts
             const contractsList: TransferOwnershipParams = {
-                contracts: [
-                    `${instance}_BasketManagerProxy`
-                ]
+                contracts: [`${instance}_BasketManagerProxy`]
             };
             await run("transferOwnership", contractsList);
         }
@@ -58,7 +65,7 @@ contract("Governance", async (accounts) => {
         const basketManager = await getDeployed(BasketManagerV4, `XUSD_BasketManagerProxy`);
         const staking = await getDeployed(Staking, `StakingProxy`);
         const fish = await getDeployed(Fish, `FishToken`);
-        const timelock = await getDeployed(Timelock, 'Timelock');
+        const timelock = await getDeployed(Timelock, "Timelock");
 
         const votingDelay = await governorAlpha.votingDelay();
         const votingPeriod = await governorAlpha.votingPeriod();
@@ -68,12 +75,14 @@ contract("Governance", async (accounts) => {
         const basketManagerAddress: string = await getInfo("XUSD_BasketManagerProxy", "address");
 
         const stakeAmount = 1000000;
-        const stakeUntilDate = Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7 * 3);
+        const stakeUntilDate = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 * 3;
 
         const stake = async (address: string, amount: number): Promise<void> => {
             await fish.transfer(address, amount, { from: owner });
             await fish.approve(stakeAddress, amount, { from: address });
-            await staking.stake(amount, stakeUntilDate, ZERO_ADDRESS, ZERO_ADDRESS, { from: address });
+            await staking.stake(amount, stakeUntilDate, ZERO_ADDRESS, ZERO_ADDRESS, {
+                from: address
+            });
         };
 
         await fish.approve(stakeAddress, stakeAmount);
@@ -87,10 +96,12 @@ contract("Governance", async (accounts) => {
         const newBasset = await Token.new("TEST", "TST", 18);
 
         const signatures = ["addBasset(address,int256,address,uint256,uint256,uint256,bool)"];
-        const calldatas = [web3.eth.abi.encodeParameters(
-            ["address", "int256", "address", "uint256", "uint256", "uint256", "bool"],
-            [newBasset.address, 1, ZERO_ADDRESS, 0, 1000, 100, false]
-        )];
+        const calldatas = [
+            web3.eth.abi.encodeParameters(
+                ["address", "int256", "address", "uint256", "uint256", "uint256", "bool"],
+                [newBasset.address, 1, ZERO_ADDRESS, 0, 1000, 100, false]
+            )
+        ];
 
         await governorAlpha.propose(targets, values, signatures, calldatas, "test propsal");
         const latestProposal = await governorAlpha.latestProposalIds(owner);
@@ -98,7 +109,12 @@ contract("Governance", async (accounts) => {
         let proposalState = (await governorAlpha.state(latestProposal)).toNumber();
         expect(proposalState).to.eq(ProposalState.Pending, "proposal should be pending");
 
-        await waitOrMineBlocks(network.provider, web3, votingDelay.toNumber() + 1, isDevelopmentNetwork(network.name));
+        await waitOrMineBlocks(
+            network.provider,
+            web3,
+            votingDelay.toNumber() + 1,
+            isDevelopmentNetwork(network.name)
+        );
 
         proposalState = (await governorAlpha.state(latestProposal)).toNumber();
         expect(proposalState).to.eq(ProposalState.Active, "proposal should be active");
@@ -107,18 +123,42 @@ contract("Governance", async (accounts) => {
         await governorAlpha.castVote(latestProposal, true, { from: voter1 });
         await governorAlpha.castVote(latestProposal, false, { from: voter2 });
 
-        const [, startBlock, , forVotes, againstVotes, , , , startTime] = await governorAlpha.proposals(latestProposal);
+        const [
+            ,
+            startBlock,
+            ,
+            forVotes,
+            againstVotes,
+            ,
+            ,
+            ,
+            startTime
+        ] = await governorAlpha.proposals(latestProposal);
         const ownerForVotes = await staking.getPriorVotes(owner, startBlock, startTime);
         const voter1ForVotes = await staking.getPriorVotes(voter1, startBlock, startTime);
         const voter2AgainstVotes = await staking.getPriorVotes(voter2, startBlock, startTime);
 
-        expect(forVotes).to.bignumber.eq(ownerForVotes.add(voter1ForVotes), "not a proper number of for votes");
-        expect(againstVotes).to.bignumber.eq(voter2AgainstVotes, "not a proper number of against votes");
+        expect(forVotes).to.bignumber.eq(
+            ownerForVotes.add(voter1ForVotes),
+            "not a proper number of for votes"
+        );
+        expect(againstVotes).to.bignumber.eq(
+            voter2AgainstVotes,
+            "not a proper number of against votes"
+        );
 
         proposalState = (await governorAlpha.state(latestProposal)).toNumber();
-        expect(proposalState).to.eq(ProposalState.Active, "proposal should be active until the end of voting period");
+        expect(proposalState).to.eq(
+            ProposalState.Active,
+            "proposal should be active until the end of voting period"
+        );
 
-        await waitOrMineBlocks(network.provider, web3, votingPeriod.toNumber(), isDevelopmentNetwork(network.name));
+        await waitOrMineBlocks(
+            network.provider,
+            web3,
+            votingPeriod.toNumber(),
+            isDevelopmentNetwork(network.name)
+        );
 
         proposalState = (await governorAlpha.state(latestProposal)).toNumber();
         expect(proposalState).to.eq(ProposalState.Succeeded, "proposal should be succeeded");
@@ -138,7 +178,6 @@ contract("Governance", async (accounts) => {
             logger.info(`Waiting ${delay} seconds to surpass delay`);
             await wait(delay * 1000);
         }
-
 
         await governorAlpha.execute(latestProposal);
 

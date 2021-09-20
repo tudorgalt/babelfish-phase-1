@@ -8,7 +8,7 @@ import { TokenInstance, RewardsVaultInstance } from "types/generated";
 const Token = artifacts.require("Token");
 const RewardsVault = artifacts.require("RewardsVault");
 
-const tokens = (amount: string | number): BN => toWei(new BN(amount), 'ether');
+const tokens = (amount: string | number): BN => toWei(new BN(amount), "ether");
 
 contract("RewardsVault", async (accounts) => {
     const sa = new StandardAccounts(accounts);
@@ -16,7 +16,7 @@ contract("RewardsVault", async (accounts) => {
     let token: TokenInstance;
     let rewardsVault: RewardsVaultInstance;
 
-    before("before all", async () => { });
+    before("before all", async () => {});
 
     describe("initialize", async () => {
         beforeEach(async () => {
@@ -27,14 +27,20 @@ contract("RewardsVault", async (accounts) => {
         context("should succeed", async () => {
             it("when it's called by first time", async () => {
                 await rewardsVault.initialize({ from: sa.default }); //
-                expect(await rewardsVault.isApprover(sa.default)).to.equal(true, "should give approver rolle to caller");
+                expect(await rewardsVault.isApprover(sa.default)).to.equal(
+                    true,
+                    "should give approver rolle to caller"
+                );
             });
         });
 
         context("should fail", async () => {
             it("when it's called for the second time", async () => {
                 await rewardsVault.initialize({ from: sa.default });
-                await expectRevert(rewardsVault.initialize({ from: sa.default }), "already initialized");
+                await expectRevert(
+                    rewardsVault.initialize({ from: sa.default }),
+                    "already initialized"
+                );
             });
         });
     });
@@ -54,7 +60,9 @@ contract("RewardsVault", async (accounts) => {
                 await rewardsVault.addApprover(approver, { from: sa.default });
                 await rewardsVault.getApproval(amount, token.address, { from: approver });
 
-                expect(await token.allowance(rewardsVault.address, approver)).bignumber.to.eq(amount);
+                expect(await token.allowance(rewardsVault.address, approver)).bignumber.to.eq(
+                    amount
+                );
             });
         });
 

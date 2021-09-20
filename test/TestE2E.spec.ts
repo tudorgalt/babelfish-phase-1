@@ -4,7 +4,7 @@ import envSetup from "@utils/env_setup";
 import { BN, tokens } from "@utils/tools";
 import { FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
-import { isDevelopmentNetwork } from 'migrations/utils/addresses';
+import { isDevelopmentNetwork } from "migrations/utils/addresses";
 import { setNetwork, getDeployed, clearState } from "migrations/utils/state";
 import { BasketManagerV4Instance, MassetV4Instance } from "types/generated";
 import { DeploymentTags } from "migrations/utils/DeploymentTags";
@@ -51,7 +51,10 @@ contract("E2E test", async (accounts) => {
         const rewardsVaultAddress = await massetMock.getRewardsVault();
 
         expect(await massetMock.getVersion()).to.eq("4.0", "should be upgraded to proper version");
-        expect(await basketManagerMock.getVersion()).to.eq("4.0", "should be upgraded to proper version");
+        expect(await basketManagerMock.getVersion()).to.eq(
+            "4.0",
+            "should be upgraded to proper version"
+        );
 
         const [basset1] = await basketManagerMock.getBassets();
         const basset1Token = await ERC20.at(basset1);
@@ -67,7 +70,10 @@ contract("E2E test", async (accounts) => {
         // -------------------------------- DEPOSIT -------------------------------- //
 
         const depositAmount = tokens(10);
-        const [depositAmountInMasset] = await basketManagerMock.convertBassetToMassetQuantity(basset1, depositAmount);
+        const [depositAmountInMasset] = await basketManagerMock.convertBassetToMassetQuantity(
+            basset1,
+            depositAmount
+        );
         const depositFee = depositAmountInMasset.mul(depositFeePromil).div(FEE_PRECISION);
         const depositReward = new BN(0); // !! call to RewardsManagerContract to get proper amount of reward !!
 
@@ -97,7 +103,10 @@ contract("E2E test", async (accounts) => {
             "proper rewards distribution "
         );
         expect(massetBalanceAfterDeposit).bignumber.to.eq(
-            initialUserMassetBalance.add(depositAmountInMasset).sub(depositFee).add(depositReward),
+            initialUserMassetBalance
+                .add(depositAmountInMasset)
+                .sub(depositFee)
+                .add(depositReward),
             "user should get proper amount of masset"
         );
 
@@ -105,7 +114,10 @@ contract("E2E test", async (accounts) => {
 
         const redeemAmount = tokens(5);
         const redeemFee = redeemAmount.mul(redeemFeePromil).div(FEE_PRECISION);
-        const [redeemedBassets] = await basketManagerMock.convertMassetToBassetQuantity(basset1, redeemAmount.sub(redeemFee));
+        const [redeemedBassets] = await basketManagerMock.convertMassetToBassetQuantity(
+            basset1,
+            redeemAmount.sub(redeemFee)
+        );
         const redeemReward = new BN(0); // !! call to RewardsManagerContract to get proper amount of reward !!
 
         await token.approve(massetMock.address, redeemAmount);
@@ -140,11 +152,19 @@ contract("E2E test", async (accounts) => {
             .add(redeemFee)
             .add(vaultRedeemRewardIncome);
 
-        const initialSumOfFunds = (await basketManagerMock.convertBassetToMassetQuantity(basset1, initialUserBasset1Balance))[0]
-            .add(initialUserMassetBalance);
+        const initialSumOfFunds = (
+            await basketManagerMock.convertBassetToMassetQuantity(
+                basset1,
+                initialUserBasset1Balance
+            )
+        )[0].add(initialUserMassetBalance);
 
-        const sumOfUserFundsAfterRedeem = (await basketManagerMock.convertBassetToMassetQuantity(basset1, basset1BalanceAfterRedeem))[0]
-            .add(massetBalanceAfterRedeem);
+        const sumOfUserFundsAfterRedeem = (
+            await basketManagerMock.convertBassetToMassetQuantity(
+                basset1,
+                basset1BalanceAfterRedeem
+            )
+        )[0].add(massetBalanceAfterRedeem);
 
         expect(initialSumOfFunds).bignumber.to.eq(
             sumOfUserFundsAfterRedeem.add(sumOfVaults),

@@ -49,7 +49,7 @@ contract RewardsManager is InitializableOwnable {
         }else if(_x1 < 0 && _x2 < 0) {
             int256 dx2 = integrateOnCurve(-_x2);
             int256 dx1 = integrateOnCurve(-_x1);
-            return -(dx1 - dx2);    
+            return -(dx1 - dx2);
         }
 
         int256 dx1 = integrateOnCurve(_x1);

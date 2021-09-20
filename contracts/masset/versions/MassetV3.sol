@@ -16,7 +16,7 @@ import "../Token.sol";
 /**
  * @title MassetV3
  * @dev Contract is responsible for managing mAsset and bAsset.
- * Used for minting and burning tokens, calculating fees and calling the bridge 
+ * Used for minting and burning tokens, calculating fees and calling the bridge
  * if transaction based on token from another blockchain.
  */
 

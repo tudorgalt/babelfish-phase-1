@@ -36,7 +36,7 @@ contract("InitializableOwnable", async (accounts) => {
 
                 await expectRevert.unspecified(
                     initializableOwnableWrapper.initialize({ from: user }),
-                    "already initialized",
+                    "already initialized"
                 );
             });
         });
@@ -80,7 +80,7 @@ contract("InitializableOwnable", async (accounts) => {
 
                 await expectRevert(
                     initializableOwnableWrapper.transferOwnership(user, { from: user }),
-                    "caller is not the owner",
+                    "caller is not the owner"
                 );
             });
 
@@ -89,7 +89,7 @@ contract("InitializableOwnable", async (accounts) => {
 
                 await expectRevert(
                     initializableOwnableWrapper.transferOwnership(ZERO_ADDRESS, { from: owner }),
-                    "new owner is the zero address",
+                    "new owner is the zero address"
                 );
             });
         });

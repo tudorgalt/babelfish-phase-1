@@ -19,7 +19,7 @@ import "./Token.sol";
 /**
  * @title MassetV4
  * @dev Contract is responsible for managing mAsset and bAsset.
- * Used for minting and burning tokens, calculating fees and calling the bridge 
+ * Used for minting and burning tokens, calculating fees and calling the bridge
  * if transaction based on token from another blockchain.
  */
 contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard {
@@ -337,7 +337,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param bridgeFlag        Flag that indicates if the reedem proces is used with conjunction with bridge.
      * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
      */
-function _redeemTo(
+    function _redeemTo(
         address _basset,
         uint256 _massetQuantity,
         address _recipient,

@@ -24,7 +24,7 @@ contract("Token", async (accounts) => {
             it("when it's not called by owner", async () => {
                 await expectRevert(
                     token.mint(user, toWei("100"), { from: user }),
-                    "caller is not the owner",
+                    "caller is not the owner"
                 );
             });
         });
@@ -41,7 +41,7 @@ contract("Token", async (accounts) => {
             it("when it's not called by owner", async () => {
                 await expectRevert(
                     token.burn(user, toWei("50"), { from: user }),
-                    "caller is not the owner",
+                    "caller is not the owner"
                 );
             });
         });
