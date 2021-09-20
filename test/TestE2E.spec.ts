@@ -50,8 +50,8 @@ contract("E2E test", async (accounts) => {
         const feesVaultAddress = await massetMock.getFeesVault();
         const rewardsVaultAddress = await massetMock.getRewardsVault();
 
-        expect(await massetMock.getVersion()).to.eq("3.0", "should be upgraded to proper version");
-        expect(await basketManagerMock.getVersion()).to.eq("3.0", "should be upgraded to proper version");
+        expect(await massetMock.getVersion()).to.eq("4.0", "should be upgraded to proper version");
+        expect(await basketManagerMock.getVersion()).to.eq("4.0", "should be upgraded to proper version");
 
         const [basset1] = await basketManagerMock.getBassets();
         const basset1Token = await ERC20.at(basset1);
