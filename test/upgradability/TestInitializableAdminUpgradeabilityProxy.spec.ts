@@ -3,8 +3,9 @@ import { expectRevert, expectEvent } from "@openzeppelin/test-helpers";
 import envSetup from "@utils/env_setup";
 import { ZERO_ADDRESS } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
-import { IMockImplementationInstance, InitializableAdminUpgradeabilityProxyInstance, MockProxyImplementation1Instance, MockProxyImplementation2Instance } from "types/generated";
+import { IMockImplementationInstance, InitializableAdminUpgradeabilityProxyInstance, MockDependencyInstance, MockProxyImplementation1Instance, MockProxyImplementation2Instance } from "types/generated";
 
+const MockDependency = artifacts.require("MockDependency");
 const MockProxyImplementation1 = artifacts.require("MockProxyImplementation1");
 const MockProxyImplementation2 = artifacts.require("MockProxyImplementation2");
 const InitializableAdminUpgradeabilityProxy = artifacts.require("InitializableAdminUpgradeabilityProxy");
@@ -60,11 +61,13 @@ contract("InitializableAdminUpgradeabilityProxy", async (accounts) => {
     });
 
     describe("integration", async () => {
+        let dependencyContract: MockDependencyInstance;
         let proxyImplementation: MockProxyImplementation1Instance;
         let proxyImplementation2: MockProxyImplementation2Instance;
         let adminUpgradeabilityProxy: InitializableAdminUpgradeabilityProxyInstance;
 
         beforeEach("before", async () => {
+            dependencyContract = await MockDependency.new();
             proxyImplementation = await MockProxyImplementation1.new();
             proxyImplementation2 = await MockProxyImplementation2.new();
             adminUpgradeabilityProxy = await InitializableAdminUpgradeabilityProxy.new({ from: sa.default });
@@ -72,7 +75,7 @@ contract("InitializableAdminUpgradeabilityProxy", async (accounts) => {
 
         it("full flow test", async () => {
             let currImplementationVersion: string;
-            const initdata: string = proxyImplementation.contract.methods.initialize().encodeABI();
+            const initdata: string = proxyImplementation.contract.methods.initialize(dependencyContract.address).encodeABI();
 
             await adminUpgradeabilityProxy.methods["initialize(address,address,bytes)"](
                 proxyImplementation.address,
@@ -88,6 +91,9 @@ contract("InitializableAdminUpgradeabilityProxy", async (accounts) => {
             const isImplementationInitalized = await implementationThroughProxy.isInitialized();
             expect(isImplementationInitalized).to.eq(true, "init function should be called");
 
+            let settledDepContract = await implementationThroughProxy.getDep();
+            expect(settledDepContract).to.eq(dependencyContract.address, "dependecy contract shuld be settled");
+
             currImplementationVersion = await implementationThroughProxy.getVersion();
             expect(currImplementationVersion).to.eq("1");
 
@@ -95,11 +101,13 @@ contract("InitializableAdminUpgradeabilityProxy", async (accounts) => {
             const newAdmin = await adminUpgradeabilityProxy.admin();
             expect(newAdmin).to.eq(sa.default, "admin should be changed");
 
-            const initdata2: string = proxyImplementation2.contract.methods.initialize().encodeABI();
-            await adminUpgradeabilityProxy.upgradeToAndCall(proxyImplementation2.address, initdata2, { from: sa.default });
+            await adminUpgradeabilityProxy.upgradeTo(proxyImplementation2.address, { from: sa.default });
 
             currImplementationVersion = await implementationThroughProxy.getVersion();
             expect(currImplementationVersion).to.eq("2", "should point to second implementation after upgrade");
+
+            settledDepContract = await implementationThroughProxy.getDep();
+            expect(settledDepContract).to.eq(dependencyContract.address, "should not lose dependecy contract after upgrade");
         });
     });
 });
@@ -109,7 +117,9 @@ const initProxy = async (
     implementation: IMockImplementationInstance,
     proxy: InitializableAdminUpgradeabilityProxyInstance
 ): Promise<MockProxyImplementation1Instance> => {
-    const initdata: string = implementation.contract.methods.initialize().encodeABI();
+    const dependencyContract = await MockDependency.new();
+    
+    const initdata: string = implementation.contract.methods.initialize(dependencyContract.address).encodeABI();
 
     await proxy.methods["initialize(address,address,bytes)"](
         implementation.address,
