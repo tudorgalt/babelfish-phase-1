@@ -454,6 +454,19 @@ contract("BasketManagerV4", async (accounts) => {
     describe("getBassetRatioDeviation", async () => {
         const targetRatios = [600, 400];
 
+        const checkDeviations = async (
+            token: string,
+            offset: BN | string | number,
+            expected: readonly [BN | string, BN | string],
+            isDeposit = true,
+            msg = ""
+        ) => {
+            const [before, after] = await basketManager.getBassetRatioDeviation(token, offset, isDeposit);
+
+            expect(before).bignumber.to.eq(expected[0], `original deviation is invalid ${msg}`);
+            expect(after).bignumber.to.eq(expected[1], `offset deviation is invalid ${msg}`);
+        };
+
         beforeEach("before each", async () => {
             mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
             mockToken2 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
@@ -468,19 +481,23 @@ contract("BasketManagerV4", async (accounts) => {
         });
 
         it("calculates ratio deviation correctly", async () => {
-            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, 0, true)).bignumber.to.eq(ZERO);
+            await checkDeviations(mockToken1.address, 0, [ZERO, ZERO]);
+
             await mockToken1.giveMe(tokens(10), { from: massetMock }); // set ratio to 636
-            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, 0, true)).bignumber.to.eq("36"); // 636 - 600
+
+            await checkDeviations(mockToken1.address, 0, ["36", "36"]);
+
             await mockToken1.giveMe(tokens(1000030), { from: massetMock }); // set ratio to 999
-            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, 0, true)).bignumber.to.eq("399"); // 999 - 600
-            expect(await basketManager.getBassetRatioDeviation(mockToken2.address, 0, true)).bignumber.to.eq("-400"); // 0 - 400
+
+            await checkDeviations(mockToken1.address, 0, ["399", "399"]);
+            await checkDeviations(mockToken2.address, 0, ["-400", "-400"]);
         });
 
         it("works fine with offset", async () => {
-            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, tokens(60), false)).bignumber.to.eq("-600"); // in case of withdrawal of all funds
-            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, tokens(10), false)).bignumber.to.eq("-45"); // 555 - 600
-            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, tokens(50), true)).bignumber.to.eq("133"); // 733 - 600
-            expect(await basketManager.getBassetRatioDeviation(mockToken1.address, tokens(10000000), true)).bignumber.to.eq("399"); // 999 - 600
+            await checkDeviations(mockToken1.address, tokens(60), [ZERO, "-600"], false, "in case of withdrawal of all funds");
+            await checkDeviations(mockToken1.address, tokens(10), [ZERO, "-45"], false);  // 555 - 600
+            await checkDeviations(mockToken1.address, tokens(50), [ZERO, "133"], true);   // 733 - 600
+            await checkDeviations(mockToken1.address, tokens(10000000), [ZERO, "399"], true);  // 999 - 600
         });
     });
 
@@ -602,7 +619,7 @@ contract("BasketManagerV4", async (accounts) => {
 
 type InitializeArgs = Partial<CreateBasketV3Args>;
 
-const initializeBasketManager = async ({ admin = sa.governor, massetAddress = sa.other, txDetails = { from: sa.default }}: InitializeArgs) => {
+const initializeBasketManager = async ({ admin = sa.governor, massetAddress = sa.other, txDetails = { from: sa.default } }: InitializeArgs) => {
     const proxy = await BasketManagerProxy.new();
 
     await createBasketManagerV3(proxy, { admin, massetAddress, txDetails });

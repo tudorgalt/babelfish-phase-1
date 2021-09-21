@@ -4,6 +4,7 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title BasketManagerV4
@@ -229,54 +230,59 @@ contract BasketManagerV4 is InitializableOwnable {
     /**
      * @dev Calculate ratio of specyfic basset in basket
      * @param  _basset      Address of basset to check ratio for
-     * @param  _offset      Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
+     * @param  _offsetInMasset      Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
      * @param  _isDeposit   Flag to determine offset direction(deposit/redeem).
      * @return ratio        Ratio of basset to total of basset in promils
      */
     function getBassetRatio(
         address _basset,
-        uint256 _offset,
+        uint256 _offsetInMasset,
         bool _isDeposit
     ) public view validBasset(_basset) returns (uint256 ratio) {
         uint256 total = getTotalMassetBalance();
+        console.log("total", total);
 
-        uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
-        (uint256 offsetInMasset, ) = convertBassetToMassetQuantity(_basset, _offset);
+        uint256 bassetBalance = IERC20(_basset).balanceOf(masset); // convert
+        (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
+
 
         if (_isDeposit) {
-            total = total.add(offsetInMasset);
-            bassetBalance = bassetBalance.add(_offset);
+            total = total.add(_offsetInMasset);
+            bassetBalanceInMasset = bassetBalanceInMasset.add(_offsetInMasset);
         } else {
-            require(_offset <= bassetBalance, "offset is greater than bassetBalance");
+            require(_offsetInMasset <= bassetBalanceInMasset, "offset is greater than bassetBalance");
 
-            total = total.sub(offsetInMasset);
-            bassetBalance = bassetBalance.sub(_offset);
+            total = total.sub(_offsetInMasset);
+            bassetBalanceInMasset = bassetBalanceInMasset.sub(_offsetInMasset);
         }
 
         if(total == 0) {
             return 0;
         }
 
-        (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
         return bassetBalanceInMasset.mul(1000).div(total);
     }
 
     /**
      * @dev Calculate deviation from target ratio
      * @param  _basset      Address of basset to check ratio for
-     * @param  offset       Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
-     * @param  isDeposit    Flag to determine offset direction(deposit/redeem).
+     * @param  _offsetInMasset       Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
+     * @param  _isDeposit    Flag to determine offset direction(deposit/redeem).
      * @return deviation    Number between -1000 and 1000. Represents deviation from target ratio.
      */
     function getBassetRatioDeviation(
         address _basset,
-        uint256 offset,
-        bool isDeposit
-    ) public view validBasset(_basset) returns (int256 deviation) {
-        int256 currentRatio = int256(getBassetRatio(_basset, offset, isDeposit));
+        uint256 _offsetInMasset,
+        bool _isDeposit
+    ) public view returns(int256 deviationBefore, int256 deviationAfter) {
         int256 targetRatio = int256(getBassetTargetRatio(_basset));
 
-        return currentRatio - targetRatio;
+        int256 currentRatio = int256(getBassetRatio(_basset, 0, _isDeposit));
+
+        deviationBefore = currentRatio - targetRatio;
+
+        int256 ratioAfterModification = int256(getBassetRatio(_basset, _offsetInMasset, _isDeposit));
+        deviationAfter = ratioAfterModification - targetRatio;
     }
 
     // Getters

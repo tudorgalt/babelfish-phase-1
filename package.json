@@ -25,7 +25,7 @@
     "lint-ts": "yarn eslint ./test --ext .ts,.js --fix --quiet",
     "lint-sol": "solium -d contracts/ --fix ",
     "coverage": "yarn hardhat compile --force && node --max_old_space_size=6144 node_modules/.bin/hardhat coverage --temp 'build/contracts' --testfiles 'test/**/Test*.ts' --show-stack-traces",
-    "test": "yarn run compile && node --max_old_space_size=4096 node_modules/.bin/hardhat test;",
+    "test": "node --max_old_space_size=4096 node_modules/.bin/hardhat test;",
     "test-file": "yarn hardhat test",
     "test:fork": "yarn run compile; yarn hardhat test --network fork;",
     "compile": "yarn hardhat compile --force",

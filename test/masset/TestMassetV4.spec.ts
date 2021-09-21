@@ -5,7 +5,7 @@ import { BN, tokens } from "@utils/tools";
 import envSetup from "@utils/env_setup";
 import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
-import { MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance, MassetV4Instance, BasketManagerV4Instance } from "types/generated";
+import { MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance, MassetV4Instance, BasketManagerV4Instance, RewardsVaultInstance } from "types/generated";
 import { createBasketManagerV3, upgradeBasketManagerToV4 } from "./utils";
 
 const { expect } = envSetup.configure();
@@ -24,6 +24,9 @@ const BasketManagerProxy = artifacts.require("BasketManagerProxy");
 
 let standardAccounts: StandardAccounts;
 
+const A_CURVE_DENOMINATOR = 1000;
+const INITIAL_RATIOS = [500, 500];
+
 const standardFees: Fees = {
     deposit: new BN(10),
     depositBridge: new BN(20),
@@ -34,12 +37,10 @@ const standardFees: Fees = {
 contract("MassetV4", async (accounts) => {
     let masset: MassetV4Instance;
     let basketManager: BasketManagerV4Instance;
-    let initialBassets: {
-        mockToken1: MockERC20Instance;
-        mockToken2: MockERC20Instance;
-    };
+    let initialBassets: InitialBassets;
     let token: TokenInstance;
     let feesVault: FeesVaultInstance;
+    let rewardsVault: RewardsVaultInstance;
     let mockTokenDummy: MockERC20Instance;
     let mockBridge: MockBridgeInstance;
 
@@ -47,16 +48,19 @@ contract("MassetV4", async (accounts) => {
 
     before("before all", async () => { });
 
-    describe("mint", async () => {
+    describe.only("mint", async () => {
+        const factors = [1, 1];
+
         beforeEach(async () => {
             const deployed = await initSystem({
                 massetConfig: { fees: standardFees },
-                basketManagerConfig: { decimals: [18, 18], factors: [100, 1] }
+                basketManagerConfig: { decimals: [18, 18], factors }
             });
 
             token = deployed.deployedToken;
             masset = deployed.deployedMassetV4;
             feesVault = deployed.deployedFeesVault;
+            rewardsVault = deployed.deployedRewardsVault;
             initialBassets = deployed.deployedInitialBassets;
             basketManager = deployed.deployedBasketManagerV4;
 
@@ -66,8 +70,9 @@ contract("MassetV4", async (accounts) => {
         context("should succeed", () => {
             it("if all params are valid", async () => {
                 const sum = tokens(1024);
-                const massetQuantity = sum.div(new BN(100));
+                const massetQuantity = sum.div(new BN(factors[0]));
                 const expectedFee = massetQuantity.mul(standardFees.deposit).div(FEE_PRECISION);
+                const expectedReward = ZERO;
                 const expectedMassetQuantity = massetQuantity.sub(expectedFee);
 
                 await initialBassets.mockToken1.approve(masset.address, sum, {
@@ -88,8 +93,49 @@ contract("MassetV4", async (accounts) => {
                 const balance = await token.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.eq(expectedMassetQuantity);
 
-                const vaultBalance = await token.balanceOf(feesVault.address);
-                expect(vaultBalance).bignumber.to.eq(expectedFee, "fee should be transfered to vault contract");
+                const feesVaultBalance = await token.balanceOf(feesVault.address);
+                expect(feesVaultBalance).bignumber.to.eq(expectedFee, "fee should be transfered to vault contract");
+
+                const rewardsVaultBalance = await token.balanceOf(rewardsVault.address);
+                expect(rewardsVaultBalance).bignumber.to.eq(expectedReward, "reward should be 0 after first deposit");
+            });
+
+            it.only("proper rewards calculation with second deposit", async () => {
+                await initializePool(initialBassets, masset, factors);
+
+                const sum = tokens(500);
+
+                const depositor = standardAccounts.dummy3;
+                await initialBassets.mockToken1.mint(depositor, sum);
+
+                const massetQuantity = sum.div(new BN(factors[0]));
+                const expectedFee = massetQuantity.mul(standardFees.deposit).div(FEE_PRECISION);
+                const expectedReward = ZERO; // TUTAJ INACZEJ
+                const expectedMassetQuantity = massetQuantity.sub(expectedFee).sub(expectedReward);
+
+
+                const poolBalanceBeforeDeposits = await basketManager.getTotalMassetBalance();
+                console.log("poolBalanceBeforeDeposits", poolBalanceBeforeDeposits.toString());
+
+                await initialBassets.mockToken1.approve(masset.address, sum, {
+                    from: standardAccounts.dummy1,
+                });
+
+                await masset.mint(initialBassets.mockToken1.address, sum, {
+                    from: standardAccounts.dummy1,
+                });
+
+                const poolBalanceAfterDeposits = await basketManager.getTotalMassetBalance();
+                console.log("poolBalanceAfterDeposits", poolBalanceAfterDeposits.toString());
+
+                // const balance = await token.balanceOf(standardAccounts.dummy1);
+                // expect(balance).bignumber.to.eq(expectedMassetQuantity);
+
+                const feesVaultBalance = await token.balanceOf(feesVault.address);
+                expect(feesVaultBalance).bignumber.to.eq(expectedFee, "fee should be transfered to vault contract");
+
+                const rewardsVaultBalance = await token.balanceOf(rewardsVault.address);
+                expect(rewardsVaultBalance).bignumber.to.eq(expectedReward, "reward should be 0 after first deposit");
             });
 
             it("if all params are valid, amounts that don't divide evenly", async () => {
@@ -781,7 +827,7 @@ async function addInitialBassets(
     const mins = [0, 0];
     const maxs = [1000, 1000];
     const pauses = [false, false];
-    const ratios = [500, 500];
+    const ratios = INITIAL_RATIOS;
 
     await basketManager.addBassets(bassets, factors, bridges, mins, maxs, ratios, pauses, { from: standardAccounts.default });
 
@@ -818,6 +864,9 @@ async function initSystem({ massetConfig, basketManagerConfig }: InitSystemArg) 
     const rewardsManager = await RewardsManager.new();
     const feesManager = await FeesManager.new();
 
+    await rewardsManager.initialize(A_CURVE_DENOMINATOR);
+    await rewardsVault.initialize();
+
     // ----- create proxies -----
 
     const massetProxy = await MassetProxy.new();
@@ -825,6 +874,8 @@ async function initSystem({ massetConfig, basketManagerConfig }: InitSystemArg) 
 
     const massetV3Mock = await MassetV3.at(massetProxy.address);
     const massetV4Mock = await MassetV4.at(massetProxy.address);
+
+    await rewardsVault.addApprover(massetProxy.address);
 
     // ----- create token -----
 
@@ -881,10 +932,34 @@ async function initSystem({ massetConfig, basketManagerConfig }: InitSystemArg) 
     return {
         deployedToken: token,
         deployedFeesVault: feesVault,
+        deployedRewardsVault: rewardsVault,
         deployedMassetV4: massetV4Mock,
         deployedInitialBassets: initialBassets,
         deployedBasketManagerV4: basketManagerV4Mock
     };
+}
+
+async function initializePool(
+    initialBassets: InitialBassets,
+    masset: MassetV4Instance,
+    factors: number[]
+) {
+    const basset1DepositAmount = tokens(INITIAL_RATIOS[0]);
+    const basset2DepositAmount = tokens(INITIAL_RATIOS[1]);
+    
+    await initialBassets.mockToken1.approve(masset.address, basset1DepositAmount, {
+        from: standardAccounts.dummy1,
+    });
+    await masset.mint(initialBassets.mockToken1.address, basset1DepositAmount, {
+        from: standardAccounts.dummy1,
+    });
+
+    await initialBassets.mockToken2.approve(masset.address, basset2DepositAmount, {
+        from: standardAccounts.dummy1,
+    });
+    await masset.mint(initialBassets.mockToken2.address, basset2DepositAmount, {
+        from: standardAccounts.dummy1,
+    });
 }
 
 async function createToken(massetAddress: string) {
@@ -896,6 +971,11 @@ async function createToken(massetAddress: string) {
 async function getBalance(token: TokenInstance | MockERC20Instance, who: string): Promise<BN> {
     return token.balanceOf(who);
 }
+
+type InitialBassets = {
+    mockToken1: MockERC20Instance;
+    mockToken2: MockERC20Instance;
+};
 
 type Fees = Record<
     | "deposit"
