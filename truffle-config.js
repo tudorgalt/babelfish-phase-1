@@ -67,7 +67,7 @@ module.exports = {
     },
     rsk: {
       provider() {
-        return new HDWalletProvider('',
+        return new HDWalletProvider('receive nasty...',
             'wss://mainnet.sovryn.app/ws', 0, 31)
       },
       network_id: 30,

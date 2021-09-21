@@ -6,7 +6,7 @@
     "address": "0xb5999795BE0EbB5bAb23144AA5FD6A02D080299F",
     "initialized": true
   },
-  "Masset": {
+  "Masset_previous": {
     "address": "0xad624f56f80cDb5E1b37d314981672e24F0917EA"
   },
   "MassetProxy": {
@@ -15,5 +15,8 @@
   },
   "BasketManager": {
     "address": "0xee8EA85FeBA403cf0E44699597Cd6276512469E4"
+  },
+  "Masset": {
+    "address": "0xeFb0B73ad3361D534b07bFca532042237C219F81"
   }
 }
