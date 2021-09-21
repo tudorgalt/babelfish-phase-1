@@ -18,7 +18,7 @@ contract SimpleVester {
     }
 
     function vest(address _userAddress, uint256 _amount) internal {
-        vestingRegistry.createTeamVesting(_userAddress, _amount, 6 * 4 weeks, 36 * 4 weeks);
+        vestingRegistry.createTeamVesting(_userAddress, _amount, 5 * 4 weeks, 35 * 4 weeks);
         address vesting = vestingRegistry.getTeamVesting(_userAddress);
         require(token.transfer(VESTING_REGISTRY, _amount), "transfer failed");
         vestingRegistry.stakeTokens(vesting, _amount);
