@@ -3,56 +3,68 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-restricted-syntax */
 import fs, { promises as fsPromises } from "fs";
-import Logs from "node-logs";
 import readline from "readline";
 import Web3 from "web3";
+import BN from "bn.js";
 
-const logger = new Logs().showInConsole(true);
+const precision = new BN(10).pow(new BN(18));
+const totalFish = new BN('420000000').mul(precision);
 
 const batchSize = 100;
-const fileName = "airdrop_1_final.csv";
+const fileName = "airdrop_1_final_fixed.csv";
 
-const main = async (): Promise<void> => {
-    const fileStream = fs.createReadStream(fileName);
-    const rl = readline.createInterface({
-        input: fileStream,
-        crlfDelay: Infinity
-    });
+export default async function main(): Promise<void> {
 
-    let iterator = 1;
+    const alreadyPaid = await readAlreadyPaid();
+    const { snapshots, total1, total2 } = await readSnapshots();
 
-    let addresses: string[] = [];
-    let values: string[] = [];
+    let addresses = Object.keys(snapshots);
 
-    for await (const line of rl) {
-        const [address, power] = line.split(",");
+    console.log("Starting...");
 
-        if (!isLineValid(address, power)) {
-            continue;
+    const batch = [];
+    const amounts = [];
+    let tableNumber = 1;
+    let totalAmount = new BN(0);
+
+    for (let index = 0; index < addresses.length; index++) {
+
+        const address = addresses[index];
+
+        const weight1 = snapshots[address][0].mul(precision).div(total1);
+        const weight2 = snapshots[address][1].mul(precision).div(total2);
+        const amount = howMuch(weight1, weight2);
+
+        let ap = alreadyPaid[address];
+        if(!ap) ap = new BN(0);
+        let toPay = amount;
+        toPay = toPay.sub(ap);
+        toPay = toPay.isNeg() ? new BN(0) : toPay;
+
+        console.log(`${address},${ap.toString()},${amount.toString()},${toPay.toString()}`);
+
+        batch.push(Web3.utils.toChecksumAddress(address));
+        amounts.push(toPay.toString());
+
+        if (batch.length === batchSize || index + 1 >= addresses.length) {
+            await createContract(batch, amounts, tableNumber);
+            tableNumber++;
+            batch.length = 0;
+            amounts.length = 0;
         }
 
-        addresses.push(Web3.utils.toChecksumAddress(address));
-        values.push(power);
-
-        if (addresses.length === batchSize) {
-            await createContract(addresses, values, iterator);
-
-            iterator++;
-            addresses = [];
-            values = [];
-        }
+        totalAmount = totalAmount.add(toPay);
     }
 
-    if (addresses.length > 0) {
-        await createContract(addresses, values, iterator);
-    }
-};
+    console.log("Total amount:", totalAmount.toString());
+}
 
-const createContract = async (addresses: string[], values: string[], index: number): Promise<any> => {
+async function createContract(addresses: string[], values: string[], tableNumber: number) {
     const buffor = `pragma solidity ^0.5.16;
+    
 import { Table } from "../Table.sol";
 
-contract Table_${index} is Table {
+contract Table_${tableNumber} is Table {
     address[] public addresses = [
         ${addresses.join(",\n")}
     ];
@@ -80,16 +92,61 @@ contract Table_${index} is Table {
     }
 }`;
 
-    await fsPromises.writeFile(`contracts/airDrop/tables/Table_${index}.sol`, buffor);
-
-    logger.info(`Created cotract with ${addresses.length} stakers`);
+    await fsPromises.writeFile(`contracts/airDrop/tables/Table_${tableNumber}.sol`, buffor);
+    console.log(`Created cotract with ${addresses.length} stakers`);
 };
 
-const isLineValid = (address: string, power: string): boolean => {
-    if (!address || !power) return false; // ignore empty lines
-    if (address === "Address") return false; // ignore header
+function howMuch(weight1, weight2): BN {
+    const forSnapshot1 = totalFish.mul(weight1)
+        .div(precision)
+        .mul(new BN(21))
+        .div(new BN(10000));
+    const forSnapshot2 = totalFish.mul(weight2)
+        .div(precision)
+        .mul(new BN(50))
+        .div(new BN(10000));
+    return forSnapshot1.add(forSnapshot2);
+}
 
-    return true;
-};
+async function readAlreadyPaid() {
+    const filestream = fs.createReadStream('already_dropped.csv');
+    const rl = readline.createInterface({
+        input: filestream,
+        crlfDelay: Infinity
+    });
 
-export default main;
+    let map = {};
+
+    let counter = 0;
+    for await (const line of rl) {
+        let [address, amount] = line.split(",");
+        address = address.toLowerCase();
+        if(address == '' || address == 'address') continue;
+        if(!map[address]) map[address] = new BN(0);
+        map[address] = map[address].add(new BN(amount));
+    }
+    return map;
+}
+
+async function readSnapshots() {
+    const filestream = fs.createReadStream('airdrop_1_snapshots_full_no_contracts.csv');
+    const rl = readline.createInterface({
+        input: filestream,
+        crlfDelay: Infinity
+    });
+
+    let map = {};
+    let total1 = new BN(0);
+    let total2 = new BN(0);
+
+    let counter = 0;
+    for await (const line of rl) {
+        let [address, weight1, weight2] = line.split(",");
+        address = address.toLowerCase();
+        if(address == '' || address == 'address') continue;
+        map[address] = [ new BN(weight1), new BN(weight2)];
+        total1 = total1.add(new BN(weight1));
+        total2 = total2.add(new BN(weight2));
+    }
+    return { snapshots: map, total1, total2 };
+}

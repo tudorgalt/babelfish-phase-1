@@ -27,9 +27,9 @@ export default async function snapshot(truffle, networkName: string): Promise<vo
     const staking = await Staking.at(stakingContractAddress);
 
     const alreadyRead = await readAlreadyRead();
-    const addresses = await readPrevious(alreadyRead);
+    const addresses = Object.keys(alreadyRead);
 
-    let fd: fsPromises.FileHandle = await fsPromises.open("airdrop_1_snapshots_full.csv", "a+");
+    let fd: fsPromises.FileHandle = await fsPromises.open("airdrop_1_snapshots_full_no_contracts.csv", "a+");
     const csvContent = await fd.readFile();
     if (csvContent.length === 0) {
         fd.write("address,snapshot1,snapshot2\n");
@@ -37,23 +37,20 @@ export default async function snapshot(truffle, networkName: string): Promise<vo
 
     const start = new Date().getTime();
 
-    const toBlock1 = 3454295;
-    const timestamp1 = new Date('2021/06/22 02:59:53 +03:00').getTime() / 1000;
-
-    const toBlock2 = 3632151;
-    const timestamp2 = new Date('2021/08/26 02:59:44 +03:00').getTime() / 1000;
-
-    console.log("Starting...");
-
     for(var counter = 0; counter < addresses.length; counter++) {
+        let address = addresses[counter];
+        if (address == 'address') continue;
 
-        const [address, power1, power2] = addresses[counter];
+        const [power1, power2] = alreadyRead[address];
+        address = Web3.utils.toChecksumAddress(address);
 
-        const stake1 = (await staking.getPriorWeightedStake(address, toBlock1, timestamp1)).toString();
-        const stake2 = (await staking.getPriorWeightedStake(address, toBlock2, timestamp2)).toString();
+        if (power1 == 0 && power2 == 0) continue;
+        const code = await web3.eth.getCode(address);
+        const contract = code.length > 3;
+        if (contract) continue;
 
-        console.log(`${address},${stake1},${stake2}`);
-        fd.write(`${address},${stake1},${stake2}\n`);
+        console.log(`${address},${power1},${power2}`);
+        fd.write(`${address},${power1},${power2}\n`);
 
         const av = (new Date().getTime() - start) / (counter + 1);
         console.log('done: ', (counter + 1), 'of', addresses.length, '   remaining time: ', (addresses.length - counter) * av / (60000), 'mins');
@@ -72,22 +69,6 @@ async function readAlreadyRead() {
     for await (const line of rl) {
         const [address, power1, power2] = line.split(",");
         addresses[address.toLowerCase()] = [ power1, power2 ];
-    }
-    fileStream.close();
-    return addresses;
-}
-
-async function readPrevious(alreadyRead) {
-    const fileStream = fs.createReadStream('airdrop_1_addresses_final_full.csv');
-    const rl = readline.createInterface({
-        input: fileStream,
-        crlfDelay: 1
-    });
-    const addresses = [];
-    for await (const line of rl) {
-        const [address, power1, power2] = line.split(",");
-        if (alreadyRead[address.toLowerCase()]) continue;
-        addresses.push([ address, power1, power2 ]);
     }
     fileStream.close();
     return addresses;
