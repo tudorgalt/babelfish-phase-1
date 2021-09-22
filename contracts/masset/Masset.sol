@@ -355,10 +355,9 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     int256[] factors;
     address[] bridges;
 
-    function migrateV20ToV22() public {
+    function migrateV22ToV23() public {
         require(
-            keccak256(bytes(version)) == keccak256(bytes("2.0")) ||
-            keccak256(bytes(version)) == keccak256(bytes("2.1")), "wrong version");
+            keccak256(bytes(version)) == keccak256(bytes("2.2")), "wrong version");
 
         uint256 chainId;
         assembly {
@@ -369,7 +368,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         factors.length = 0;
         bridges.length = 0;
 
-        version = "2.2";
+        version = "2.3";
 
         // testnet
         if (chainId == 31) {
@@ -438,19 +437,19 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
             // BSC->RSK
             assets.push(0x6A42FF12215a90F50866a5CE43a9c9c870116E76); // DAIbs
             factors.push(int256(1));
-            bridges.push(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581);
+            bridges.push(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350);
 
             assets.push(0x91eDceE9567cD5612C9DeDeAAe24D5e574820Af1); // USDCbs
             factors.push(int256(1));
-            bridges.push(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581);
+            bridges.push(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350);
 
             assets.push(0xFf4299bcA0313c20A61dC5Ed597739743bEf3f6D); // USDTbs
             factors.push(int256(1));
-            bridges.push(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581);
+            bridges.push(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350);
 
             assets.push(0x61e9604E31a736129D7f5c58964C75935b2D80d6); // BUSDbs
             factors.push(int256(1));
-            bridges.push(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581);
+            bridges.push(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350);
 
             // non bridge
             assets.push(0xef213441A85dF4d7ACbDaE0Cf78004e1E486bB96); // RUSDT
