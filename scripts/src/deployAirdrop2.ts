@@ -10,7 +10,7 @@
 /* eslint-disable no-restricted-syntax */
 import { BN } from "@utils/tools";
 import { conditionalDeploy, getDeployed, setNetwork } from "../state";
-import { FishInstance, SenderInstance, TableInstance } from "types/generated";
+import { AirdropVesterInstance, FishInstance, SenderInstance, TableInstance } from "types/generated";
 import { promises } from "fs";
 import Web3 from "web3";
 
@@ -55,7 +55,7 @@ export default async function main(truffle, networkName): Promise<void> {
 
     const token: FishInstance = await FishToken.at('0x055A902303746382FBB7D18f6aE0df56eFDc5213');
 
-    const sender: SenderInstance = await conditionalDeploy(AirdropVester, `Sender`,
+    const vester: AirdropVesterInstance = await conditionalDeploy(AirdropVester, `AirdropVester`,
         () => AirdropVester.new(tables, token.address)
     );
 

@@ -310,5 +310,8 @@
   },
   "Vesting_Table_44": {
     "address": "0xDa06Abd500dB6412544f8A414227D60c91e6a9a6"
+  },
+  "AirdropVester": {
+    "address": "0xEc3E63F6943879Dfd4f9F462fBDCF34EC8da493c"
   }
 }

@@ -39,8 +39,8 @@ contract AirdropVester is Ownable {
     }
 
     function vest(address _userAddress, uint256 _amount) internal {
-        vestingRegistry.createTeamVesting(_userAddress, _amount, 0, 9 * 4 weeks);
-        address vesting = vestingRegistry.getTeamVesting(_userAddress);
+        vestingRegistry.createVesting(_userAddress, _amount, 0, 9 * 4 weeks);
+        address vesting = vestingRegistry.getVesting(_userAddress);
         require(token.transfer(VESTING_REGISTRY, _amount), "transfer failed");
         vestingRegistry.stakeTokens(vesting, _amount);
     }
