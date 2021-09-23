@@ -2,6 +2,7 @@ pragma solidity ^0.5.16;
 
 import "../fish/interfaces/IERC20.sol";
 import "./IVestingRegistry3.sol";
+import "./IVesting.sol";
 
 contract SimpleVester {
 
@@ -19,9 +20,9 @@ contract SimpleVester {
 
     function vest(address _userAddress, uint256 _amount) internal {
         vestingRegistry.createTeamVesting(_userAddress, _amount, 5 * 4 weeks, 35 * 4 weeks);
-        address vesting = vestingRegistry.getTeamVesting(_userAddress);
-        require(token.transfer(VESTING_REGISTRY, _amount), "transfer failed");
-        vestingRegistry.stakeTokens(vesting, _amount);
+        IVesting vesting = IVesting(vestingRegistry.getTeamVesting(_userAddress));
+        require(token.approve(address(vesting), _amount), "approve failed");
+        vesting.stakeTokens(_amount);
     }
 
     function sendBack(uint256 _amount) public {

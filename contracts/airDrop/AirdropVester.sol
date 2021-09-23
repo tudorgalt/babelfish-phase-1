@@ -8,7 +8,6 @@ import "./IVestingRegistry3.sol";
 contract AirdropVester is Ownable {
 
     address public constant MULTISIG = 0x26712A09D40F11f34e6C14633eD2C7C34c903eF0;
-    address public constant VESTING_REGISTRY = 0x036ab2DB0a3d1574469a4a7E09887Ed76fB56C41;
     address public constant FISH_TOKEN = 0x055A902303746382FBB7D18f6aE0df56eFDc5213;
 
     uint256 public index;
@@ -19,7 +18,7 @@ contract AirdropVester is Ownable {
     uint256 public totalAmount;
     uint256 public batchSize;
 
-    IVestingRegistry3 public vestingRegistry;
+    mapping(address => uint256) public lastSent;
 
     constructor(address[] memory _tables, address _token) public {
         tables = _tables;
@@ -38,14 +37,7 @@ contract AirdropVester is Ownable {
         totalAmount = totalValue;
     }
 
-    function vest(address _userAddress, uint256 _amount) internal {
-        vestingRegistry.createVesting(_userAddress, _amount, 0, 9 * 4 weeks);
-        address vesting = vestingRegistry.getVesting(_userAddress);
-        require(token.transfer(VESTING_REGISTRY, _amount), "transfer failed");
-        vestingRegistry.stakeTokens(vesting, _amount);
-    }
-
-    function vestTokens (uint256 _numberOfTransfers) public onlyOwner {
+    function sendTokens (uint256 _numberOfTransfers) public {
         uint256 i = index;
         uint256 toIndex = _numberOfTransfers + index;
         if (toIndex > totalLength) {
@@ -53,6 +45,7 @@ contract AirdropVester is Ownable {
         }
 
         address[] memory tablesList = tables;
+        uint256 now = block.timestamp;
 
         for (;i < toIndex; i++) {
             uint256 contractIndex = i / batchSize; //totalLength/contractIndex
@@ -62,13 +55,24 @@ contract AirdropVester is Ownable {
 
             (address recipient, uint256 value, bool isLast) = table.getRecipentInfo(insideIndex);
 
-            vest(recipient, value);
+            uint256 t_lastSent = lastSent[recipient];
+
+            if (now - t_lastSent >= 4 weeks) {
+                require(token.transfer(recipient, value / 9), "transfer failed");
+                lastSent[recipient] = now;
+            }
         }
 
         index = i;
     }
 
-    function addressAtIndex (uint256 _index) public view onlyOwner returns(address) {
+    function restartIfEnded() public {
+        if (index >= totalLength) {
+            index = 0;
+        }
+    }
+
+    function addressAtIndex(uint256 _index) public view onlyOwner returns(address) {
         uint256 i = _index;
 
         uint256 contractIndex = i / batchSize;
@@ -80,7 +84,7 @@ contract AirdropVester is Ownable {
         return recipient;
     }
 
-    function amountAtIndex (uint256 _index) public view onlyOwner returns(uint256) {
+    function amountAtIndex(uint256 _index) public view onlyOwner returns(uint256) {
         uint256 i = _index;
 
         uint256 contractIndex = i / batchSize;

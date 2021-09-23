@@ -1,0 +1,223 @@
+
+> @mstable/protocol@1.5.0 script:rsk /Users/gadiguy/workspace/babelfish-phase-1
+> truffle --network rsk exec ./scripts/main.js "vestingTest"
+
+Using network 'rsk'.
+
+HDWalletProvider {
+  walletHdpath: "m/44'/60'/0'/0/",
+  wallets: {
+    '0x59a083e07fd418a24471da3c4d63beb2563cfb99': Wallet {
+      privateKey: <Buffer 60 3d 83 cb b7 e6 f0 6d 18 6a 71 44 12 35 22 43 06 4e 41 3a 20 76 aa b1 92 61 54 cd bf f1 12 0f>,
+      publicKey: <Buffer 55 76 58 bc 31 48 8b 56 83 fb d9 14 45 b3 cc 53 9f d3 69 f3 b4 41 7b d3 35 e2 a4 22 d4 0e d6 fa 92 0c 8d 70 44 7f d8 bc 34 f5 fa 9c d6 da c4 25 df d8 ... 14 more bytes>
+    },
+    '0xbf52efa522bae6359ad1e7a03add636233d10306': Wallet {
+      privateKey: <Buffer bf 27 58 3c bd b7 d2 1c 63 44 9b 30 b1 8e e3 a9 82 c3 f5 7c 29 a5 13 37 1e 2a d4 67 09 71 17 8d>,
+      publicKey: <Buffer 36 f7 90 d9 11 6a b5 66 ab f7 58 fd 6a 7f 4c f7 94 8a 30 84 47 4a 2b d4 12 6b 58 b0 bd 32 05 c4 1d f7 e4 0a ca 12 04 9f 1c 6d ed ae e7 5d 6b da 38 16 ... 14 more bytes>
+    },
+    '0x6ed58e07e957103e32dd552776570fc55c6eafc6': Wallet {
+      privateKey: <Buffer 0c 15 32 97 07 af 61 7e 14 68 99 9f 3c e7 f2 69 17 93 a2 2a 24 35 63 27 b4 7e 14 82 02 8a 51 13>,
+      publicKey: <Buffer c8 72 c7 da 5e fa e9 e1 4e 9a 54 7f 42 e7 6f 35 7f 58 af 86 78 18 43 44 fc 68 af 72 c8 d7 bf ba d6 d0 f6 99 fa 4e 9e b3 47 42 fd 47 d9 c4 00 90 bb 93 ... 14 more bytes>
+    },
+    '0xedbdefbe17a7b234ef66d67521d381b9d47934c0': Wallet {
+      privateKey: <Buffer 05 ea 6a c4 e3 da 56 d5 c4 de 78 67 b0 39 cd 8d a3 02 33 51 3e ce 4b 4b c2 64 6a 54 4f 4f db 4b>,
+      publicKey: <Buffer a2 e9 ba b5 00 dd 87 9a fa cb 13 08 c8 af d1 04 b4 08 4b e2 c0 84 7a 40 fa 9b 1b 07 f7 75 6f 6b b0 4d 94 9e 39 64 70 69 30 ed 7c e8 db 6c cd 5d 91 e6 ... 14 more bytes>
+    },
+    '0xdcf797e91a37465677c1b5ddbbcaba7a7422f3ab': Wallet {
+      privateKey: <Buffer ad 57 29 5a 8d 58 b2 b2 08 74 d1 26 c9 fc ef 88 06 ac de 39 93 25 fb 7c bd 4d 7c 47 53 8f cb 3d>,
+      publicKey: <Buffer 63 25 78 06 19 8f dd 78 5d 36 d0 6c ac 20 a7 47 80 30 df 0a f0 f3 f1 45 81 13 8f 16 ef ff 0b cb 19 1b 7e 41 e5 d1 7c 8f 10 53 49 4e 40 ac 8e 28 f2 0b ... 14 more bytes>
+    },
+    '0x203a032fb410f74a397ac9e359420ed0a44a5eca': Wallet {
+      privateKey: <Buffer bf 5b a4 8f 8a ec 9f cb f6 be ff 38 4e 3a 58 13 aa 96 b6 87 fb eb a7 7c cf be 7a 0d 03 90 45 79>,
+      publicKey: <Buffer ed 41 24 d7 84 25 ce 34 49 ff f4 b7 26 94 0f 54 cb ab c1 28 ba 02 10 96 31 23 2a 31 27 e9 a1 42 b6 bd b5 c1 57 c5 5e c4 c1 fb 50 30 64 a3 3e d4 14 27 ... 14 more bytes>
+    },
+    '0xbcc7b44813e03ba75fcc3411fd862dba23561f30': Wallet {
+      privateKey: <Buffer 80 81 77 5e ba 99 50 cb 63 94 a9 b5 f5 19 9e 80 0e 16 a1 27 eb 45 b4 e4 40 e0 33 70 c0 a6 38 a0>,
+      publicKey: <Buffer 85 98 d5 f3 22 36 8a 7e 63 7b 90 3b 5d a7 5c 53 f9 23 53 b8 c9 d3 be 61 51 54 55 d4 bd 82 df 3c 25 22 22 64 00 23 d7 ca 2a a2 66 e3 e7 9c 63 02 3b aa ... 14 more bytes>
+    },
+    '0x5c0ac5950cafe41eead8729d52ac55d73f7a5116': Wallet {
+      privateKey: <Buffer d6 05 ca f4 11 21 26 7b 5d d1 88 20 0e 79 09 5b 85 71 f5 0a e8 3f d1 57 0c 77 ed 70 27 a4 23 eb>,
+      publicKey: <Buffer cc a6 c3 5d 8e c9 9f e2 19 cc a0 d5 cd ec b6 46 7d d4 72 0e 6b 3e 73 01 88 12 44 fd ed 54 d4 fe c0 93 5b 14 d2 f6 0b 66 6d 65 bd c1 82 34 73 f5 d0 24 ... 14 more bytes>
+    },
+    '0x1ee6df221b5950cda1171fc06c343f01c21a51ca': Wallet {
+      privateKey: <Buffer e8 f0 29 51 fb 0f 10 8f b8 c6 13 68 27 ba 42 00 4c 33 b3 50 17 36 b1 16 a3 d8 2d db 18 fe 5a df>,
+      publicKey: <Buffer ab 04 b9 6e ff af 1a 56 fe ff 0e b6 b8 82 81 39 f0 2e dd b9 7d 84 ee 39 0e a9 b7 36 08 7a 4c 29 18 e7 cd 7a a4 5a 41 5d 92 65 39 f8 c0 4b d4 eb 8a 8b ... 14 more bytes>
+    },
+    '0x23399b8a13ba725e1f53264a15c5193ae5ba6d66': Wallet {
+      privateKey: <Buffer 9f 4b ca e3 95 0d 9b 01 07 fb ab ff 95 4b 12 32 c5 df 8e 18 2d e9 fa 41 68 62 00 a0 f2 78 3e 32>,
+      publicKey: <Buffer fb ea 6c 29 78 c8 c0 7b f7 a5 11 f7 fb d7 de 47 fc 4f 3a e5 45 64 0e a6 dd c1 4a 23 cc 0d 03 3c e5 5e 2f 74 9b b1 d1 29 9c 26 6d 72 5c 99 80 b4 83 9b ... 14 more bytes>
+    },
+    '0x0da566f9066dfe9995670e6badf4fb8c4e9bf907': Wallet {
+      privateKey: <Buffer 0a c9 fc 79 ba 51 00 62 d4 60 97 b5 bc 8e 67 c4 27 66 50 6c 7f 36 4b 6d 50 5c 12 62 df 04 95 cb>,
+      publicKey: <Buffer 7f 24 b8 32 bb 4a 5e 05 a0 ae e5 38 66 f3 c1 1b dd 87 3a 06 25 d1 95 86 b3 ca 2c 86 64 4a b5 f3 6d 6c 45 33 00 78 2d 51 01 fb bb 1e 19 6f f4 d8 bf 1a ... 14 more bytes>
+    },
+    '0x70818e6a43ca06acda4eecce359cd4481c8ec5b6': Wallet {
+      privateKey: <Buffer bf cd 78 96 f0 96 3d e0 02 be cd 64 14 c7 c6 25 7f 3d de 98 0e 28 3a 38 fa b0 d7 14 f5 52 e1 07>,
+      publicKey: <Buffer 9a 58 0c 85 9b db fe 55 d6 57 22 b1 d0 36 cb 06 6d b5 ea d6 01 d4 16 c8 fc c4 87 08 23 7a 70 7d 07 2f 95 45 94 79 e7 13 f5 5b 6a da f6 d5 21 88 cb 63 ... 14 more bytes>
+    },
+    '0xd3203ab6ba293ed8a972ef6e5cbb1362e3aa0e11': Wallet {
+      privateKey: <Buffer e6 19 4e 7f a1 0e 2a bc 6e 6a 1e 46 c6 cf 76 dd 5a 98 7e df 14 0c 56 f4 22 0d 70 04 a8 95 ba 60>,
+      publicKey: <Buffer a0 25 df 29 c3 f1 d6 7e 74 9d 3e 43 ab 21 7d e6 28 d3 6e 57 c7 b7 fd b5 5f 08 eb bb 3d ba 02 89 09 9c 5a 76 e9 02 30 95 63 39 bb 82 6b 12 0d a4 5c bc ... 14 more bytes>
+    },
+    '0xbad6c899138f14dff4e1a9d4f8d55ac546cff8dc': Wallet {
+      privateKey: <Buffer bd a0 ae 4e 80 c9 c6 00 4c 4c 59 ab dc 42 73 87 f4 18 26 9e 1b 81 67 6d 85 cd 76 5b 9b fe 16 13>,
+      publicKey: <Buffer c3 94 59 17 89 ae a5 4a 96 42 95 1b c6 e2 25 58 51 64 57 42 d1 ef 72 e8 9e ec f4 75 8a 9f 28 d0 ae ed 39 ea b6 38 6d f4 29 1d 51 c1 53 36 27 73 f5 45 ... 14 more bytes>
+    },
+    '0xa7bbabfcbf3af7a77aa5b852bdfdecd6cd54528f': Wallet {
+      privateKey: <Buffer 3d d2 c4 56 2f 3c bb b9 78 f1 4d 97 26 83 f7 24 84 b9 6e 54 16 b1 4d 51 cf 2a aa 51 7b d8 c1 32>,
+      publicKey: <Buffer d9 d0 51 f5 a2 7b a4 95 7e 71 75 40 ff 97 d1 a9 da c7 50 cc d3 2a 32 fc 59 8a c0 12 28 b5 93 74 0d d4 93 87 a5 8e 18 f3 a4 78 7d 62 91 79 41 b9 05 f6 ... 14 more bytes>
+    },
+    '0xbdf090f2ed3ddbb9ac06cc94eb10e623659a0e27': Wallet {
+      privateKey: <Buffer e9 d3 df 25 65 83 54 b2 cf c8 ec 6c 67 5f f3 9d 4d 14 f4 59 be 76 a6 d6 7d 40 43 8e bb b7 2a 78>,
+      publicKey: <Buffer de b4 77 b8 46 84 9d 99 8b eb c8 4f be fa 93 b9 e1 5b 04 95 c1 95 6b 36 06 11 db 80 27 5a ac 11 63 3e 81 33 8e 1d 1e d8 95 f5 5f 7c 4d 05 14 97 c6 00 ... 14 more bytes>
+    },
+    '0x0536d59b6c74b9f35f793fa3365951922db2d243': Wallet {
+      privateKey: <Buffer 43 2d 8e c4 51 10 29 0f 17 62 a2 52 e9 46 47 19 84 0e 69 0f d0 39 e5 94 40 f6 fc 65 ba 1e 99 86>,
+      publicKey: <Buffer c0 08 32 87 cd a5 d5 dd 69 7c 76 2e 04 41 33 c9 2c 76 83 e9 d0 26 96 02 50 cf 3a eb 28 60 9e 56 c3 5a 23 3b b0 ff e2 bf c2 cb e9 34 3b 1e fc 44 69 5d ... 14 more bytes>
+    },
+    '0x1213cdcc542bdd1959fa8835305618784593fded': Wallet {
+      privateKey: <Buffer 84 eb b1 b0 e5 3c b2 ab e9 9f 17 df 42 a0 c5 c3 3c 7b b8 00 d3 29 d6 1e f4 63 6f 37 8b 24 c8 29>,
+      publicKey: <Buffer ba 75 20 77 75 3d d5 00 94 88 11 9f fa c9 67 5e 4e 64 b1 bc 1f 8a e6 c3 a5 85 ee 30 27 de c2 34 04 f5 ab c9 e4 3c ee 00 74 1d fd 5f bc 66 80 3d c0 f4 ... 14 more bytes>
+    },
+    '0xbdf08eab9e2ecee0102ed9628c12d3cd1ae8c5f4': Wallet {
+      privateKey: <Buffer a3 86 03 6c f6 39 e8 93 b4 c6 02 a8 2f 8e 0d dd 2b 18 45 eb f7 c6 2d 97 a4 09 0e ec 33 f7 35 c5>,
+      publicKey: <Buffer 7d 96 14 fc e8 3e 90 b7 0a 22 3a 31 3e 77 52 d8 2b f6 bb 7d 06 3b ca 68 93 4d 85 b3 9b 51 0a 48 f4 20 ce 33 87 6d 0d 2c bf 43 34 40 9d 5a 9b b5 92 36 ... 14 more bytes>
+    },
+    '0x644f20cece2f9ce7a9fb4bb8053fea6b14ac2b5a': Wallet {
+      privateKey: <Buffer 6b 9b 2b 7e f7 3c 49 ee b1 47 77 6b 1f d8 43 8f 8b fb 03 6f 08 f7 64 01 63 f7 08 d4 f6 45 91 f8>,
+      publicKey: <Buffer 41 30 f5 f0 99 fd 2b 9b c6 d3 9e fd c2 54 b7 58 f9 d0 f1 a3 49 40 4f 8f c8 89 36 aa f0 23 d9 59 af 4e 54 69 f3 d1 40 51 61 06 d8 fa 67 bc fd d4 5a 18 ... 14 more bytes>
+    },
+    '0x10792fc01d343d28fea2eafadb24e63fec1f8683': Wallet {
+      privateKey: <Buffer d7 03 b0 23 bd ec b6 09 8a 69 16 15 31 ef 9a 62 62 cd 19 6a 99 6f e7 96 a4 94 fa 50 29 90 20 50>,
+      publicKey: <Buffer 9c cc 68 fe 34 7c 8a 6a b4 04 1c 4f 85 6a 56 64 c2 55 93 62 35 2e 5b 8d ae 55 89 c5 7e 0d 0c f4 34 6e f1 d5 d7 3c 3a 56 64 05 45 60 e4 01 d3 28 2c 2b ... 14 more bytes>
+    },
+    '0xa625a3eed228d6c591b95ef7a379bb734bd53606': Wallet {
+      privateKey: <Buffer 95 89 ab d5 35 74 02 94 ff ea d1 a1 25 54 ea 5b 03 ba c7 27 5d e3 02 a2 00 68 f0 84 4b b9 03 7e>,
+      publicKey: <Buffer c8 64 1d 3b 19 19 a1 53 53 e9 96 9c 4b 2c 3b f3 10 36 bc d3 c4 cc 61 f5 34 49 54 b2 60 ce 0a 0c bc ec ff 4c 68 10 d8 52 e4 17 d9 b6 b7 62 9d e8 21 20 ... 14 more bytes>
+    },
+    '0xa536388ae44eaf827247b779590383b938d4d003': Wallet {
+      privateKey: <Buffer d4 10 d9 5a ac f1 67 ba b7 e3 1e 09 5f 60 95 02 85 e9 9c 15 89 10 72 9b b3 4d 93 81 c3 33 65 5a>,
+      publicKey: <Buffer 27 34 c2 d9 a2 35 57 fb 8c f8 9a 34 2e 84 33 78 2a 01 48 57 51 89 c6 06 84 d1 5b 79 d4 37 ea 44 f2 7e 0b 19 1f 48 15 cc a6 7b 7f 16 2a ef 05 cf a0 14 ... 14 more bytes>
+    },
+    '0x0bc2f8c67dfa538a365a243c2580ec75665c8ed4': Wallet {
+      privateKey: <Buffer 4f f4 9f ea 44 95 2d 7a 31 f7 d6 2a 89 b8 20 1a 32 b0 6a e4 6e d2 c4 35 4b f1 bd 26 f8 e1 69 da>,
+      publicKey: <Buffer 43 75 c4 90 4c b2 a2 a9 26 a7 b6 b3 2d 88 fc d6 81 2b ca 7d 04 70 62 42 f9 48 43 e6 96 3e 3a 3a 4b f3 4b 41 ba e0 75 6d a3 49 fa d6 1b e9 dc b8 1d 05 ... 14 more bytes>
+    },
+    '0x8b670c593c73a1fd0eff24dd22dfed1092bf0cdc': Wallet {
+      privateKey: <Buffer 9c 67 5b cb 32 20 5c 84 74 ce 58 9d a3 95 4a cd 76 24 51 ca 7c 5d ce b6 34 cb 7d d5 8d ea a8 67>,
+      publicKey: <Buffer 3b d6 e1 9a 0f e5 d7 e2 9c 85 76 ec 72 8c da 68 6a bc a5 0a c2 17 a6 ee 6e 7a a6 8f cc f3 5b bd 1f 78 63 be 91 a5 4a 98 e3 58 04 3d 43 81 de e8 6a d0 ... 14 more bytes>
+    },
+    '0x2676d1d6b6ca93f7e247429a61ee873ad65eae06': Wallet {
+      privateKey: <Buffer d7 86 db 2e ce 57 23 40 45 9f e3 09 87 a4 53 27 e9 56 e0 47 d8 06 1d 3c 59 5c a9 79 f3 84 7e 75>,
+      publicKey: <Buffer 98 4e 57 cb 9e 7a 08 67 ee 12 ff b6 fe 18 79 e9 a2 e1 00 5b a6 7c 9e f8 c3 ac bd 7b 7a 09 f0 58 ff 43 7f 45 57 b2 07 1c 79 84 3b 51 03 b1 84 68 44 bc ... 14 more bytes>
+    },
+    '0x24fe6bb3d5d3f308003b1d8f9cc9fc773bbdb6eb': Wallet {
+      privateKey: <Buffer 9c 89 66 8c de e2 2d 4b 10 a9 2d 4a a5 32 61 78 0d 5b 8c 3e 8d 41 6a 37 4e 00 a5 2d 97 9b 5d 4b>,
+      publicKey: <Buffer de a3 32 27 44 c9 18 cf d1 81 bf b5 5d 3f 02 95 a6 f8 c0 97 97 24 49 bb cc d6 c8 9b a0 bc 71 dd e1 45 c2 c7 df 2c 26 ad ec 66 fb 1d ce a9 ec cb a7 c9 ... 14 more bytes>
+    },
+    '0x1dcf6ed7caf80bb62a04539a182f6cdfa839e929': Wallet {
+      privateKey: <Buffer 36 1a e8 a0 10 a2 25 ca 80 e9 da 72 18 ad a9 6f 07 af 08 a9 0d be 5b ad 87 83 90 fc bd c1 5e ff>,
+      publicKey: <Buffer 64 25 07 d7 db 60 86 bf fd cc 0b 9d 2d b8 c1 f9 9b d6 ec f8 36 26 be 86 05 61 d4 f2 2c eb 6a ab 7b 6a 7f c9 b1 6f e4 21 84 93 b4 ea 03 9e 4d 5b 40 43 ... 14 more bytes>
+    },
+    '0xb7c3a6e1552f009e7c8b2ae2863df0fddd5617a6': Wallet {
+      privateKey: <Buffer 3d 0b 4e fd 45 1b ae f6 f1 6a 98 34 1f 61 0c ca 9b 18 70 4f 81 97 d8 e5 dd 58 0c 80 09 4a 9a b0>,
+      publicKey: <Buffer 7c f0 7d 63 5d a5 c2 4b 25 1b 48 7c 09 82 89 c0 d8 d9 bf 68 05 88 b1 d3 48 d2 02 94 ad a8 5e 4f 72 64 2d a0 c6 87 d0 9c f8 72 8b b6 58 0d 3b b1 27 20 ... 14 more bytes>
+    },
+    '0x9289ba9dc7395b56cdfe5bfd8da8c4f73ba257cf': Wallet {
+      privateKey: <Buffer 45 0b 1b 19 c7 6e a5 be 59 af c7 ff ff 06 55 f2 ae b2 92 96 dc 41 3c 57 c9 20 ed 79 65 9e 71 b5>,
+      publicKey: <Buffer 89 3e 7f 98 1d 5a 55 96 a9 a3 58 10 41 3a c7 69 3d d6 a7 72 ab 9d d4 ed 5b e4 a8 23 2b 33 4c a5 ec 45 85 01 76 e8 d2 23 dd a0 51 35 28 12 75 d7 b9 7d ... 14 more bytes>
+    }
+  },
+  addresses: [
+    '0x59a083e07fd418a24471da3c4d63beb2563cfb99',
+    '0xbf52efa522bae6359ad1e7a03add636233d10306',
+    '0x6ed58e07e957103e32dd552776570fc55c6eafc6',
+    '0xedbdefbe17a7b234ef66d67521d381b9d47934c0',
+    '0xdcf797e91a37465677c1b5ddbbcaba7a7422f3ab',
+    '0x203a032fb410f74a397ac9e359420ed0a44a5eca',
+    '0xbcc7b44813e03ba75fcc3411fd862dba23561f30',
+    '0x5c0ac5950cafe41eead8729d52ac55d73f7a5116',
+    '0x1ee6df221b5950cda1171fc06c343f01c21a51ca',
+    '0x23399b8a13ba725e1f53264a15c5193ae5ba6d66',
+    '0x0da566f9066dfe9995670e6badf4fb8c4e9bf907',
+    '0x70818e6a43ca06acda4eecce359cd4481c8ec5b6',
+    '0xd3203ab6ba293ed8a972ef6e5cbb1362e3aa0e11',
+    '0xbad6c899138f14dff4e1a9d4f8d55ac546cff8dc',
+    '0xa7bbabfcbf3af7a77aa5b852bdfdecd6cd54528f',
+    '0xbdf090f2ed3ddbb9ac06cc94eb10e623659a0e27',
+    '0x0536d59b6c74b9f35f793fa3365951922db2d243',
+    '0x1213cdcc542bdd1959fa8835305618784593fded',
+    '0xbdf08eab9e2ecee0102ed9628c12d3cd1ae8c5f4',
+    '0x644f20cece2f9ce7a9fb4bb8053fea6b14ac2b5a',
+    '0x10792fc01d343d28fea2eafadb24e63fec1f8683',
+    '0xa625a3eed228d6c591b95ef7a379bb734bd53606',
+    '0xa536388ae44eaf827247b779590383b938d4d003',
+    '0x0bc2f8c67dfa538a365a243c2580ec75665c8ed4',
+    '0x8b670c593c73a1fd0eff24dd22dfed1092bf0cdc',
+    '0x2676d1d6b6ca93f7e247429a61ee873ad65eae06',
+    '0x24fe6bb3d5d3f308003b1d8f9cc9fc773bbdb6eb',
+    '0x1dcf6ed7caf80bb62a04539a182f6cdfa839e929',
+    '0xb7c3a6e1552f009e7c8b2ae2863df0fddd5617a6',
+    '0x9289ba9dc7395b56cdfe5bfd8da8c4f73ba257cf'
+  ],
+  chainSettings: {},
+  engine: Web3ProviderEngine {
+    _events: [Object: null prototype] {
+      block: [Array],
+      start: [Array],
+      stop: [Array]
+    },
+    _eventsCount: 3,
+    _maxListeners: 30,
+    _blockTracker: PollingBlockTracker {
+      _events: [Object: null prototype],
+      _eventsCount: 5,
+      _maxListeners: undefined,
+      _blockResetDuration: 4000,
+      _currentBlock: null,
+      _isRunning: true,
+      _onNewListener: [Function: bound _onNewListener],
+      _onRemoveListener: [Function: bound _onRemoveListener],
+      _resetCurrentBlock: [Function: bound _resetCurrentBlock],
+      _provider: [Object],
+      _pollingInterval: 4000,
+      _retryTimeout: 400,
+      _keepEventLoopActive: true,
+      _setSkipCacheFlag: true
+    },
+    _ready: Stoplight {
+      _events: [Object: null prototype] {},
+      _eventsCount: 0,
+      _maxListeners: undefined,
+      isLocked: false,
+      [Symbol(kCapture)]: false
+    },
+    currentBlock: null,
+    _providers: [
+      [HookedWalletSubprovider],
+      [NonceTrackerSubprovider],
+      [SubscriptionsSubprovider],
+      [WebsocketSubprovider]
+    ],
+    silent: false,
+    _running: true,
+    [Symbol(kCapture)]: false
+  },
+  hdwallet: EthereumHDKey {
+    _hdkey: HDKey {
+      versions: [Object],
+      depth: 0,
+      index: 0,
+      _privateKey: <Buffer 8f f1 06 39 81 29 32 30 97 ef ed 3a 40 79 d8 68 c2 5f d3 44 21 a5 c9 84 1f 3b 27 6a e1 4c ac 0a>,
+      _publicKey: <Buffer 02 34 d8 8d 0e 62 f4 60 f0 8b d8 c1 0d 71 db ab d6 a9 a0 3a 18 98 32 da f9 d7 1b 44 4a 41 7d 74 1f>,
+      chainCode: <Buffer ee 1f 56 e3 b0 47 73 0f f0 76 79 5f e5 65 24 2d 44 17 fb b8 3f 58 37 d5 c9 da 76 19 e1 ba c6 e1>,
+      _fingerprint: 1403843443,
+      parentFingerprint: 0,
+      _identifier: <Buffer 53 ac f3 73 2c 06 9d 19 f2 ec 14 9e 82 ac c5 45 69 64 81 57>
+    }
+  },
+  initialized: Promise { <pending> },
+  hardfork: 'istanbul',
+  send: [Function (anonymous)],
+  _alreadyWrapped: true
+}

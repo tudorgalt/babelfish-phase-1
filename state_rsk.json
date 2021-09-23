@@ -176,7 +176,7 @@
   "Sender": {
     "address": "0xA7094DBb3692622a9846167fF66B1eAc98BE6410"
   },
-  "SimpleVester": {
+  "SimpleVester_previous": {
     "address": "0xBd07A878b0Af0CD211EaA0afA8dF6F9ED28CB708"
   },
   "Vesting_Table_1": {
@@ -313,5 +313,8 @@
   },
   "AirdropVester": {
     "address": "0xEc3E63F6943879Dfd4f9F462fBDCF34EC8da493c"
+  },
+  "SimpleVester": {
+    "address": "0x929189B38c9b073C9b4911BdE71B5Fde3664Be76"
   }
 }

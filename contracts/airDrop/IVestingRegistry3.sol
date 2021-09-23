@@ -48,4 +48,6 @@ contract IVestingRegistry3 {
      * @param _tokenOwner the owner of the tokens
      */
     function getTeamVesting(address _tokenOwner) public view returns (address);
+
+    function addAdmin(address _admin) public;
 }

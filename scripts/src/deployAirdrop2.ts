@@ -31,6 +31,12 @@ export default async function main(truffle, networkName): Promise<void> {
 
     const FishToken = artifacts.require("Fish");
     const AirdropVester = artifacts.require("AirdropVester");
+    const IVestingRegistry3 = artifacts.require("IVestingRegistry3");
+
+    const vestingRegistry = await IVestingRegistry3.at('0x036ab2DB0a3d1574469a4a7E09887Ed76fB56C41');
+
+    let abi = vestingRegistry.contract.methods['addAdmin(address)']().encodeABI();
+    console.log('abi for upgrade: ', abi);
 
     const numberOfTables = await countTables();
 
@@ -47,11 +53,6 @@ export default async function main(truffle, networkName): Promise<void> {
         tables.push(table.address);
     }
 
-    /*
-    const token: FishInstance = await conditionalDeploy(FishToken, `FishToken`,
-        () => FishToken.new('2982000000000000000000000')
-    );
-    */
 
     const token: FishInstance = await FishToken.at('0x055A902303746382FBB7D18f6aE0df56eFDc5213');
 
@@ -59,12 +60,27 @@ export default async function main(truffle, networkName): Promise<void> {
         () => AirdropVester.new(tables, token.address)
     );
 
-    //await token.transfer(sender.address, '2982000000000000000000000');
+    let totalGasUsed = 0;
 
-    /*
-    // eslint-disable-next-line no-restricted-syntax
-    for await (const table of tablesContracts) {
-        await table.transferOwnership(sender.address);
+    try {
+        while (currentIndex.lt(total)) {
+            const { receipt } = await sender.sendTokens(batchSize);
+            totalGasUsed += receipt.gasUsed;
+
+            currentIndex = await sender.index();
+            console.log(`Sent to ${batchSize} addresses. Index: ${currentIndex.toString()}. Gas used: ${receipt.gasUsed}`);
+            let balance = await fishToken.balanceOf(sender.address);
+            console.log(`Current balance: ${balance.toString()}`);
+        }
+    } catch (e) {
+        console.log("ERROR");
+        console.log(e);
     }
-    */
+
+    const finalBalance = await fishToken.balanceOf(sender.address);
+    //const expectedBalance = initialBalance.sub(totalValue);
+
+    //assert(finalBalance.eq(expectedBalance), "final balance is not valid");
+
+    console.log(`Sending completed. Total gas used: ${totalGasUsed}`);
 };
