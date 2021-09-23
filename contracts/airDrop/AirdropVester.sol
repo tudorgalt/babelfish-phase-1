@@ -3,7 +3,6 @@ pragma solidity ^0.5.16;
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "../fish/interfaces/IERC20.sol";
 import {Table} from "./Table.sol";
-import "./IVestingRegistry3.sol";
 
 contract AirdropVester is Ownable {
 
@@ -23,7 +22,6 @@ contract AirdropVester is Ownable {
     constructor(address[] memory _tables, address _token) public {
         tables = _tables;
         token = IERC20(_token);
-        vestingRegistry = IVestingRegistry3(VESTING_REGISTRY);
         batchSize = Table(_tables[0]).getSize();
 
         uint256 numberOfAddresses = 0;
