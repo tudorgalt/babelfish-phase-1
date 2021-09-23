@@ -11,7 +11,6 @@ const precision = new BN(10).pow(new BN(18));
 const totalFish = new BN('420000000').mul(precision);
 
 const batchSize = 100;
-const fileName = "airdrop_1_final_fixed.csv";
 
 export default async function main(): Promise<void> {
 
@@ -63,26 +62,16 @@ contract Table_${tableNumber} is Table {
         ${values.join(",\n")}
     ];
 
-    uint256 public totalLength;
-
-    constructor () public {
-        totalLength = addresses.length;
+    function getRecipentInfo(uint256 index) public view returns(address recipient, uint256 amount, bool finished) {
+        return (addresses[index], amounts[index], index >= addresses.length - 1);
     }
-
-    function getRecipentInfo(uint256 index) public view returns(address, uint256, bool) {
-        return (addresses[index], amounts[index], index == totalLength -1);
-    } 
 
     function getSize() public view returns(uint256 size) {
-        return totalLength;
-    }
-
-    function destroy() public onlyOwner {
-        selfdestruct(msg.sender);
+        return addresses.length;
     }
 }`;
 
-    await fsPromises.writeFile(`contracts/airDrop/tables/Table_${tableNumber}.sol`, buffor);
+    await fsPromises.writeFile(`contracts/airDrop/vestingTables/Table_${tableNumber}.sol`, buffor);
     console.log(`Created cotract with ${addresses.length} stakers`);
 };
 
