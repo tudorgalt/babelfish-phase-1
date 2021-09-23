@@ -16,8 +16,6 @@ import { FeesVault } from "../vault/FeesVault.sol";
 import { RewardsVault } from "../vault/RewardsVault.sol";
 import "./Token.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title MassetV4
  * @dev Contract is responsible for managing mAsset and bAsset.
@@ -156,23 +154,6 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         ERC1820.setInterfaceImplementer(address(this), ERC777_RECIPIENT_INTERFACE_HASH, address(this));
     }
 
-    /**
-     * @dev Calculate and return fee amount based on massetAmount.
-     * @param massetAmount  Amount of masset to deposit / withdraw.
-     * @return fee          Calculated fee amount.
-     */
-    function calculateFee(uint256 massetAmount, uint256 feeAmount) internal pure returns(uint256 fee) {
-        return massetAmount.mul(feeAmount).div(FEE_PRECISION);
-    }
-
-    function _mintToken(uint256 _amount, address _target) internal {
-        token.mint(_target, _amount);
-    }
-
-    function _burnToken(uint256 _amount, address _target) internal {
-        token.burn(_target, _amount);
-    }
-
     // public
 
     /**
@@ -196,6 +177,37 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         feesManager = FeesManager(_feeManagerAddress);
 
         version = "4.0";
+    }
+
+    /**
+     * @dev Calculate and return fee amount based on massetAmount.
+     * @param massetAmount  Amount of masset to deposit / withdraw.
+     * @return fee          Calculated fee amount.
+     */
+    function calculateFee(uint256 massetAmount, uint256 feeAmount) public pure returns(uint256 fee) {
+        return massetAmount.mul(feeAmount).div(FEE_PRECISION);
+    }
+
+    function calculateReward (
+        address _basset,
+        uint256 _massetQuantity,
+        bool _isDeposit
+    ) internal view returns(int256 rewardAmount) {
+        (int256 deviationBefore, int256 deviationAfter) = basketManager.getBassetRatioDeviation(_basset, _massetQuantity, _isDeposit);
+
+        rewardAmount = rewardsManager.calculateReward(deviationBefore, deviationAfter, _isDeposit);
+
+        if(rewardAmount < 0) {
+            require(uint256(-rewardAmount) < _massetQuantity, "Insuficient balance to cover rewards.");
+        }else if(rewardAmount > 0) {
+            uint256 rewardsVaultBalance = token.balanceOf(address(rewardsVault));
+
+            if (rewardsVaultBalance < uint256(rewardAmount)) {
+                rewardAmount = 0; // !!!!!!!!!!!!! 
+            }
+        }
+
+        return rewardAmount;
     }
 
     /***************************************
@@ -240,6 +252,51 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return _mintTo(_bAsset, _bAssetQuantity, _recipient);
     }
 
+    function calculateMintRatio (
+        address _basset,
+        uint256 _bassetQuantity
+    ) public view returns(uint256 massetsMinted, uint256 bassetsTaken) {
+        (, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) = calculateMint(_basset, _bassetQuantity, false);
+
+        uint256 transferedReward = 0;
+        if (reward > 0) {
+            transferedReward = uint256(reward);
+        }
+
+        return (massetsToMint.add(transferedReward), bassetsToTake);
+    }
+
+    function calculateMint (
+        address _basset,
+        uint256 _bassetQuantity,
+        bool _bridgeFlag
+    ) public view returns (uint256 fee, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) {
+        require(_bassetQuantity > 0, "quantity must not be 0");
+
+        require(basketManager.isValidBasset(_basset), "invalid basset");
+
+        (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(_basset, _bassetQuantity);
+        require(basketManager.checkBasketBalanceForDeposit(_basset, bassetQuantity), "basket out of balance");
+
+        uint256 feeAmount = _bridgeFlag ? depositBridgeFee : depositFee;
+        fee = calculateFee(massetQuantity, feeAmount);
+
+        if (!_bridgeFlag) {
+            reward = calculateReward(_basset, massetQuantity, true);
+        }
+
+        uint256 massetsAfterReward = reward > 0
+            ? massetQuantity
+            : massetQuantity.sub(uint256(-reward));
+        
+        require(massetsAfterReward > 0, "mint amount after reward must be > 0");
+
+        massetsToMint = massetsAfterReward.sub(fee);
+        require(massetsToMint > 0, "mint amount after reward and fee must be > 0");
+
+        return (fee, reward, massetsToMint, bassetQuantity);
+    }
+
     /***************************************
               MINTING (INTERNAL)
     ****************************************/
@@ -248,103 +305,40 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @dev Mint a single mAsset to recipient address, at a 1:1 ratio with the bAsset.
      *      This contract must have approval to spend the senders bAsset.
      * @param _basset         Address of the bAsset.
-     * @param _massetQuantity Quantity in bAsset units.
+     * @param _bassetQuantity Quantity in bAsset units.
      * @param _recipient      Receipient of the newly minted mAsset tokens.
-     * @param _isDeposit      !!
      * @return massetMinted   Number of newly minted mAssets.
      */
-    function _calculateAndApplyReward (
-        address _basset,
-        uint256 _massetQuantity,
-        address _recipient,
-        bool _isDeposit
-    ) internal returns(uint256 massetsToMint, uint256 transferedRewardAmount) {
-        (int256 deviationBefore, int256 deviationAfter) = basketManager.getBassetRatioDeviation(_basset, _massetQuantity, _isDeposit);
-
-        int256 rewardAmount = rewardsManager.calculateReward(deviationBefore, deviationAfter, _isDeposit);
-        // console.log("deviationBefore", deviationBefore, deviationAfter, rewardAmount);
-        console.logInt(deviationBefore);
-        console.logInt(deviationAfter);
-        console.logInt(rewardAmount);
-
-        massetsToMint = _massetQuantity;
-
-        if(rewardAmount < 0) {
-            uint256 takeRewardAmount = uint256(-rewardAmount);
-            require(takeRewardAmount < massetsToMint, "Insuficient balance to cover rewards.");
-            
-
-            if (_isDeposit) {
-                massetsToMint = massetsToMint.sub(takeRewardAmount);
-                token.mint(address(rewardsVault), takeRewardAmount);
-            } else {
-                (uint256 bassetQuantity, uint256 massetQuantity) = basketManager.convertMassetToBassetQuantity(_basset, takeRewardAmount);
-                massetsToMint = massetsToMint.sub(massetQuantity);
-                
-                token.transferFrom(_recipient, address(rewardsVault), massetQuantity);
-            }
-        }else if(rewardAmount > 0) {
-            transferedRewardAmount = uint256(rewardAmount);
-
-            rewardsVault.getApproval(transferedRewardAmount, address(token));
-            uint256 rewardsVaultBalance = token.balanceOf(address(rewardsVault));
-
-            if (rewardsVaultBalance >= transferedRewardAmount) {
-                require(token.transferFrom(address(rewardsVault), _recipient, transferedRewardAmount), "add reward transfer failed");
-            } else {
-                transferedRewardAmount = 0;
-            }
-        }
-
-        return (massetsToMint, transferedRewardAmount);
-    }
-
     function _mintTo(
         address _basset,
         uint256 _bassetQuantity,
         address _recipient
     )
     internal
-    returns (uint256 massetMinted)
-    {
+    returns (uint256 massetMinted) {
         require(_recipient != address(0), "must be a valid recipient");
-        require(_bassetQuantity > 0, "quantity must not be 0");
 
-        require(basketManager.isValidBasset(_basset), "invalid basset");
-        require(basketManager.checkBasketBalanceForDeposit(_basset, _bassetQuantity), "invalid basket");
+        (uint256 fee, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) = calculateMint(_basset, _bassetQuantity, false);
 
-        (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(_basset, _bassetQuantity);
+        token.mint(feesVaultAddress, fee);
 
-        uint256 massetsAfterFee = _calculateAndApplyFee(massetQuantity, depositFee, address(0));
-        require(massetsAfterFee > 0, "mint amount after fee must be > 0");
+        uint256 transferedReward = 0;
 
-        (uint256 massetsAfterReward, uint256 transferedRewardAmount) = _calculateAndApplyReward(_basset, massetsAfterFee, _recipient, true);
-        require(massetsAfterReward > 0, "mint amount after reward must be > 0");
+        if (reward > 0) {
+            transferedReward = uint256(reward);
 
-        IERC20(_basset).safeTransferFrom(msg.sender, address(this), bassetQuantity);
-        token.mint(_recipient, massetsAfterReward);
-
-        emit Minted(msg.sender, _recipient, massetsAfterReward.add(transferedRewardAmount), _basset, bassetQuantity);
-
-        return massetsAfterReward;
-    }
-
-    /** !!!!!!!!!!!!!!!!!!!!!!!!!!!! _redeemer DESC
-     * @dev Mints fee to vault contract and return the amount of massets that goes to the user.
-     * @param massetQuantity    Amount of massets.
-     * @return massetsToMint    Amount of massets that is left to mint for user.
-     */
-    function _calculateAndApplyFee(uint256 massetQuantity, uint256 feeAmount, address _redeemer) internal returns (uint256 massetsLeft) {
-        uint256 fee = calculateFee(massetQuantity, feeAmount);
-        massetsLeft = massetQuantity.sub(fee);
-
-        if (_redeemer == address(0)) {
-            token.mint(feesVaultAddress, fee);
+            rewardsVault.getApproval(transferedReward, address(token));
+            require(token.transferFrom(address(rewardsVault), _recipient, transferedReward), "add reward transfer failed");
         } else {
-            token.safeTransferFrom(_redeemer, feesVaultAddress, fee);
+            token.mint(address(rewardsVault), uint256(-reward));
         }
 
-        return massetsLeft;
+        IERC20(_basset).safeTransferFrom(msg.sender, address(this), bassetsToTake);
+        token.mint(_recipient, massetsToMint);
+
+        emit Minted(msg.sender, _recipient, massetsToMint.add(transferedReward), _basset, bassetsToTake);
+
+        return massetsToMint;
     }
 
     /***************************************
@@ -381,6 +375,52 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return _redeemTo(_bAsset, _massetQuantity, _recipient, false);
     }
 
+    function calculateRedeemRatio (
+        address _basset,
+        uint256 _massetQuantity
+    ) public view returns(uint256 massetsTaken, uint256 bassetsTransfered) {
+        (, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) = calculateRedeem(_basset, _massetQuantity, false);
+
+        uint256 transferedReward = 0;
+        if (reward > 0) {
+            transferedReward = uint256(reward);
+        }
+
+        uint256 finalMassetsTaken = (transferedReward > massetsToTake) ? 0 : massetsToTake.sub(transferedReward);
+
+        return (finalMassetsTaken, bassetsToTransfer);
+    }
+
+    function calculateRedeem (
+        address _basset,
+        uint256 _massetQuantity,
+        bool _bridgeFlag
+    ) public view returns (uint256 fee, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) {
+        require(_massetQuantity > 0, "quantity must not be 0");
+
+        require(basketManager.isValidBasset(_basset), "invalid basset");
+
+        uint256 feeAmount = _bridgeFlag ? withdrawalBridgeFee : withdrawalFee;
+        fee = calculateFee(_massetQuantity, feeAmount);
+
+        if (!_bridgeFlag) {
+            reward = calculateReward(_basset, _massetQuantity, false);
+        }
+
+        uint256 massetsToConvert = reward > 0
+            ? _massetQuantity
+            : _massetQuantity.sub(uint256(-reward));
+        
+        massetsToConvert = massetsToConvert.sub(fee);
+
+        (uint256 convertedBassetsToTransfer, uint256 convertedMassetsToTake) = basketManager.convertMassetToBassetQuantity(_basset, massetsToConvert);
+        require(convertedBassetsToTransfer > 0, "amount after reward and fee must be > 0");
+
+        require(basketManager.checkBasketBalanceForWithdrawal(_basset, convertedBassetsToTransfer), "basket out of balance");
+
+        return (fee, reward, convertedBassetsToTransfer, convertedMassetsToTake);
+    }
+
     /***************************************
               REDEMPTION (INTERNAL)
     ****************************************/
@@ -391,53 +431,61 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param _basset           Address of the bAsset to redeem.
      * @param _massetQuantity   Units of the masset to redeem.
      * @param _recipient        Address to credit with withdrawn bAssets.
-     * @param bridgeFlag        Flag that indicates if the reedem proces is used with conjunction with bridge.
+     * @param _bridgeFlag        Flag that indicates if the reedem proces is used with conjunction with bridge.
      * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
      */
-function _redeemTo(
+    function _redeemTo(
         address _basset,
         uint256 _massetQuantity,
         address _recipient,
-        bool bridgeFlag
+        bool _bridgeFlag
     ) internal returns (uint256 massetRedeemed) {
         require(_recipient != address(0), "must be a valid recipient");
-        require(_massetQuantity > 0, "masset quantity must be greater than 0");
-        require(basketManager.isValidBasset(_basset), "invalid basset");
 
-        uint256 feeAmount = bridgeFlag ? withdrawalBridgeFee : withdrawalFee;
+        (uint256 fee, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) = calculateRedeem(_basset, _massetQuantity, _bridgeFlag);
 
-        // massetsToBurn is the amount of massets that is left to burn after the fee was taken.
-        // It is used to calculate amount of bassets that are transfered to user.
-        uint256 massetsAfterFee = _calculateAndApplyFee(_massetQuantity, feeAmount, msg.sender);
-        (uint256 bassetQuantity, uint256 massetsToBurn) = basketManager.convertMassetToBassetQuantity(_basset, massetsAfterFee);
-
-        require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
+        token.safeTransferFrom(_recipient, feesVaultAddress, fee);
 
         // In case of withdrawal to bridge the receiveTokensAt is called instead of transfer.
-        if(bridgeFlag) {
-            address bridgeAddress = basketManager.getBridge(_basset);
-            require(bridgeAddress != address(0), "invalid bridge");
-            IERC20(_basset).approve(bridgeAddress, bassetQuantity);
-            require(
-                IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
-                "call to bridge failed"
-            );
+        if(_bridgeFlag) {
+            _transferToBridge(_basset, _recipient, bassetsToTransfer);
     
-            token.burn(msg.sender, massetsToBurn);
-            emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity);
+            token.burn(msg.sender, massetsToTake);
+            emit Redeemed(msg.sender, _recipient, massetsToTake, _basset, bassetsToTransfer);
 
-            return massetsToBurn;
+            return massetsToTake;
         }
 
-        (uint256 massetsAfterReward, uint256 transferedRewardAmount) = _calculateAndApplyReward(_basset, massetsAfterFee, _recipient, false);
-        (uint256 bassetsAfterReward,) = basketManager.convertMassetToBassetQuantity(_basset, massetsAfterFee);
+        uint256 transferedReward = 0;
+        if (reward > 0) {
+            transferedReward = uint256(reward);
 
-        token.burn(msg.sender, massetsAfterReward);
-        IERC20(_basset).safeTransfer(_recipient, bassetsAfterReward);
+            rewardsVault.getApproval(transferedReward, address(token));
+            token.safeTransferFrom(address(rewardsVault), _recipient, transferedReward);
+        } else {
+            token.safeTransferFrom(msg.sender, address(rewardsVault), uint256(-reward));
+        }
 
-        emit Redeemed(msg.sender, _recipient, massetsAfterReward, _basset, bassetsAfterReward);
+        token.burn(msg.sender, massetsToTake);
+        IERC20(_basset).safeTransfer(_recipient, bassetsToTransfer);
 
-        return massetsToBurn;
+        uint256 finalMassetsTaken = (transferedReward > massetsToTake) ? 0 : massetsToTake.sub(transferedReward);
+
+        emit Redeemed(msg.sender, _recipient, finalMassetsTaken, _basset, bassetsToTransfer);
+
+        return finalMassetsTaken;
+    }
+
+    function _transferToBridge (address _basset, address _recipient, uint256 amount) internal {
+        address bridgeAddress = basketManager.getBridge(_basset);
+        require(bridgeAddress != address(0), "invalid bridge");
+
+        IERC20(_basset).approve(bridgeAddress, amount);
+
+        require(
+            IBridge(bridgeAddress).receiveTokensAt(_basset, amount, _recipient, bytes("")),
+            "call to bridge failed"
+        );
     }
 
     // For the BRIDGE
@@ -540,24 +588,26 @@ function _redeemTo(
         address _tokenAddress,
         bytes calldata _userData
     ) external nonReentrant {
-        emit onTokensMintedCalled(msg.sender, _orderAmount, _tokenAddress, _userData);
-
         require(_orderAmount > 0, "amount must be > 0");
 
         address recipient =  _decodeAddress(_userData);
+        require(recipient != address(0), "must be a valid recipient");
+
         address basset = _tokenAddress;
 
         address bridgeAddress = basketManager.getBridge(basset);
         require(msg.sender == bridgeAddress, "only bridge may call");
 
         require(basketManager.isValidBasset(basset), "invalid basset");
-        require(basketManager.checkBasketBalanceForDeposit(basset, _orderAmount), "basket out of balance");
 
-        (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(basset, _orderAmount);
-        uint256 massetsToMint = _calculateAndApplyFee(massetQuantity, depositBridgeFee, address(0));
+        (uint256 fee,, uint256 massetsToMint, uint256 bassetsAmount) = calculateMint(basset, _orderAmount, true);
+
+        token.mint(feesVaultAddress, fee);
+
         token.mint(recipient, massetsToMint);
 
-        emit Minted(msg.sender, recipient, massetsToMint, basset, bassetQuantity);
+        emit onTokensMintedCalled(msg.sender, _orderAmount, _tokenAddress, _userData);
+        emit Minted(msg.sender, recipient, massetsToMint, basset, bassetsAmount);
     }
 
     // Getters

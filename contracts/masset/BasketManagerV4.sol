@@ -4,8 +4,6 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title BasketManagerV4
  * @dev Contract is responsible for mAsset and bAsset exchange process and 
@@ -240,7 +238,6 @@ contract BasketManagerV4 is InitializableOwnable {
         bool _isDeposit
     ) public view validBasset(_basset) returns (uint256 ratio) {
         uint256 total = getTotalMassetBalance();
-        console.log("total", total);
 
         uint256 bassetBalance = IERC20(_basset).balanceOf(masset); // convert
         (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
