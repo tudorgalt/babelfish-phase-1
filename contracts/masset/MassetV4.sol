@@ -203,7 +203,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
             uint256 rewardsVaultBalance = token.balanceOf(address(rewardsVault));
 
             if (rewardsVaultBalance < uint256(rewardAmount)) {
-                rewardAmount = 0; // !!!!!!!!!!!!! 
+                rewardAmount = int256(rewardsVaultBalance);
             }
         }
 
@@ -378,8 +378,8 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
     function calculateRedeemRatio (
         address _basset,
         uint256 _massetQuantity
-    ) public view returns(uint256 massetsTaken, uint256 bassetsTransfered) {
-        (, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) = calculateRedeem(_basset, _massetQuantity, false);
+    ) public view returns(uint256 bassetsTransfered, uint256 massetsTaken) {
+        (uint256 fee, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) = calculateRedeem(_basset, _massetQuantity, false);
 
         uint256 transferedReward = 0;
         if (reward > 0) {
@@ -388,7 +388,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         uint256 finalMassetsTaken = (transferedReward > massetsToTake) ? 0 : massetsToTake.sub(transferedReward);
 
-        return (finalMassetsTaken, bassetsToTransfer);
+        return (bassetsToTransfer, finalMassetsTaken.add(fee));
     }
 
     function calculateRedeem (
@@ -444,7 +444,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         (uint256 fee, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) = calculateRedeem(_basset, _massetQuantity, _bridgeFlag);
 
-        token.safeTransferFrom(_recipient, feesVaultAddress, fee);
+        token.safeTransferFrom(msg.sender, feesVaultAddress, fee);
 
         // In case of withdrawal to bridge the receiveTokensAt is called instead of transfer.
         if(_bridgeFlag) {
@@ -469,7 +469,8 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         token.burn(msg.sender, massetsToTake);
         IERC20(_basset).safeTransfer(_recipient, bassetsToTransfer);
 
-        uint256 finalMassetsTaken = (transferedReward > massetsToTake) ? 0 : massetsToTake.sub(transferedReward);
+        uint256 finalMassetsTaken = massetsToTake.add(fee);
+        finalMassetsTaken = (transferedReward > finalMassetsTaken) ? 0 : finalMassetsTaken.sub(transferedReward);
 
         emit Redeemed(msg.sender, _recipient, finalMassetsTaken, _basset, bassetsToTransfer);
 

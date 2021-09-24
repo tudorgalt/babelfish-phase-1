@@ -1,7 +1,14 @@
 import { BasketManagerProxyInstance, BasketManagerV3Instance, BasketManagerV4Instance } from "types/generated";
 
+const Token = artifacts.require("Token");
 const BasketManagerV3 = artifacts.require("BasketManagerV3");
 const BasketManagerV4 = artifacts.require("BasketManagerV4");
+
+export const createToken = async (massetAddress: string) => {
+    const token = await Token.new("Mock1", "MK1", 18);
+    token.transferOwnership(massetAddress);
+    return token;
+};
 
 export type CreateBasketV3Args = {
     admin: string,

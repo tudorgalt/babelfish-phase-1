@@ -6,6 +6,7 @@ import envSetup from "@utils/env_setup";
 import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { BasketManagerV3Instance, MassetV3Instance, MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance } from "types/generated";
+import { Fees } from "./types";
 
 const { expect } = envSetup.configure();
 
@@ -888,11 +889,3 @@ type BasketManagerObj = {
     bassets: string[];
     basketManager: BasketManagerV3Instance;
 };
-
-type Fees = Record<
-    | "deposit"
-    | "depositBridge"
-    | "withdrawal"
-    | "withdrawalBridge",
-    BN
->;

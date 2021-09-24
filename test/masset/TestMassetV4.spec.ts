@@ -6,7 +6,8 @@ import envSetup from "@utils/env_setup";
 import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance, MassetV4Instance, BasketManagerV4Instance, RewardsVaultInstance } from "types/generated";
-import { createBasketManagerV3, upgradeBasketManagerToV4 } from "./utils";
+import { createBasketManagerV3, createToken, upgradeBasketManagerToV4 } from "./utils";
+import { Fees } from "./types";
 
 const { expect } = envSetup.configure();
 
@@ -101,7 +102,7 @@ contract("MassetV4", async (accounts) => {
             });
 
             it("deposit to pool with perfect ratio", async () => {
-                const initialFeesVaultBalance = await initializePool(initialBassets, masset, factors, feesVault);
+                const { initialFeesVaultBalance } = await initializePool(initialBassets, masset, factors, feesVault, rewardsVault);
 
                 const sum = tokens(INITIAL_RATIOS[0]);
 
@@ -141,38 +142,52 @@ contract("MassetV4", async (accounts) => {
             });
 
             it("if all params are valid, amounts that don't divide evenly", async () => {
+                const depositor = standardAccounts.dummy3;
+
                 const factor = new BN(1000);
                 await basketManager.setFactor(initialBassets.mockToken1.address, factor);
+                const { initialFeesVaultBalance } = await initializePool(initialBassets, masset, [factor.toNumber(), 1], feesVault, rewardsVault);
 
                 const sum = new BN(1024);
+                await initialBassets.mockToken1.mint(depositor, sum);
 
                 const expectedReminder = sum.mod(factor);
                 const bassetsLeft = sum.sub(expectedReminder);
                 const massetsToMint = sum.sub(expectedReminder).div(factor);
 
+                const expectedReward = ZERO; // deposit amount is so small use should not get any reward
                 const expectedFee = massetsToMint.mul(standardFees.deposit).div(FEE_PRECISION);
-                const expectedMassetQuantity = massetsToMint.sub(expectedFee);
+                const expectedMassetQuantity = massetsToMint.sub(expectedFee).sub(expectedReward);
 
                 await initialBassets.mockToken1.approve(masset.address, sum, {
-                    from: standardAccounts.dummy1,
+                    from: depositor
                 });
                 const tx = await masset.mint(initialBassets.mockToken1.address, sum, {
-                    from: standardAccounts.dummy1,
+                    from: depositor
                 });
 
                 await expectEvent(tx.receipt, "Minted", {
-                    minter: standardAccounts.dummy1,
-                    recipient: standardAccounts.dummy1,
+                    minter: depositor,
+                    recipient: depositor,
                     massetQuantity: expectedMassetQuantity,
                     bAsset: initialBassets.mockToken1.address,
                     bassetQuantity: bassetsLeft,
                 });
 
-                const balance = await token.balanceOf(standardAccounts.dummy1);
+                const balance = await token.balanceOf(depositor);
                 expect(balance).bignumber.to.eq(expectedMassetQuantity);
 
-                const vaultBalance = await token.balanceOf(feesVault.address);
-                expect(vaultBalance).bignumber.to.eq(expectedFee, "fee should be transfered to vault contract");
+                const feesvaultBalance = await token.balanceOf(feesVault.address);
+                expect(feesvaultBalance).bignumber.to.eq(
+                    initialFeesVaultBalance.add(expectedFee),
+                    "fee should be transfered to vault contract"
+                );
+
+                const rewardsvaultBalance = await token.balanceOf(rewardsVault.address);
+                expect(rewardsvaultBalance).bignumber.to.eq(
+                    expectedReward,
+                    "rewards vault should be empty"
+                );
             });
         });
 
@@ -208,6 +223,7 @@ contract("MassetV4", async (accounts) => {
             token = deployed.deployedToken;
             masset = deployed.deployedMassetV4;
             feesVault = deployed.deployedFeesVault;
+            rewardsVault = deployed.deployedRewardsVault;
             initialBassets = deployed.deployedInitialBassets;
             basketManager = deployed.deployedBasketManagerV4;
 
@@ -215,32 +231,252 @@ contract("MassetV4", async (accounts) => {
         });
         context("should succeed", () => {
             it("if all params are valid", async () => {
-                const sum = tokens(1);
+                const {
+                    initialFeesVaultBalance,
+                    initialRewardsVaultBalance
+                } = await initializePool(initialBassets, masset, [1, 1], feesVault, rewardsVault, [600, 400]);
+
+                const depositor = standardAccounts.dummy3;
+                const recipient = standardAccounts.dummy4;
+
+                const sum = tokens(133);
                 const expectedFee = sum.mul(standardFees.deposit).div(FEE_PRECISION);
-                const expectedMassetQuantity = sum.sub(expectedFee);
+                /*
+                    ratioBefore = 600
+                    ratioAfter = 646 // 733/1133
+                    deviationBefore = 100 // 600 - 500
+                    deviationAfter = 146 // 646 - 500
+
+                    segmentOnCorveBefore = 333 //  deviationBefore^3 / 3 / A_CURVE_DENOMINATOR
+                    segmentOnCurveAfter = 1037 // deviationAfter^3 / 3 / A_CURVE_DENOMINATOR
+
+                    reward = 704 // segmentOnCurveAfter - segmentOnCorveBefore
+                */
+                const expectedReward = new BN("704");
+                const expectedMassetQuantity = sum.sub(expectedFee).sub(expectedReward);
+
+                await initialBassets.mockToken1.mint(depositor, sum);
 
                 await initialBassets.mockToken1.approve(masset.address, sum, {
-                    from: standardAccounts.dummy1,
+                    from: depositor
                 });
-                const tx = await masset.mintTo(
-                    initialBassets.mockToken1.address,
-                    sum,
-                    standardAccounts.dummy4,
-                    { from: standardAccounts.dummy1 },
-                );
+                const tx = await masset.mintTo(initialBassets.mockToken1.address, sum, recipient, { from: depositor });
+
                 await expectEvent(tx.receipt, "Minted", {
-                    minter: standardAccounts.dummy1,
-                    recipient: standardAccounts.dummy4,
+                    minter: depositor,
+                    recipient,
                     massetQuantity: expectedMassetQuantity,
                     bAsset: initialBassets.mockToken1.address,
                     bassetQuantity: sum,
                 });
-                const balance = await token.balanceOf(standardAccounts.dummy4);
-                expect(balance).bignumber.to.eq(expectedMassetQuantity);
 
-                const vaultBalance = await token.balanceOf(feesVault.address);
-                expect(vaultBalance).bignumber.to.eq(expectedFee, "fee should be transfered to vault contract");
+                const depositorMassetBalance = await token.balanceOf(depositor);
+                expect(depositorMassetBalance).bignumber.to.eq(ZERO, "depositor should not get any funds");
+
+                const recipientMassetBalance = await token.balanceOf(recipient);
+                expect(recipientMassetBalance).bignumber.to.eq(expectedMassetQuantity, "all funds should go to recipient");
+
+                const feesVaultBalance = await token.balanceOf(feesVault.address);
+                expect(feesVaultBalance).bignumber.to.eq(
+                    initialFeesVaultBalance.add(expectedFee),
+                    "fee should be transfered to vault contract"
+                );
+
+                const rewardsVaultBalance = await token.balanceOf(rewardsVault.address);
+                expect(rewardsVaultBalance).bignumber.to.eq(
+                    initialRewardsVaultBalance.add(expectedReward),
+                    "should transfer proper amount of reward"
+                );
             });
+        });
+    });
+
+    describe("calculateMint", async () => {
+        type CalculateMintResult = Record<"fee" | "reward" | "massetsToMint" | "bassetsToTake", BN>;
+        type CheckCalculateMintResultsConfig = {
+            massetInstance: MassetV4Instance;
+            expected: CalculateMintResult;
+            params: Parameters<MassetV4Instance['calculateMint']>;
+        };
+
+        const checkCalculateMintResults = async ({ massetInstance, params, expected }: CheckCalculateMintResultsConfig) => {
+            const [fee, reward, massetsToMint, bassetsToTake] = await massetInstance.calculateMint(...params);
+
+            expect(fee).bignumber.to.eq(expected.fee, "fee amount is invalid");
+            expect(reward).bignumber.to.eq(expected.reward, "reward amount is invalid");
+            expect(massetsToMint).bignumber.to.eq(expected.massetsToMint, "massetsToMint amount is invalid");
+            expect(bassetsToTake).bignumber.to.eq(expected.bassetsToTake, "bassetsToTake amount is invalid");
+        };
+
+        beforeEach(async () => {
+            const deployed = await initSystem({
+                massetConfig: { fees: standardFees },
+                basketManagerConfig: { decimals: [18, 18], factors: [1, 1] }
+            });
+
+            masset = deployed.deployedMassetV4;
+            feesVault = deployed.deployedFeesVault;
+            rewardsVault = deployed.deployedRewardsVault;
+            initialBassets = deployed.deployedInitialBassets;
+            basketManager = deployed.deployedBasketManagerV4;
+        });
+
+        it("to empty pool, equal factors", async () => {
+            const mintAmount = tokens(100);
+            const fee = mintAmount.mul(standardFees.deposit).div(FEE_PRECISION);
+
+            await checkCalculateMintResults({
+                massetInstance: masset,
+                params: [initialBassets.mockToken2.address, tokens(100), false],
+                expected: {
+                    fee,
+                    reward: ZERO,
+                    bassetsToTake: mintAmount,
+                    massetsToMint: mintAmount.sub(fee)
+                }
+            });
+        });
+
+        it("to empty pool, diffrent factors", async () => {
+            const factor = new BN(100);
+            await basketManager.setFactor(initialBassets.mockToken1.address, factor);
+
+            const bassetsAmount = new BN(9999);
+            const reminder = new BN(99);
+            const massetsAmount = bassetsAmount.div(factor);
+            const fee = massetsAmount.mul(standardFees.deposit).div(FEE_PRECISION);
+
+            await checkCalculateMintResults({
+                massetInstance: masset,
+                params: [initialBassets.mockToken1.address, bassetsAmount, false],
+                expected: {
+                    fee,
+                    reward: ZERO,
+                    bassetsToTake: bassetsAmount.sub(reminder),
+                    massetsToMint: massetsAmount.sub(fee)
+                }
+            });
+        });
+
+        it("to balanced pool, equal factors", async () => {
+            await initializePool(initialBassets, masset, [1, 1], feesVault, rewardsVault);
+
+            const amount = tokens(79);
+            const fee = amount.mul(standardFees.deposit).div(FEE_PRECISION);
+
+            // ratioBefore = 500;
+            // deviationBefore = 0;
+            // ratioAfter = 536 // 579 / 1079
+            // deviationAfter = 36;
+            const punishment = new BN(15); // 36**3 / 3 / 1000
+
+            await checkCalculateMintResults({
+                massetInstance: masset,
+                params: [initialBassets.mockToken1.address, amount, false],
+                expected: {
+                    fee,
+                    reward: punishment.neg(),
+                    bassetsToTake: amount,
+                    massetsToMint: amount.sub(fee).sub(punishment)
+                }
+            });
+        });
+
+        it("to balanced pool, diffrent factors", async () => {
+            const factor = -1000;
+            await basketManager.setFactor(initialBassets.mockToken1.address, factor);
+            await initializePool(initialBassets, masset, [factor, 1], feesVault, rewardsVault);
+
+            const bassetsAmount = tokens(10);
+            const massetsAmount = bassetsAmount.mul(new BN(factor).neg());
+            const fee = massetsAmount.mul(standardFees.deposit).div(FEE_PRECISION);
+
+            // ratioBefore = 500;
+            // deviationBefore = 0;
+            // ratioAfter = 954 // 10500 : 1100
+            // deviationAfter = 454;
+            const punishment = new BN(31192); // 454**3 / 3 / 1000
+
+            await checkCalculateMintResults({
+                massetInstance: masset,
+                params: [initialBassets.mockToken1.address, bassetsAmount, false],
+                expected: {
+                    fee,
+                    reward: punishment.neg(),
+                    bassetsToTake: bassetsAmount,
+                    massetsToMint: massetsAmount.sub(fee).sub(punishment)
+                }
+            });
+        });
+
+        it("to unbalanced pool, equal factors", async () => {
+            await initializePool(initialBassets, masset, [1, 1], feesVault, rewardsVault, [750, 250]);
+
+            const amount = tokens(100);
+            const fee = amount.mul(standardFees.deposit).div(FEE_PRECISION);
+
+            // ratioBefore = 750;
+            // deviationBefore = 250;
+            // ratioAfter = 772 // 850 : 1100
+            // deviationAfter = 272;
+            const punishment = new BN(1499); // (272**3 / 3 / 1000) - (250**3 / 3 / 1000)
+
+            await checkCalculateMintResults({
+                massetInstance: masset,
+                params: [initialBassets.mockToken1.address, amount, false],
+                expected: {
+                    fee,
+                    reward: punishment.neg(),
+                    bassetsToTake: amount,
+                    massetsToMint: amount.sub(fee).sub(punishment)
+                }
+            });
+        });
+
+        it("with bridge", async () => {
+            await initializePool(initialBassets, masset, [1, 1], feesVault, rewardsVault, [750, 250]);
+
+            const amount = tokens(100);
+            const fee = amount.mul(standardFees.depositBridge).div(FEE_PRECISION);
+            const punishment = new BN(0); // no rewards through bridge
+
+            await checkCalculateMintResults({
+                massetInstance: masset,
+                params: [initialBassets.mockToken1.address, amount, true],
+                expected: {
+                    fee,
+                    reward: punishment.neg(),
+                    bassetsToTake: amount,
+                    massetsToMint: amount.sub(fee).sub(punishment)
+                }
+            });
+        });
+    });
+
+    describe("calculateMintRatio", async () => {
+        beforeEach(async () => {
+            const deployed = await initSystem({
+                massetConfig: { fees: standardFees },
+                basketManagerConfig: { decimals: [18, 18], factors: [1, 1] }
+            });
+
+            masset = deployed.deployedMassetV4;
+            initialBassets = deployed.deployedInitialBassets;
+            basketManager = deployed.deployedBasketManagerV4;
+        });
+
+        it("proper calculations", async () => {
+            const factor = new BN(100);
+            await basketManager.setFactor(initialBassets.mockToken1.address, factor);
+
+            const bassetAmount = tokens(100);
+            const converted = bassetAmount.div(factor);
+            const fee = converted.mul(standardFees.deposit).div(FEE_PRECISION);
+
+            const [massetAmount, bassetsTaken] = await masset.calculateMintRatio(initialBassets.mockToken1.address, bassetAmount);
+
+            expect(massetAmount).bignumber.to.eq(converted.sub(fee));
+            expect(bassetsTaken).bignumber.to.eq(bassetAmount);
         });
     });
 
@@ -282,12 +518,6 @@ contract("MassetV4", async (accounts) => {
 
                 mintedMassets = mintedMassets.sub(mintFee);
 
-                let balance = await token.balanceOf(standardAccounts.dummy1);
-                expect(balance).bignumber.to.equal(mintedMassets);
-
-                balance = await initialBassets.mockToken1.balanceOf(standardAccounts.dummy1);
-                expect(balance).bignumber.to.equal(initialBalance.sub(sum));
-
                 const withdrawalFee = mintedMassets.mul(standardFees.withdrawal).div(FEE_PRECISION);
                 const withdrawnBassets = mintedMassets.sub(withdrawalFee);
 
@@ -306,18 +536,21 @@ contract("MassetV4", async (accounts) => {
                     bassetQuantity: withdrawnBassets,
                 });
 
-                balance = await token.balanceOf(standardAccounts.dummy1);
-                expect(balance).bignumber.to.equal(tokens(0));
+                const massetsBalance = await token.balanceOf(standardAccounts.dummy1);
+                expect(massetsBalance).bignumber.to.equal(ZERO);
 
-                balance = await initialBassets.mockToken1.balanceOf(standardAccounts.dummy1);
-                expect(balance).bignumber.to.equal(initialBalance.sub(mintFee).sub(withdrawalFee));
+                const bassetsBalance = await initialBassets.mockToken1.balanceOf(standardAccounts.dummy1);
+                expect(bassetsBalance).bignumber.to.equal(initialBalance.sub(mintFee).sub(withdrawalFee));
 
-                const vaultBalance = await token.balanceOf(feesVault.address);
-                expect(vaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
+                const feesVaultBalance = await token.balanceOf(feesVault.address);
+                expect(feesVaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
+
+                const rewardsVaultBalance = await token.balanceOf(rewardsVault.address);
+                expect(rewardsVaultBalance).bignumber.to.eq(ZERO);
             });
 
-            it("redeem to pool with perfect ratio", async () => {
-                const initialFeesVaultBalance = await initializePool(initialBassets, masset, factors, feesVault);
+            it("redeem from pool with perfect ratio", async () => {
+                const { initialFeesVaultBalance } = await initializePool(initialBassets, masset, factors, feesVault, rewardsVault);
 
                 const sum = tokens(INITIAL_RATIOS[0] / 2);
 
@@ -362,8 +595,8 @@ contract("MassetV4", async (accounts) => {
                 expect(rewardsVaultBalance).bignumber.to.eq(expectedReward, "reward should be 0 after first deposit");
             });
 
-            it("redeem to unbalanced pool", async () => {
-                await initializePool(initialBassets, masset, factors, feesVault);
+            it("redeem from unbalanced pool", async () => {
+                await initializePool(initialBassets, masset, factors, feesVault, rewardsVault);
                 const depositor = standardAccounts.dummy1;
 
                 const deposit1Sum = tokens(INITIAL_RATIOS[0] / 2);
@@ -470,7 +703,7 @@ contract("MassetV4", async (accounts) => {
                 await expectEvent(tx.receipt, "Redeemed", {
                     redeemer: standardAccounts.dummy1,
                     recipient: standardAccounts.dummy1,
-                    massetQuantity: mintedMassets,
+                    massetQuantity: mintedMassets.sub(redeemReminder),
                     bAsset: initialBassets.mockToken1.address,
                     bassetQuantity: withdrawnBassets,
                 });
@@ -492,8 +725,8 @@ contract("MassetV4", async (accounts) => {
                     "check that sum of funds in system after deposit and redeem is the same as before"
                 );
 
-                const vaultBalance = await token.balanceOf(feesVault.address);
-                expect(vaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
+                const feesVaultBalance = await token.balanceOf(feesVault.address);
+                expect(feesVaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
             });
         });
         context("should fail", () => {
@@ -517,7 +750,7 @@ contract("MassetV4", async (accounts) => {
 
                 await expectRevert(
                     masset.redeem(initialBassets.mockToken1.address, 1000, { from: standardAccounts.dummy1 }),
-                    "VM Exception while processing transaction: reverted with reason string 'basset balance is not sufficient'"
+                    "VM Exception while processing transaction: reverted with reason string 'balance is not sufficient'"
                 );
             });
             it("if amount is greater than balance", async () => {
@@ -653,6 +886,136 @@ contract("MassetV4", async (accounts) => {
                 const vaultBalance = await token.balanceOf(feesVault.address);
                 expect(vaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
             });
+        });
+    });
+
+    describe("calculateRedeem", async () => {
+        type CalculateRedeemResult = Record<"fee" | "reward" | "bassetsToTransfer" | "massetsToTake", BN>;
+        type CheckCalculateRedeemResultsConfig = {
+            massetInstance: MassetV4Instance;
+            expected: CalculateRedeemResult;
+            params: Parameters<MassetV4Instance['calculateRedeem']>;
+        };
+
+        const checkCalculateRedeemResults = async ({ massetInstance, params, expected }: CheckCalculateRedeemResultsConfig) => {
+            const [fee, reward, bassetsToTransfer, massetsToTake] = await massetInstance.calculateRedeem(...params);
+
+            expect(fee).bignumber.to.eq(expected.fee, "fee amount is invalid");
+            expect(reward).bignumber.to.eq(expected.reward, "reward amount is invalid");
+            expect(bassetsToTransfer).bignumber.to.eq(expected.bassetsToTransfer, "bassetsToTransfer amount is invalid");
+            expect(massetsToTake).bignumber.to.eq(expected.massetsToTake, "massetsToTake amount is invalid");
+        };
+
+        beforeEach(async () => {
+            const deployed = await initSystem({
+                massetConfig: { fees: standardFees },
+                basketManagerConfig: { decimals: [18, 18], factors: [1, 1] }
+            });
+
+            masset = deployed.deployedMassetV4;
+            feesVault = deployed.deployedFeesVault;
+            rewardsVault = deployed.deployedRewardsVault;
+            initialBassets = deployed.deployedInitialBassets;
+            basketManager = deployed.deployedBasketManagerV4;
+        });
+
+        it("to balanced pool, equal factors", async () => {
+            await initializePool(initialBassets, masset, [1, 1], feesVault, rewardsVault);
+
+            const amount = tokens(79);
+            const fee = amount.mul(standardFees.withdrawal).div(FEE_PRECISION);
+
+            // ratioBefore = 500;
+            // deviationBefore = 0;
+            // ratioAfter = 457 // 421 / 921
+            // deviationAfter = 43;
+            const punishment = new BN(26); // 43**3 / 3 / 1000
+
+            await checkCalculateRedeemResults({
+                massetInstance: masset,
+                params: [initialBassets.mockToken1.address, amount, false],
+                expected: {
+                    fee,
+                    reward: punishment.neg(),
+                    bassetsToTransfer: amount.sub(fee).sub(punishment),
+                    massetsToTake: amount.sub(fee).sub(punishment)
+                }
+            });
+        });
+
+        it("to balanced pool, diffrent factors", async () => {
+            const factor = -1000;
+            await basketManager.setFactor(initialBassets.mockToken1.address, factor);
+            await initializePool(initialBassets, masset, [factor, 1], feesVault, rewardsVault);
+
+            const massetsAmount = tokens(30);
+            const fee = massetsAmount.mul(standardFees.withdrawal).div(FEE_PRECISION);
+            const punishment = new BN(1); // 16**3 / 3 / 1000
+
+            const massetsToTake = massetsAmount.sub(fee).sub(punishment);
+            const reminder = massetsToTake.mod(new BN(factor).neg());
+            const bassetsAmount = massetsToTake.div(new BN(factor).neg());
+
+            await checkCalculateRedeemResults({
+                massetInstance: masset,
+                params: [initialBassets.mockToken1.address, massetsAmount, false],
+                expected: {
+                    fee,
+                    reward: punishment.neg(),
+                    bassetsToTransfer: bassetsAmount,
+                    massetsToTake: massetsToTake.sub(reminder)
+                }
+            });
+        });
+
+        it("with bridge", async () => {
+            await initializePool(initialBassets, masset, [1, 1], feesVault, rewardsVault, [750, 250]);
+
+            const amount = tokens(100);
+            const fee = amount.mul(standardFees.withdrawalBridge).div(FEE_PRECISION);
+            const reward = new BN(0); // no rewards through bridge
+
+            await checkCalculateRedeemResults({
+                massetInstance: masset,
+                params: [initialBassets.mockToken1.address, amount, true],
+                expected: {
+                    fee,
+                    reward,
+                    bassetsToTransfer: amount.sub(fee),
+                    massetsToTake: amount.sub(fee)
+                }
+            });
+        });
+    });
+
+    describe("calculateRedeemRatio", async () => {
+        beforeEach(async () => {
+            const deployed = await initSystem({
+                massetConfig: { fees: standardFees },
+                basketManagerConfig: { decimals: [18, 18], factors: [1, 1] }
+            });
+
+            masset = deployed.deployedMassetV4;
+            feesVault = deployed.deployedFeesVault;
+            rewardsVault = deployed.deployedRewardsVault;
+            initialBassets = deployed.deployedInitialBassets;
+            basketManager = deployed.deployedBasketManagerV4;
+        });
+
+        it("proper calculations", async () => {
+            const factor = new BN(-10);
+            await initializePool(initialBassets, masset, [factor.toNumber(), 1], feesVault, rewardsVault, [600, 500]);
+            await basketManager.setFactor(initialBassets.mockToken1.address, factor);
+
+            const massetAmount = tokens(3);
+            const fee = massetAmount.mul(standardFees.withdrawal).div(FEE_PRECISION);
+            const massetsToTake = massetAmount.sub(fee);
+
+            const converted = massetsToTake.div(factor.neg());
+            const [bassetAmount, massetsTaken] = await masset.calculateRedeemRatio(initialBassets.mockToken1.address, massetAmount);
+
+            expect(massetsTaken).bignumber.to.eq(massetAmount);
+            expect(bassetAmount).bignumber.to.eq(converted);
         });
     });
 
@@ -863,6 +1226,7 @@ contract("MassetV4", async (accounts) => {
             token = deployed.deployedToken;
             masset = deployed.deployedMassetV4;
             feesVault = deployed.deployedFeesVault;
+            rewardsVault = deployed.deployedRewardsVault;
             initialBassets = deployed.deployedInitialBassets;
             basketManager = deployed.deployedBasketManagerV4;
         });
@@ -897,20 +1261,30 @@ contract("MassetV4", async (accounts) => {
                 from: standardAccounts.dummy1,
             });
             expect(await getBalance(token, standardAccounts.dummy1)).bignumber.to.equal(account1BalanceAfterMint.sub(amount));
+            expect(await getBalance(token, standardAccounts.dummy2)).bignumber.to.equal(amount);
 
             await token.approve(masset.address, amount, { from: standardAccounts.dummy2 });
             await masset.redeem(initialBassets.mockToken2.address, amount, {
                 from: standardAccounts.dummy2,
             });
-            expect(await getBalance(token, standardAccounts.dummy2)).bignumber.to.equal(tokens(0));
 
+            const reward = new BN(41666); // punishment for withdrawal that will run pool out of balance
             const withdrawalFee = amount.mul(standardFees.withdrawal).div(FEE_PRECISION);
-            const expectedBalance = amount.sub(withdrawalFee).div(basset2Factor.neg());
+
+            const expectedReminder = amount.sub(withdrawalFee).sub(reward).mod(basset2Factor);
+
+            expect(await getBalance(token, standardAccounts.dummy2)).bignumber.to.equal(expectedReminder);
+
+            const expectedBalance = amount.sub(withdrawalFee).sub(expectedReminder).div(basset2Factor.neg());
             expect(await getBalance(initialBassets.mockToken2, standardAccounts.dummy2)).bignumber.to.equal(expectedBalance);
 
             const totalFee = fee.mul(new BN(2)).add(withdrawalFee); // 2 mints and one redeem
-            const vaultBalance = await token.balanceOf(feesVault.address);
-            expect(vaultBalance).bignumber.to.eq(totalFee);
+
+            const feesVaultBalance = await token.balanceOf(feesVault.address);
+            expect(feesVaultBalance).bignumber.to.eq(totalFee);
+
+            const rewardsVaultBalance = await token.balanceOf(rewardsVault.address);
+            expect(rewardsVaultBalance).bignumber.to.eq(reward);
         });
     });
 });
@@ -1057,16 +1431,26 @@ async function initializePool(
     initialBassets: InitialBassets,
     masset: MassetV4Instance,
     factors: number[],
-    feesVault: FeesVaultInstance
+    feesVault: FeesVaultInstance,
+    rewardsVault: RewardsVaultInstance,
+    startRatios = INITIAL_RATIOS
 ) {
-
+    // // ERROR WITH THIS, CHECK WITH KONRAD
+    // const basset1DepositAmount = (factors[0] > 0
+    //     ? tokens(INITIAL_RATIOS[0]).mul(new BN(factors[0]))
+    //     : tokens(INITIAL_RATIOS[0]).div(new BN(factors[0]))).mul(new BN(1000000));
     const basset1DepositAmount = factors[0] > 0
-        ? tokens(INITIAL_RATIOS[0] / factors[0])
-        : tokens(INITIAL_RATIOS[0] * factors[0]);
+        ? tokens(startRatios[0]).mul(new BN(factors[0]))
+        : tokens(startRatios[0]).div(new BN(factors[0]).neg());
 
     const basset2DepositAmount = factors[1] > 0
-        ? tokens(INITIAL_RATIOS[1] / factors[1])
-        : tokens(INITIAL_RATIOS[1] * factors[1]);
+        ? tokens(startRatios[1]).mul(new BN(factors[1]))
+        : tokens(startRatios[1]).div(new BN(factors[1]).neg());
+
+    await initialBassets.mockToken1.mint(
+        standardAccounts.dummy1,
+        basset1DepositAmount.add(basset2DepositAmount)
+    );
 
     await initialBassets.mockToken1.approve(masset.address, basset1DepositAmount, {
         from: standardAccounts.dummy1,
@@ -1085,14 +1469,13 @@ async function initializePool(
     const mAssetTokenAddress = await masset.getToken();
     const mAssetToken = await Token.at(mAssetTokenAddress);
 
-    const initialFeeAmount = await getBalance(mAssetToken, feesVault.address);
-    return initialFeeAmount;
-}
+    const initialFeesVaultBalance = await getBalance(mAssetToken, feesVault.address);
+    const initialRewardsVaultBalance = await getBalance(mAssetToken, rewardsVault.address);
 
-async function createToken(massetAddress: string) {
-    const token = await Token.new("Mock1", "MK1", 18);
-    token.transferOwnership(massetAddress);
-    return token;
+    return {
+        initialFeesVaultBalance,
+        initialRewardsVaultBalance
+    };
 }
 
 async function getBalance(token: TokenInstance | MockERC20Instance, who: string): Promise<BN> {
@@ -1103,11 +1486,3 @@ type InitialBassets = {
     mockToken1: MockERC20Instance;
     mockToken2: MockERC20Instance;
 };
-
-type Fees = Record<
-    | "deposit"
-    | "depositBridge"
-    | "withdrawal"
-    | "withdrawalBridge",
-    BN
->;

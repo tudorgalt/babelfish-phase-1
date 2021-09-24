@@ -247,7 +247,7 @@ contract BasketManagerV4 is InitializableOwnable {
             total = total.add(_offsetInMasset);
             bassetBalanceInMasset = bassetBalanceInMasset.add(_offsetInMasset);
         } else {
-            require(_offsetInMasset <= bassetBalanceInMasset, "offset is greater than bassetBalance");
+            require(_offsetInMasset <= bassetBalanceInMasset, "balance is not sufficient");
 
             total = total.sub(_offsetInMasset);
             bassetBalanceInMasset = bassetBalanceInMasset.sub(_offsetInMasset);
