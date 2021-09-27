@@ -1,3 +1,6 @@
+import { BN } from "@utils/tools";
+import { Fees } from "types";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type UnionType<T extends readonly any[]> = T[number];
 
@@ -6,6 +9,7 @@ export type BassetInstanceDetails = {
     factors: Array<number>;
     bridges: Array<string>;
     ratios: Array<number>;
+    fees: Fees;
     multisig?: string;
 };
 
@@ -77,6 +81,12 @@ const addresses: Addresses = {
                 '0x0000000000000000000000000000000000000000'
             ],
             factors: [1, 1, 1, 1, 1, 1, 1, 1],
+            fees: { // SET PROPER FEES
+                deposit: new BN(0),
+                depositBridge: new BN(0),
+                withdrawal: new BN(0),
+                withdrawalBridge: new BN(0)
+            },
             ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         },
         ETHs: {
@@ -95,6 +105,12 @@ const addresses: Addresses = {
                 '0x2b2bcad081fa773dc655361d1bb30577caa556f8'
             ],
             factors: [1, 1],
+            fees: { // SET PROPER FEES
+                deposit: new BN(0),
+                depositBridge: new BN(0),
+                withdrawal: new BN(0),
+                withdrawalBridge: new BN(0)
+            },
             ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         },
         BNBs: {
@@ -107,6 +123,12 @@ const addresses: Addresses = {
                 '0x2b2bcad081fa773dc655361d1bb30577caa556f8', // BNBs
             ],
             factors: [1],
+            fees: { // SET PROPER FEES
+                deposit: new BN(0),
+                depositBridge: new BN(0),
+                withdrawal: new BN(0),
+                withdrawalBridge: new BN(0)
+            },
             ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         }
     },
@@ -144,6 +166,12 @@ const addresses: Addresses = {
             ],
             factors: [1, 1, 1, 1, 1, 1, 1, 1],
             multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01',
+            fees: { // SET PROPER FEES
+                deposit: new BN(0),
+                depositBridge: new BN(0),
+                withdrawal: new BN(0),
+                withdrawalBridge: new BN(0)
+            },
             ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         },
         ETHs: {
@@ -163,6 +191,12 @@ const addresses: Addresses = {
             ],
             factors: [1, 1],
             multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01',
+            fees: { // SET PROPER FEES
+                deposit: new BN(0),
+                depositBridge: new BN(0),
+                withdrawal: new BN(0),
+                withdrawalBridge: new BN(0)
+            },
             ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         },
         BNBs: {
@@ -176,6 +210,12 @@ const addresses: Addresses = {
             ],
             factors: [1],
             multisig: '0x37a706259f5201c03f6cb556a960f30f86842d01',
+            fees: { // SET PROPER FEES
+                deposit: new BN(0),
+                depositBridge: new BN(0),
+                withdrawal: new BN(0),
+                withdrawalBridge: new BN(0)
+            },
             ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         }
     }

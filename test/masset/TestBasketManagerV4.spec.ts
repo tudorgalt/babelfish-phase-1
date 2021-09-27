@@ -435,7 +435,7 @@ contract("BasketManagerV4", async (accounts) => {
             it("when offset is greater than total", async () => {
                 await expectRevert(
                     basketManager.getBassetRatio(mockToken1.address, tokens(10), false),
-                    "VM Exception while processing transaction: reverted with reason string 'offset is greater than bassetBalance'"
+                    "VM Exception while processing transaction: reverted with reason string 'balance is not sufficient'"
                 );
             });
 
@@ -445,7 +445,7 @@ contract("BasketManagerV4", async (accounts) => {
 
                 await expectRevert(
                     basketManager.getBassetRatio(mockToken1.address, tokens(10), false),
-                    "VM Exception while processing transaction: reverted with reason string 'offset is greater than bassetBalance'"
+                    "VM Exception while processing transaction: reverted with reason string 'balance is not sufficient'"
                 );
             });
         });

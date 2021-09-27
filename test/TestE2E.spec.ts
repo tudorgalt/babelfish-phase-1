@@ -1,17 +1,18 @@
 import { deployments, network } from "hardhat";
 
 import envSetup from "@utils/env_setup";
-import { BN, tokens } from "@utils/tools";
-import { FEE_PRECISION, ZERO } from "@utils/constants";
+import { tokens } from "@utils/tools";
+import { FEE_PRECISION } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { isDevelopmentNetwork } from 'migrations/utils/addresses';
 import { setNetwork, getDeployed, clearState } from "migrations/utils/state";
-import { BasketManagerV4Instance, MassetV4Instance } from "types/generated";
+import { BasketManagerV4Instance, MassetV4Instance, RewardsManagerInstance } from "types/generated";
 import { DeploymentTags } from "migrations/utils/DeploymentTags";
 
 const ERC20 = artifacts.require("ERC20");
 const MassetV4 = artifacts.require("MassetV4");
 const Token = artifacts.require("Token");
+const RewardsManager = artifacts.require("RewardsManager");
 const BasketManagerV4 = artifacts.require("BasketManagerV4");
 
 const { expect } = envSetup.configure();
@@ -23,6 +24,7 @@ contract("E2E test", async (accounts) => {
 
     let massetMock: MassetV4Instance;
     let basketManagerMock: BasketManagerV4Instance;
+    let rewardsManagerMock: RewardsManagerInstance;
 
     before("before all", async () => {
         setNetwork(network.name);
@@ -35,12 +37,7 @@ contract("E2E test", async (accounts) => {
 
         massetMock = await getDeployed(MassetV4, `${instance}_MassetProxy`);
         basketManagerMock = await getDeployed(BasketManagerV4, `${instance}_BasketManagerProxy`);
-
-        if (isDevelopmentNetwork(network.name)) {
-            // set fees
-            await massetMock.setDepositFee(new BN(5));
-            await massetMock.setWithdrawalFee(new BN(10));
-        }
+        rewardsManagerMock = await getDeployed(RewardsManager, `${instance}_RewardsManagerProxy`)
     });
 
     it("full flow", async () => {
@@ -69,7 +66,9 @@ contract("E2E test", async (accounts) => {
         const depositAmount = tokens(10);
         const [depositAmountInMasset] = await basketManagerMock.convertBassetToMassetQuantity(basset1, depositAmount);
         const depositFee = depositAmountInMasset.mul(depositFeePromil).div(FEE_PRECISION);
-        const depositReward = new BN(0); // !! call to RewardsManagerContract to get proper amount of reward !!
+
+        const [deviationBeforeDeposit, deviationAfterDeposit] = await basketManagerMock.getBassetRatioDeviation(basset1, depositAmount, true);
+        const depositReward = await rewardsManagerMock.calculateReward(deviationBeforeDeposit, deviationAfterDeposit, true);
 
         const hasEnoughFunds = initialUserBasset1Balance.gte(depositAmount);
         expect(hasEnoughFunds).to.eq(true, "basset balance is not sufficient");
@@ -82,8 +81,6 @@ contract("E2E test", async (accounts) => {
         const basset1BalanceAfterDeposit = await basset1Token.balanceOf(sa.default);
         const massetBalanceAfterDeposit = await token.balanceOf(sa.default);
 
-        const vaultDepositRewardIncome = depositReward.lt(ZERO) ? depositReward : ZERO;
-
         expect(basset1BalanceAfterDeposit).bignumber.to.eq(
             initialUserBasset1Balance.sub(depositAmount),
             "tokens should be transfered"
@@ -93,7 +90,7 @@ contract("E2E test", async (accounts) => {
             "deposit fee should be charged"
         );
         expect(await token.balanceOf(rewardsVaultAddress)).bignumber.to.eq(
-            initialRewardsVaultBalance.add(vaultDepositRewardIncome),
+            initialRewardsVaultBalance.add(depositReward.neg()),
             "proper rewards distribution "
         );
         expect(massetBalanceAfterDeposit).bignumber.to.eq(
@@ -106,7 +103,9 @@ contract("E2E test", async (accounts) => {
         const redeemAmount = tokens(5);
         const redeemFee = redeemAmount.mul(redeemFeePromil).div(FEE_PRECISION);
         const [redeemedBassets] = await basketManagerMock.convertMassetToBassetQuantity(basset1, redeemAmount.sub(redeemFee));
-        const redeemReward = new BN(0); // !! call to RewardsManagerContract to get proper amount of reward !!
+
+        const [deviationBeforeRedeem, deviationAfterRedeem] = await basketManagerMock.getBassetRatioDeviation(basset1, depositAmount, false);
+        const redeemReward = await rewardsManagerMock.calculateReward(deviationBeforeRedeem, deviationAfterRedeem, false);
 
         await token.approve(massetMock.address, redeemAmount);
         await massetMock.redeem(basset1, redeemAmount);
@@ -115,8 +114,6 @@ contract("E2E test", async (accounts) => {
 
         const basset1BalanceAfterRedeem = await basset1Token.balanceOf(sa.default);
         const massetBalanceAfterRedeem = await token.balanceOf(sa.default);
-
-        const vaultRedeemRewardIncome = redeemReward.lt(ZERO) ? redeemReward : ZERO;
 
         expect(basset1BalanceAfterRedeem).bignumber.to.eq(
             basset1BalanceAfterDeposit.add(redeemedBassets),
@@ -127,7 +124,7 @@ contract("E2E test", async (accounts) => {
             "withdrawal fee should be charged"
         );
         expect(await token.balanceOf(rewardsVaultAddress)).bignumber.to.eq(
-            initialRewardsVaultBalance.add(vaultDepositRewardIncome).add(vaultRedeemRewardIncome),
+            initialRewardsVaultBalance.add(depositReward.neg()).add(redeemReward.neg()),
             "proper rewards distribution"
         );
         expect(massetBalanceAfterRedeem).bignumber.to.eq(
@@ -136,9 +133,9 @@ contract("E2E test", async (accounts) => {
         );
 
         const sumOfVaults = depositFee
-            .add(vaultDepositRewardIncome)
+            .add(depositReward.neg())
             .add(redeemFee)
-            .add(vaultRedeemRewardIncome);
+            .add(redeemReward.neg());
 
         const initialSumOfFunds = (await basketManagerMock.convertBassetToMassetQuantity(basset1, initialUserBasset1Balance))[0]
             .add(initialUserMassetBalance);

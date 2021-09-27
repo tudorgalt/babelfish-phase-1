@@ -1,7 +1,7 @@
 import Logs from "node-logs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { ZERO_ADDRESS } from "@utils/constants";
-import { tokens } from "@utils/tools";
+import { tokens, BN } from "@utils/tools";
 import { MassetV3Instance } from "types/generated";
 import addresses, { BassetInstanceDetails, hasMultisigAddress, isDevelopmentNetwork } from './utils/addresses';
 import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "./utils/state";
@@ -45,14 +45,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
     );
     const vaultFake = await FeesVault.at(feesVaultProxy.address);
 
-    async function upgradeInstance(
-        symbol: string,
-        addressesForInstance: BassetInstanceDetails,
-        depositFee: number | BN,
-        depositBridgeFee: number | BN,
-        withdrawFee: number | BN,
-        withdrawBridgeFee: number | BN
-    ): Promise<void> {
+    async function upgradeInstance(symbol: string, addressesForInstance: BassetInstanceDetails): Promise<void> {
         const massetFake: MassetV3Instance = await getDeployed(MassetV3, `${symbol}_MassetProxy`);
         const massetVersion = await massetFake.getVersion();
 
@@ -101,6 +94,12 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             addressesForInstance.factors = [-10, 1, 1];
             addressesForInstance.bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
             addressesForInstance.ratios = [300, 300, 400];
+            addressesForInstance.fees = {
+                deposit: new BN(5),
+                depositBridge: new BN(6),
+                withdrawal: new BN(7),
+                withdrawalBridge:  new BN(8)
+            };
         }
 
         if (await basketManagerProxy.admin() === _admin) {
@@ -151,16 +150,16 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             basketManagerFake.address,
             tokenAddress,
             vaultFake.address,
-            depositFee,
-            depositBridgeFee,
-            withdrawFee,
-            withdrawBridgeFee
+            addressesForInstance.fees.deposit,
+            addressesForInstance.fees.depositBridge,
+            addressesForInstance.fees.withdrawal,
+            addressesForInstance.fees.withdrawalBridge
         );
     }
 
-    await upgradeInstance('ETHs', addressesForNetwork.ETHs, 0, 0, 0, 0);
-    await upgradeInstance('XUSD', addressesForNetwork.XUSD, 0, 0, 0, 0);
-    await upgradeInstance('BNBs', addressesForNetwork.BNBs, 0, 0, 0, 0);
+    await upgradeInstance('ETHs', addressesForNetwork.ETHs);
+    await upgradeInstance('XUSD', addressesForNetwork.XUSD);
+    await upgradeInstance('BNBs', addressesForNetwork.BNBs);
 
     logger.success("Migration completed");
     printState();

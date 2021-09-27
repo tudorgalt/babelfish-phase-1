@@ -174,6 +174,15 @@ contract("RewardsManager", async (accounts) => {
             });
         });
         
+        context("should fail", async () => { // TALK ABOUT IT WITH KONRAD
+            it("in case it's not initialized", async () => {
+                const manager = await RewardsManager.new({ from: sa.default });
+                await expectRevert(
+                    manager.calculateReward(0, 4, true),
+                    "not initialized / aDenominator should not be equal 0"
+                );
+            });
+        });
     });
 
     describe("calculateReward", async () => {

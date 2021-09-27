@@ -5,9 +5,9 @@ import { BN, tokens } from "@utils/tools";
 import envSetup from "@utils/env_setup";
 import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
+import { Fees } from "types";
 import { MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance, MassetV4Instance, BasketManagerV4Instance, RewardsVaultInstance } from "types/generated";
 import { createBasketManagerV3, createToken, upgradeBasketManagerToV4 } from "./utils";
-import { Fees } from "./types";
 
 const { expect } = envSetup.configure();
 
@@ -429,6 +429,27 @@ contract("MassetV4", async (accounts) => {
                     reward: punishment.neg(),
                     bassetsToTake: amount,
                     massetsToMint: amount.sub(fee).sub(punishment)
+                }
+            });
+        });
+
+        it("to extremly unbalanced pool", async () => {
+            await initialBassets.mockToken1.mint(standardAccounts.default, tokens(100));
+            await initialBassets.mockToken1.approve(masset.address, tokens(100));
+            await masset.mint(initialBassets.mockToken1.address, tokens(100));
+
+            const amount = new BN("100");
+            const fee = amount.mul(standardFees.depositBridge).div(FEE_PRECISION);
+            const reward = new BN(0);
+
+            await checkCalculateMintResults({
+                massetInstance: masset,
+                params: [initialBassets.mockToken2.address, amount, false],
+                expected: {
+                    fee,
+                    reward,
+                    bassetsToTake: amount,
+                    massetsToMint: amount.sub(fee)
                 }
             });
         });
@@ -1435,10 +1456,6 @@ async function initializePool(
     rewardsVault: RewardsVaultInstance,
     startRatios = INITIAL_RATIOS
 ) {
-    // // ERROR WITH THIS, CHECK WITH KONRAD
-    // const basset1DepositAmount = (factors[0] > 0
-    //     ? tokens(INITIAL_RATIOS[0]).mul(new BN(factors[0]))
-    //     : tokens(INITIAL_RATIOS[0]).div(new BN(factors[0]))).mul(new BN(1000000));
     const basset1DepositAmount = factors[0] > 0
         ? tokens(startRatios[0]).mul(new BN(factors[0]))
         : tokens(startRatios[0]).div(new BN(factors[0]).neg());

@@ -5,8 +5,8 @@ import { BN, tokens } from "@utils/tools";
 import envSetup from "@utils/env_setup";
 import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
+import { Fees } from "types";
 import { BasketManagerV3Instance, MassetV3Instance, MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance } from "types/generated";
-import { Fees } from "./types";
 
 const { expect } = envSetup.configure();
 
