@@ -265,7 +265,9 @@ contract BasketManagerV4 is InitializableOwnable {
      * @param  _basset      Address of basset to check ratio for
      * @param  _offsetInMasset       Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
      * @param  _isDeposit    Flag to determine offset direction(deposit/redeem).
-     * @return deviation    Number between -1000 and 1000. Represents deviation from target ratio.
+     * @return Numbers between -1000 and 1000. Represents deviation from target ratio.
+     *         deviationBefore: current deviation
+     *         deviationAfter:  deviation after deposit/redeem
      */
     function getBassetRatioDeviation(
         address _basset,
@@ -280,6 +282,8 @@ contract BasketManagerV4 is InitializableOwnable {
 
         int256 ratioAfterModification = int256(getBassetRatio(_basset, _offsetInMasset, _isDeposit));
         deviationAfter = ratioAfterModification - targetRatio;
+
+        return (deviationBefore, deviationAfter);
     }
 
     // Getters

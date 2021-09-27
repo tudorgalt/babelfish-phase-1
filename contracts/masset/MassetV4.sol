@@ -160,7 +160,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @dev Contract initializer.
      * @param _rewardsManagerAddress  Address of the rewards manager.
      * @param _rewardsVaultAddress    Address of the rewards vault.
-     * @param _feeManagerAddress      Address of the Fee manager.
+     * @param _feeManagerAddress      Address of the fees manager.
     */
     function initialize(
         address _rewardsManagerAddress,
@@ -181,13 +181,22 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev Calculate and return fee amount based on massetAmount.
-     * @param massetAmount  Amount of masset to deposit / withdraw.
-     * @return fee          Calculated fee amount.
+     * @param _massetAmount  Amount of masset to deposit / withdraw.
+     * @param _feeAmount     Amount of fee in promils.
+     * @return fee           Calculated fee amount.
      */
-    function calculateFee(uint256 massetAmount, uint256 feeAmount) public pure returns(uint256 fee) {
-        return massetAmount.mul(feeAmount).div(FEE_PRECISION);
+    function calculateFee(uint256 _massetAmount, uint256 _feeAmount) public pure returns(uint256 fee) {
+        return _massetAmount.mul(_feeAmount).div(FEE_PRECISION);
     }
 
+    /**
+     * @dev Calculate and return reward amount.
+     * @param _basset           Address of basset to deposit/withdraw.
+     * @param _massetQuantity   Amount of masset to deposit / withdraw.
+     * @param _isDeposit        Type of action deposit / withdraw. It's used to determine offset direction.
+     * @return rewardAmount     Calculated reward amount.
+     *         Positive value means that user will be rewarded, negative that this amount will be taken.
+     */
     function calculateReward (
         address _basset,
         uint256 _massetQuantity,
@@ -252,11 +261,19 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return _mintTo(_bAsset, _bAssetQuantity, _recipient);
     }
 
+    /**
+     * @dev Calculates how many mAssets will be given to user for deposit.
+     * @notice includes fees and rewards
+     * @param _bAsset          Address of the bAsset.
+     * @param _bAssetQuantity  Quantity in bAsset units.
+     * @return  massetsMinted: total amount of mAssets that will be given for user
+     *          bassetsTaken:  total amount of bAssets that will be taken from user
+     */
     function calculateMintRatio (
-        address _basset,
-        uint256 _bassetQuantity
+        address _bAsset,
+        uint256 _bAssetQuantity
     ) public view returns(uint256 massetsMinted, uint256 bassetsTaken) {
-        (, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) = calculateMint(_basset, _bassetQuantity, false);
+        (, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) = calculateMint(_bAsset, _bAssetQuantity, false);
 
         uint256 transferedReward = 0;
         if (reward > 0) {
@@ -266,23 +283,33 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return (massetsToMint.add(transferedReward), bassetsToTake);
     }
 
+    /**
+     * @dev Calculates all needed data to perform deposit for certain bAsset.
+     * @param _bAsset         Address of the bAsset.
+     * @param _bAssetQuantity Quantity in bAsset units.
+     * @param _bridgeFlag     Flag that indicates if the mint proces is used with conjunction with bridge.
+     * @return  fee: amount of fee that will be taken
+     *          reward: amount to reward/punish user for performing action in specific pool balance.
+     *          massetsToMint: amount of mAsset that will be minted for user. IT DOES NOT INCLUDE FEES AND REWARDS!
+     *          bassetsToTake: amount of bAssets that will be taken from user.
+     */
     function calculateMint (
-        address _basset,
-        uint256 _bassetQuantity,
+        address _bAsset,
+        uint256 _bAssetQuantity,
         bool _bridgeFlag
     ) public view returns (uint256 fee, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) {
-        require(_bassetQuantity > 0, "quantity must not be 0");
+        require(_bAssetQuantity > 0, "quantity must not be 0");
 
-        require(basketManager.isValidBasset(_basset), "invalid basset");
+        require(basketManager.isValidBasset(_bAsset), "invalid basset");
 
-        (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(_basset, _bassetQuantity);
-        require(basketManager.checkBasketBalanceForDeposit(_basset, bassetQuantity), "basket out of balance");
+        (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(_bAsset, _bAssetQuantity);
+        require(basketManager.checkBasketBalanceForDeposit(_bAsset, bassetQuantity), "basket out of balance");
 
         uint256 feeAmount = _bridgeFlag ? depositBridgeFee : depositFee;
         fee = calculateFee(massetQuantity, feeAmount);
 
         if (!_bridgeFlag) {
-            reward = calculateReward(_basset, massetQuantity, true);
+            reward = calculateReward(_bAsset, massetQuantity, true);
         }
 
         uint256 massetsAfterReward = reward > 0
@@ -375,11 +402,19 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return _redeemTo(_bAsset, _massetQuantity, _recipient, false);
     }
 
+    /**
+     * @dev Calculates how many bAssets will be given to user for redeem.
+     * @notice Includes fees and rewards
+     * @param _bAsset          Address of the bAsset.
+     * @param _massetQuantity  Quantity in mAsset units.
+     * @return  bassetsTransfered: total amount of bAssets that will be given for user
+     *          massetsTaken:  total amount of mAssets that will be taken from user
+     */
     function calculateRedeemRatio (
-        address _basset,
+        address _bAsset,
         uint256 _massetQuantity
     ) public view returns(uint256 bassetsTransfered, uint256 massetsTaken) {
-        (uint256 fee, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) = calculateRedeem(_basset, _massetQuantity, false);
+        (uint256 fee, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) = calculateRedeem(_bAsset, _massetQuantity, false);
 
         uint256 transferedReward = 0;
         if (reward > 0) {
@@ -391,6 +426,16 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return (bassetsToTransfer, finalMassetsTaken.add(fee));
     }
 
+    /**
+     * @dev Calculates all needed data to perform redeem for certain bAsset.
+     * @param _basset         Address of the bAsset.
+     * @param _massetQuantity Quantity in mAsset units.
+     * @param _bridgeFlag     Flag that indicates if the mint proces is used with conjunction with bridge.
+     * @return  fee: amount of fee that will be taken
+     *          reward: amount to reward/punish user for performing action in specific pool balance.
+     *          bassetsToTransfer: amount of bAsset that will be given for user.
+     *          massetsToTake: amount of mAssets that will be taken from user. IT DOES NOT INCLUDE FEE AND REWARDS.
+     */
     function calculateRedeem (
         address _basset,
         uint256 _massetQuantity,
@@ -431,7 +476,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param _basset           Address of the bAsset to redeem.
      * @param _massetQuantity   Units of the masset to redeem.
      * @param _recipient        Address to credit with withdrawn bAssets.
-     * @param _bridgeFlag        Flag that indicates if the reedem proces is used with conjunction with bridge.
+     * @param _bridgeFlag       Flag that indicates if the reedem proces is used with conjunction with bridge.
      * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
      */
     function _redeemTo(
@@ -477,14 +522,14 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return finalMassetsTaken;
     }
 
-    function _transferToBridge (address _basset, address _recipient, uint256 amount) internal {
+    function _transferToBridge (address _basset, address _recipient, uint256 _amount) internal {
         address bridgeAddress = basketManager.getBridge(_basset);
         require(bridgeAddress != address(0), "invalid bridge");
 
-        IERC20(_basset).approve(bridgeAddress, amount);
+        IERC20(_basset).approve(bridgeAddress, _amount);
 
         require(
-            IBridge(bridgeAddress).receiveTokensAt(_basset, amount, _recipient, bytes("")),
+            IBridge(bridgeAddress).receiveTokensAt(_basset, _amount, _recipient, bytes("")),
             "call to bridge failed"
         );
     }
