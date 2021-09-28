@@ -11,6 +11,7 @@ import { InitializableReentrancyGuard } from "../../helpers/InitializableReentra
 import { IBridge } from "../IBridge.sol";
 import { BasketManagerV3 } from "./BasketManagerV3.sol";
 import { FeesVault } from "../../vault/FeesVault.sol";
+import { FeesManager } from "../FeesManager.sol";
 import "../Token.sol";
 
 /**
@@ -92,49 +93,17 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         bytes userData
     );
 
-    /**
-     * @dev Emitted when deposit fee has changed.
-     * @param depositFee            Amount of the fee.
-     */
-    event DepositFeeChanged (uint256 depositFee);
-
-    /**
-     * @dev Emitted when deposit bridge fee has changed.
-     * @param depositBridgeFee      Amount of the fee.
-     */
-    event DepositBridgeFeeChanged (uint256 depositBridgeFee);
-
-    /**
-     * @dev Emitted when withdrawal fee has changed.
-     * @param withdrawalFee         Amount of the fee.
-     */
-    event WithdrawalFeeChanged (uint256 withdrawalFee);
-
-    /**
-     * @dev Emitted when withdrawal bridge fee has changed.
-     * @param withdrawalBridgeFee   Amount of the fee.
-     */
-    event WithdrawalBridgeFeeChanged (uint256 withdrawalBridgeFee);
-
     // state
 
-    /**
-     * @dev Factor of fees.
-     * @notice 1000 means that fees are in per mille.
-     */
-    uint256 constant private FEE_PRECISION = 1000;
     bytes32 constant ERC777_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
 
     string private version;
 
-    uint256 private depositFee;
-    uint256 private depositBridgeFee;
-    uint256 private withdrawalFee;
-    uint256 private withdrawalBridgeFee;
-
-    address private feesVaultAddress;
     BasketManagerV3 private basketManager;
     Token private token;
+
+    FeesVault private feesVault;
+    FeesManager private feesManager;
 
     // internal
 
@@ -144,15 +113,6 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     function registerAsERC777Recipient() internal {
         IERC1820Registry ERC1820 = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
         ERC1820.setInterfaceImplementer(address(this), ERC777_RECIPIENT_INTERFACE_HASH, address(this));
-    }
-
-    /**
-     * @dev Calculate and return fee amount based on massetAmount.
-     * @param massetAmount  Amount of masset to deposit / withdraw.
-     * @return fee          Calculated fee amount.
-     */
-    function calculateFee(uint256 massetAmount, uint256 feeAmount) internal pure returns(uint256 fee) {
-        return massetAmount.mul(feeAmount).div(FEE_PRECISION);
     }
 
     // public
@@ -256,7 +216,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         IERC20(_basset).safeTransferFrom(msg.sender, address(this), bassetQuantity);
 
-        uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, depositFee);
+        uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, false);
         token.mint(_recipient, massetsToMint);
 
         emit Minted(msg.sender, _recipient, massetsToMint, _basset, bassetQuantity);
@@ -267,13 +227,20 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     /**
      * @dev Mints fee to vault contract and return the amount of massets that goes to the user.
      * @param massetQuantity    Amount of massets.
+     * @param _bridgeFlag       Flag that indicates if the proces is used with conjunction with bridge.
      * @return massetsToMint    Amount of massets that is left to mint for user.
      */
-    function _mintAndCalulateFee(uint256 massetQuantity, uint256 feeAmount) internal returns (uint256 massetsToMint) {
-        uint256 fee = calculateFee(massetQuantity, feeAmount);
+    function _mintAndCalulateFee(uint256 massetQuantity, bool _bridgeFlag) internal returns (uint256 massetsToMint) {
+        uint256 fee;
+        if (_bridgeFlag) {
+            fee = feesManager.calculateDepositBridgeFee(massetQuantity);
+        } else {
+            fee = feesManager.calculateDepositFee(massetQuantity);
+        }
+
         massetsToMint = massetQuantity.sub(fee);
 
-        token.mint(feesVaultAddress, fee);
+        token.mint(address(feesVault), fee);
 
         return massetsToMint;
     }
@@ -335,11 +302,9 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(_massetQuantity > 0, "masset quantity must be greater than 0");
         require(basketManager.isValidBasset(_basset), "invalid basset");
 
-        uint256 feeAmount = bridgeFlag ? withdrawalBridgeFee : withdrawalFee;
-
         // massetsToBurn is the amount of massets that is left to burn after the fee was taken.
         // It is used to calculate amount of bassets that are transfered to user.
-        uint256 massetsAfterFee = _transferAndCalulateFee(_massetQuantity, feeAmount, msg.sender);
+        uint256 massetsAfterFee = _transferAndCalulateFee(_massetQuantity, msg.sender, bridgeFlag);
         (uint256 bassetQuantity, uint256 massetsToBurn) = basketManager.convertMassetToBassetQuantity(_basset, massetsAfterFee);
 
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
@@ -367,13 +332,20 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      *      must have approval to spend the senders Masset.
      * @param massetQuantity        Amount of massets to withdraw.
      * @param sender                Owner of massets.
+     * @param _bridgeFlag           Flag that indicates if the proces is used with conjunction with bridge.
      * @return massetsToBurn        Amount of massets that is left to burn.
      */
-    function _transferAndCalulateFee(uint256 massetQuantity, uint256 feeAmount, address sender) internal returns (uint256 massetsToBurn) {
-        uint256 fee = calculateFee(massetQuantity, feeAmount);
+    function _transferAndCalulateFee(uint256 massetQuantity, address sender, bool _bridgeFlag) internal returns (uint256 massetsToBurn) {
+        uint256 fee;
+        if (_bridgeFlag) {
+            fee = feesManager.calculateRedeemBridgeFee(massetQuantity);
+        } else {
+            fee = feesManager.calculateRedeemFee(massetQuantity);
+        }
+
         massetsToBurn = massetQuantity.sub(fee);
 
-        token.safeTransferFrom(sender, feesVaultAddress, fee);
+        token.safeTransferFrom(sender, address(feesVault), fee);
 
         return massetsToBurn;
     }
@@ -492,7 +464,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(basketManager.checkBasketBalanceForDeposit(basset, _orderAmount), "basket out of balance");
 
         (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(basset, _orderAmount);
-        uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, depositBridgeFee);
+        uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, true);
         token.mint(recipient, massetsToMint);
 
         emit Minted(msg.sender, recipient, massetsToMint, basset, bassetQuantity);
@@ -512,52 +484,6 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return address(basketManager);
     }
 
-    function getDepositFee () external view returns(uint256) {
-        return depositFee;
-    }
-
-    function getDepositBridgeFee () external view returns(uint256) {
-        return depositBridgeFee;
-    }
-
-    function getWithdrawalFee () external view returns(uint256) {
-        return withdrawalFee;
-    }
-
-    function getWithdrawalBridgeFee () external view returns(uint256) {
-        return withdrawalBridgeFee;
-    }
-
-    // Governance methods
-
-    function setDepositFee (uint256 _amount) public onlyOwner {
-        require(_amount >= 0, "fee amount should be greater or equal zero");
-        depositFee = _amount;
-
-        emit DepositFeeChanged(_amount);
-    }
-
-    function setDepositBridgeFee (uint256 _amount) public onlyOwner {
-        require(_amount >= 0, "fee amount should be greater or equal zero");
-        depositBridgeFee = _amount;
-
-        emit DepositBridgeFeeChanged(_amount);
-    }
-
-    function setWithdrawalFee (uint256 _amount) public onlyOwner {
-        require(_amount >= 0, "fee amount should be greater or equal zero");
-        withdrawalFee = _amount;
-
-        emit WithdrawalFeeChanged(_amount);
-    }
-
-    function setWithdrawalBridgeFee (uint256 _amount) public onlyOwner {
-        require(_amount >= 0, "fee amount should be greater or equal zero");
-        withdrawalBridgeFee = _amount;
-
-        emit WithdrawalBridgeFeeChanged(_amount);
-    }
-
     // Temporary migration
     /**
      * @dev Temporary migration to V3 version.
@@ -566,23 +492,17 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         address _basketManagerAddress,
         address _tokenAddress,
         address _feesVaultAddress,
-        uint256 _depositFee,
-        uint256 _depositBridgeFee,
-        uint256 _withdrawalFee,
-        uint256 _withdrawalBridgeFee
+        address _feesManagerAddress
     ) external {
         require(
             keccak256(bytes(version)) == keccak256(bytes("1.0")) ||
             keccak256(bytes(version)) == keccak256(bytes("2.0")), "wrong version (1)");
         require(keccak256(bytes(BasketManagerV3(_basketManagerAddress).getVersion())) == keccak256(bytes("3.0")), "wrong version (2)");
         require(_feesVaultAddress != address(0), "invalid vault address");
+        require(_feesManagerAddress != address(0), "invalid fees manager address");
 
-        setDepositFee(_depositFee);
-        setDepositBridgeFee(_depositBridgeFee);
-        setWithdrawalFee(_withdrawalFee);
-        setWithdrawalBridgeFee(_withdrawalBridgeFee);
-
-        feesVaultAddress = _feesVaultAddress;
+        feesVault = FeesVault(_feesVaultAddress);
+        feesManager = FeesManager(_feesManagerAddress);
         basketManager = BasketManagerV3(_basketManagerAddress);
         token = Token(_tokenAddress);
         version = "3.0";

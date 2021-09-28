@@ -3,7 +3,6 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
-import "hardhat/console.sol";
 
 /**
  * @title RewardsManager

@@ -6,7 +6,7 @@ import { FEE_PRECISION } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { isDevelopmentNetwork } from 'migrations/utils/addresses';
 import { setNetwork, getDeployed, clearState } from "migrations/utils/state";
-import { BasketManagerV4Instance, MassetV4Instance, RewardsManagerInstance } from "types/generated";
+import { BasketManagerV4Instance, FeesManagerInstance, MassetV4Instance, RewardsManagerInstance } from "types/generated";
 import { DeploymentTags } from "migrations/utils/DeploymentTags";
 
 const ERC20 = artifacts.require("ERC20");
@@ -14,6 +14,7 @@ const MassetV4 = artifacts.require("MassetV4");
 const Token = artifacts.require("Token");
 const RewardsManager = artifacts.require("RewardsManager");
 const BasketManagerV4 = artifacts.require("BasketManagerV4");
+const FeesManager = artifacts.require("FeesManager");
 
 const { expect } = envSetup.configure();
 
@@ -25,6 +26,7 @@ contract("E2E test", async (accounts) => {
     let massetMock: MassetV4Instance;
     let basketManagerMock: BasketManagerV4Instance;
     let rewardsManagerMock: RewardsManagerInstance;
+    let feesmanagerMock: FeesManagerInstance;
 
     before("before all", async () => {
         setNetwork(network.name);
@@ -37,7 +39,8 @@ contract("E2E test", async (accounts) => {
 
         massetMock = await getDeployed(MassetV4, `${instance}_MassetProxy`);
         basketManagerMock = await getDeployed(BasketManagerV4, `${instance}_BasketManagerProxy`);
-        rewardsManagerMock = await getDeployed(RewardsManager, `${instance}_RewardsManagerProxy`)
+        rewardsManagerMock = await getDeployed(RewardsManager, `${instance}_RewardsManagerProxy`);
+        feesmanagerMock = await getDeployed(FeesManager, `${instance}_FeesManagerProxy`);
     });
 
     it("full flow", async () => {
@@ -58,8 +61,8 @@ contract("E2E test", async (accounts) => {
         const initialUserBasset1Balance = await basset1Token.balanceOf(sa.default);
         const initialFeesVaultBalance = await token.balanceOf(feesVaultAddress);
         const initialRewardsVaultBalance = await token.balanceOf(rewardsVaultAddress);
-        const depositFeePromil = await massetMock.getDepositFee();
-        const redeemFeePromil = await massetMock.getWithdrawalFee();
+        const depositFeePromil = await feesmanagerMock.getDepositFee();
+        const redeemFeePromil = await feesmanagerMock.getWithdrawalFee();
 
         // -------------------------------- DEPOSIT -------------------------------- //
 
