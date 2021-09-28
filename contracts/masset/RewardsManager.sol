@@ -9,9 +9,18 @@ import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
  * @dev Contract is responsible for rewards calculations using specified curves.
  */
 contract RewardsManager is InitializableOwnable {
-    int256 aCurveDenominator;
+    // State
 
+    int256 aCurveDenominator;
     bool initialized;
+
+    // Events
+
+    /**
+     * @dev Emitted when curve parameter has changed.
+     * @param aDominator    New curve parameter.
+     */
+    event ADominatorChanged(int256 aDominator);
 
     // Initializer
 
@@ -124,5 +133,7 @@ contract RewardsManager is InitializableOwnable {
     function setACurveDenominator (int256 _aCurveDenominator) public onlyOwner {
         require(_aCurveDenominator > 0, "x^2/A: A must be greater than zero.");
         aCurveDenominator = _aCurveDenominator;
+
+        emit ADominatorChanged(_aCurveDenominator);
     }
 }

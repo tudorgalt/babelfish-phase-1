@@ -1,5 +1,6 @@
-import { expectRevert } from "@openzeppelin/test-helpers";
+import { expectRevert, expectEvent } from "@openzeppelin/test-helpers";
 
+import { BN } from "@utils/tools";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { RewardsManagerInstance } from "types/generated";
 
@@ -256,8 +257,12 @@ contract("RewardsManager", async (accounts) => {
 
         context("should succeed", async () => {
             it("when it's called by admin", async () => {
-                await rewardsManager.setACurveDenominator("123", { from: admin });
-                expect (await rewardsManager.getACurveDenominator()).bignumber.to.eq("123");
+                const aDominator = new BN("123");
+
+                const tx = await rewardsManager.setACurveDenominator(aDominator, { from: admin });
+                expect (await rewardsManager.getACurveDenominator()).bignumber.to.eq(aDominator);
+
+                await expectEvent(tx.receipt, "ADominatorChanged", { aDominator });
             });
         });
     });
