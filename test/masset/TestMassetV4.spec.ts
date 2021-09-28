@@ -117,7 +117,7 @@ contract("MassetV4", async (accounts) => {
                     deviation after = 166 // final ratio - target ratio
                 */
                 const deviationAfter = new BN(166);
-                const expectedReward = deviationAfter.pow(new BN(3)).div(new BN(3)).div(A_CURVE_DENOMINATOR); // 1524
+                const expectedReward = calculateCurve(deviationAfter); // 1524
                 const expectedMassetQuantity = massetQuantity.sub(expectedFee).sub(expectedReward);
 
                 await initialBassets.mockToken1.approve(masset.address, sum, {
@@ -246,13 +246,10 @@ contract("MassetV4", async (accounts) => {
                     ratioAfter = 646 // 733/1133
                     deviationBefore = 100 // 600 - 500
                     deviationAfter = 146 // 646 - 500
-
-                    segmentOnCorveBefore = 333 //  deviationBefore^3 / 3 / A_CURVE_DENOMINATOR
-                    segmentOnCurveAfter = 1037 // deviationAfter^3 / 3 / A_CURVE_DENOMINATOR
-
-                    reward = 704 // segmentOnCurveAfter - segmentOnCorveBefore
                 */
-                const expectedReward = new BN("704");
+                const deviationBefore = new BN(100); // 600 - 500
+                const deviationAfter = new BN(146); // 646 - 500
+                const expectedReward = calculateCurve(deviationAfter).sub(calculateCurve(deviationBefore)); // 704
                 const expectedMassetQuantity = sum.sub(expectedFee).sub(expectedReward);
 
                 await initialBassets.mockToken1.mint(depositor, sum);
@@ -367,8 +364,8 @@ contract("MassetV4", async (accounts) => {
             // ratioBefore = 500;
             // deviationBefore = 0;
             // ratioAfter = 536 // 579 / 1079
-            // deviationAfter = 36;
-            const punishment = new BN(15); // 36**3 / 3 / 1000
+            const deviationAfter = new BN(36);
+            const punishment = calculateCurve(deviationAfter);
 
             await checkCalculateMintResults({
                 massetInstance: masset,
@@ -394,8 +391,8 @@ contract("MassetV4", async (accounts) => {
             // ratioBefore = 500;
             // deviationBefore = 0;
             // ratioAfter = 954 // 10500 : 1100
-            // deviationAfter = 454;
-            const punishment = new BN(31192); // 454**3 / 3 / 1000
+            const deviationAfter = new BN(454);
+            const punishment = calculateCurve(deviationAfter);
 
             await checkCalculateMintResults({
                 massetInstance: masset,
@@ -416,10 +413,10 @@ contract("MassetV4", async (accounts) => {
             const fee = amount.mul(standardFees.deposit).div(FEE_PRECISION);
 
             // ratioBefore = 750;
-            // deviationBefore = 250;
             // ratioAfter = 772 // 850 : 1100
-            // deviationAfter = 272;
-            const punishment = new BN(1499); // (272**3 / 3 / 1000) - (250**3 / 3 / 1000)
+            const deviationBefore = new BN(250);
+            const deviationAfter = new BN(272);
+            const punishment = calculateCurve(deviationAfter).sub(calculateCurve(deviationBefore));
 
             await checkCalculateMintResults({
                 massetInstance: masset,
@@ -439,7 +436,7 @@ contract("MassetV4", async (accounts) => {
             await masset.mint(initialBassets.mockToken1.address, tokens(100));
 
             const amount = new BN("100");
-            const fee = amount.mul(standardFees.depositBridge).div(FEE_PRECISION);
+            const fee = amount.mul(standardFees.deposit).div(FEE_PRECISION);
             const reward = new BN(0);
 
             await checkCalculateMintResults({
@@ -582,10 +579,10 @@ contract("MassetV4", async (accounts) => {
                 /*
                     target ratio: 500%%
                     final ratio: 333%% // 1:2 = 333%%
-                    deviation after = -167 // final ratio - target ratio
-                */
+                */                
                 const deviationAfter = new BN(167);
-                const expectedReward = deviationAfter.pow(new BN(3)).div(new BN(3)).div(A_CURVE_DENOMINATOR); // 1552
+                const expectedReward = calculateCurve(deviationAfter);
+                
                 const expectedBassetQuantityInMasset = sum.sub(expectedFee).sub(expectedReward);
                 const expectedBassetQuantity = expectedBassetQuantityInMasset.mul(new BN(factors[0]));
 
@@ -642,10 +639,7 @@ contract("MassetV4", async (accounts) => {
 
                 const deviationBefore = new BN(100);
                 const deviationAfter = new BN(55);
-                const expectedReward =
-                    deviationAfter.pow(new BN(3)).div(new BN(3)).div(A_CURVE_DENOMINATOR)
-                        .sub(deviationBefore.pow(new BN(3)).div(new BN(3)).div(A_CURVE_DENOMINATOR))
-                        .neg();
+                const expectedReward = calculateCurve(deviationAfter).sub(calculateCurve(deviationBefore)).neg();
 
                 const expectedBassetQuantityInMasset = redeemSum.sub(expectedFee);
                 const expectedBassetQuantity = expectedBassetQuantityInMasset.mul(new BN(factors[0]));
@@ -949,8 +943,8 @@ contract("MassetV4", async (accounts) => {
             // ratioBefore = 500;
             // deviationBefore = 0;
             // ratioAfter = 457 // 421 / 921
-            // deviationAfter = 43;
-            const punishment = new BN(26); // 43**3 / 3 / 1000
+            const deviationAfter = new BN(43);
+            const punishment = calculateCurve(deviationAfter);
 
             await checkCalculateRedeemResults({
                 massetInstance: masset,
@@ -971,7 +965,9 @@ contract("MassetV4", async (accounts) => {
 
             const massetsAmount = tokens(30);
             const fee = massetsAmount.mul(standardFees.withdrawal).div(FEE_PRECISION);
-            const punishment = new BN(1); // 16**3 / 3 / 1000
+
+            const deviationAfter = new BN(16);
+            const punishment = calculateCurve(deviationAfter);
 
             const massetsToTake = massetsAmount.sub(fee).sub(punishment);
             const reminder = massetsToTake.mod(new BN(factor).neg());
@@ -1317,6 +1313,10 @@ type BasketManagerConfig = {
     factors: Array<number | BN>,
     bridges?: string[]
 };
+
+function calculateCurve(deviation: BN) {
+    return deviation.pow(new BN(3)).div(new BN(3)).div(A_CURVE_DENOMINATOR);
+}
 
 async function addInitialBassets(
     basketManager: BasketManagerV4Instance,
