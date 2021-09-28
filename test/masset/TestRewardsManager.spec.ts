@@ -36,7 +36,7 @@ contract("RewardsManager", async (accounts) => {
 
         context("should fail", async () => {
             it("when x is less than zero", async () => {
-                await expectRevert(rewardsManager.pointOnCurve(-1), "x must be greater than equal to 0");
+                await expectRevert(rewardsManager.valueOnCurve(-1), "x must be greater than equal to 0");
             });
         });
 
@@ -45,6 +45,9 @@ contract("RewardsManager", async (accounts) => {
                 expect(await rewardsManager.pointOnCurve(0)).bignumber.to.eq("0");
                 expect(await rewardsManager.pointOnCurve(2)).bignumber.to.eq("4");
                 expect(await rewardsManager.pointOnCurve(100)).bignumber.to.eq("10000");
+
+                expect(await rewardsManager.pointOnCurve(-2)).bignumber.to.eq("-4");
+                expect(await rewardsManager.pointOnCurve(-100)).bignumber.to.eq("-10000");
             });
         });
     });
@@ -174,12 +177,12 @@ contract("RewardsManager", async (accounts) => {
             });
         });
         
-        context("should fail", async () => { // TALK ABOUT IT WITH KONRAD
+        context("should fail", async () => {
             it("in case it's not initialized", async () => {
                 const manager = await RewardsManager.new({ from: sa.default });
                 await expectRevert(
                     manager.calculateReward(0, 4, true),
-                    "not initialized / aDenominator should not be equal 0"
+                    "not initialized"
                 );
             });
         });
