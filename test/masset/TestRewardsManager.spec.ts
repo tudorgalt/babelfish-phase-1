@@ -26,6 +26,14 @@ contract("RewardsManager", async (accounts) => {
                 await expectRevert(rewardsManager.initialize(-1, { from: sa.default }), "x^2/A: A must be greater than zero.");
             });
         });
+
+        context("shoud succeed", async () => {
+            it("with proper aDenominator", async () => {
+                await rewardsManager.initialize(1, { from: sa.default });
+
+                expect(await rewardsManager.getACurveDenominator()).bignumber.to.eq("1");
+            });
+        });
     });
 
     describe("pointOnCurve", async () => {
@@ -217,6 +225,39 @@ contract("RewardsManager", async (accounts) => {
             });
             it("ratio deviation from 0 to 100", async () => {
                 expect(await rewardsManager.calculateReward(0, 100, false)).bignumber.to.eq("980");
+            });
+        });
+    });
+
+    describe("setACurveDenominator", async () => {
+        let admin: string;
+
+        beforeEach(async () => {
+            admin = sa.governor;
+            rewardsManager = await RewardsManager.new({ from: admin });
+            await rewardsManager.initialize(340, { from: admin });
+        });
+
+        context("should fail", async () => {
+            it("when it's not called by admin", async () => {
+                await expectRevert(
+                    rewardsManager.setACurveDenominator("123"),
+                    "VM Exception while processing transaction: reverted with reason string 'InitializableOwnable: caller is not the owner'"
+                );
+            });
+
+            it("when aDominator is not valid", async () => {
+                await expectRevert(
+                    rewardsManager.setACurveDenominator(0, { from: admin }),
+                    "VM Exception while processing transaction: reverted with reason string 'x^2/A: A must be greater than zero.'"
+                );
+            });
+        });
+
+        context("should succeed", async () => {
+            it("when it's called by admin", async () => {
+                await rewardsManager.setACurveDenominator("123", { from: admin });
+                expect (await rewardsManager.getACurveDenominator()).bignumber.to.eq("123");
             });
         });
     });

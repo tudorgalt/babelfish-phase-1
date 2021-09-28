@@ -20,12 +20,11 @@ contract RewardsManager is InitializableOwnable {
      * @param _aCurveDenominator  Curve parameter a. f(x) = 1/a * x^2
     */
     function initialize(int256 _aCurveDenominator) external {
-        require(_aCurveDenominator > 0, "x^2/A: A must be greater than zero.");
         require(initialized == false, "already initialized");
         _initialize();
 
+        setACurveDenominator(_aCurveDenominator);
         initialized = true;
-        aCurveDenominator = _aCurveDenominator;
     }
 
     // Public
@@ -112,5 +111,18 @@ contract RewardsManager is InitializableOwnable {
     function integrateOnCurve(int256 _x) public view returns(int256 y) {
         require(_x >= 0, "x must be greater than equal to 0");
         return _x*_x*_x / 3 / aCurveDenominator;
+    }
+
+    // Getters
+
+    function getACurveDenominator () public view returns(int256) {
+        return aCurveDenominator;
+    }
+
+    // Governance
+
+    function setACurveDenominator (int256 _aCurveDenominator) public onlyOwner {
+        require(_aCurveDenominator > 0, "x^2/A: A must be greater than zero.");
+        aCurveDenominator = _aCurveDenominator;
     }
 }
