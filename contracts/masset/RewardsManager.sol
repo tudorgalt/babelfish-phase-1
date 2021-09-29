@@ -3,16 +3,24 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
-import "hardhat/console.sol";
 
 /**
  * @title RewardsManager
  * @dev Contract is responsible for rewards calculations using specified curves.
  */
 contract RewardsManager is InitializableOwnable {
-    int256 aCurveDenominator;
+    // State
 
+    int256 aCurveDenominator;
     bool initialized;
+
+    // Events
+
+    /**
+     * @dev Emitted when curve parameter has changed.
+     * @param aDominator    New curve parameter.
+     */
+    event ADominatorChanged(int256 aDominator);
 
     // Initializer
 
@@ -21,12 +29,11 @@ contract RewardsManager is InitializableOwnable {
      * @param _aCurveDenominator  Curve parameter a. f(x) = 1/a * x^2
     */
     function initialize(int256 _aCurveDenominator) external {
-        require(_aCurveDenominator > 0, "x^2/A: A must be greater than zero.");
         require(initialized == false, "already initialized");
         _initialize();
 
+        setACurveDenominator(_aCurveDenominator);
         initialized = true;
-        aCurveDenominator = _aCurveDenominator;
     }
 
     // Public
@@ -113,5 +120,20 @@ contract RewardsManager is InitializableOwnable {
     function integrateOnCurve(int256 _x) public view returns(int256 y) {
         require(_x >= 0, "x must be greater than equal to 0");
         return _x*_x*_x / 3 / aCurveDenominator;
+    }
+
+    // Getters
+
+    function getACurveDenominator () public view returns(int256) {
+        return aCurveDenominator;
+    }
+
+    // Governance
+
+    function setACurveDenominator (int256 _aCurveDenominator) public onlyOwner {
+        require(_aCurveDenominator > 0, "x^2/A: A must be greater than zero.");
+        aCurveDenominator = _aCurveDenominator;
+
+        emit ADominatorChanged(_aCurveDenominator);
     }
 }

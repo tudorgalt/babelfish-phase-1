@@ -3,10 +3,10 @@
 import { expectRevert, expectEvent } from "@openzeppelin/test-helpers";
 import { BN, tokens } from "@utils/tools";
 import envSetup from "@utils/env_setup";
-import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
+import { ZERO_ADDRESS, FEE_PRECISION } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { Fees } from "types";
-import { BasketManagerV3Instance, MassetV3Instance, MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance } from "types/generated";
+import { BasketManagerV3Instance, MassetV3Instance, MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance, FeesManagerInstance } from "types/generated";
 
 const { expect } = envSetup.configure();
 
@@ -16,6 +16,7 @@ const Token = artifacts.require("Token");
 const MockERC20 = artifacts.require("MockERC20");
 const MockBridge = artifacts.require("MockBridge");
 const FeesVault = artifacts.require("FeesVault");
+const FeesManager = artifacts.require("FeesManager");
 
 let standardAccounts: StandardAccounts;
 
@@ -33,15 +34,18 @@ contract("MassetV3", async (accounts) => {
     let vault: FeesVaultInstance;
     let mockTokenDummy: MockERC20Instance;
     let mockBridge: MockBridgeInstance;
-
+    
     standardAccounts = new StandardAccounts(accounts);
-
+    
     before("before all", async () => { });
-
+    
     describe("initialize", async () => {
+        let feesManager: FeesManagerInstance;
+
         beforeEach(async () => {
             vault = await FeesVault.new();
             masset = await MassetV3.new();
+            feesManager = await FeesManager.new();
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
             token = await createToken(masset);
         });
@@ -68,19 +72,11 @@ contract("MassetV3", async (accounts) => {
                     basketManagerObj.basketManager.address,
                     token.address,
                     vault.address,
-                    1,
-                    2,
-                    3,
-                    4
+                    feesManager.address
                 );
 
                 version = await masset.getVersion();
                 expect(version).to.eq("3.0");
-
-                expect(await masset.getDepositFee()).bignumber.to.eq(new BN(1));
-                expect(await masset.getDepositBridgeFee()).bignumber.to.eq(new BN(2));
-                expect(await masset.getWithdrawalFee()).bignumber.to.eq(new BN(3));
-                expect(await masset.getWithdrawalBridgeFee()).bignumber.to.eq(new BN(4));
             });
         });
         context("should fail", async () => {
@@ -684,72 +680,6 @@ contract("MassetV3", async (accounts) => {
         });
     });
 
-    describe("setFeeAmount", async () => {
-        let admin: string;
-
-        beforeEach(async () => {
-            masset = await MassetV3.new();
-            admin = standardAccounts.default;
-
-            basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
-
-            await initMassetV3(
-                masset,
-                basketManagerObj.basketManager.address,
-                standardAccounts.dummy2,
-                standardAccounts.dummy2,
-                standardFees,
-                { from: admin }
-            );
-        });
-
-        context("should fail", async () => {
-            it("when it's not called by admin", async () => {
-                const revertMessage = "VM Exception while processing transaction: reverted with reason string 'InitializableOwnable: caller is not the owner'";
-
-                await expectRevert(masset.setDepositFee(2, { from: standardAccounts.other }), revertMessage);
-                await expectRevert(masset.setDepositBridgeFee(2, { from: standardAccounts.other }), revertMessage);
-                await expectRevert(masset.setWithdrawalFee(2, { from: standardAccounts.other }), revertMessage);
-                await expectRevert(masset.setWithdrawalBridgeFee(2, { from: standardAccounts.other }), revertMessage);
-            });
-        });
-
-        context("should succeed", async () => {
-            it("when amount is correct", async () => {
-                let tx: Truffle.TransactionResponse<Truffle.AnyEvent>;
-
-                tx =  await masset.setDepositFee(standardFees.deposit, { from: admin });
-                await expectEvent(tx.receipt, "DepositFeeChanged", { depositFee: standardFees.deposit });
-
-                tx = await masset.setDepositBridgeFee(standardFees.depositBridge, { from: admin });
-                await expectEvent(tx.receipt, "DepositBridgeFeeChanged", { depositBridgeFee: standardFees.depositBridge });
-
-                tx = await masset.setWithdrawalFee(standardFees.withdrawal, { from: admin });
-                await expectEvent(tx.receipt, "WithdrawalFeeChanged", { withdrawalFee: standardFees.withdrawal });
-
-                tx = await masset.setWithdrawalBridgeFee(standardFees.withdrawalBridge, { from: admin });
-                await expectEvent(tx.receipt, "WithdrawalBridgeFeeChanged", { withdrawalBridgeFee: standardFees.withdrawalBridge });
-
-                expect(await masset.getDepositFee()).bignumber.to.eq(standardFees.deposit);
-                expect(await masset.getDepositBridgeFee()).bignumber.to.eq(standardFees.depositBridge);
-                expect(await masset.getWithdrawalFee()).bignumber.to.eq(standardFees.withdrawal);
-                expect(await masset.getWithdrawalBridgeFee()).bignumber.to.eq(standardFees.withdrawalBridge);
-            });
-
-            it("when amount is zero", async () => {
-                await masset.setDepositFee(0, { from: admin });
-                await masset.setDepositBridgeFee(0, { from: admin });
-                await masset.setWithdrawalFee(0, { from: admin });
-                await masset.setWithdrawalBridgeFee(0, { from: admin });
-
-                expect(await masset.getDepositFee()).bignumber.to.eq(ZERO);
-                expect(await masset.getDepositBridgeFee()).bignumber.to.eq(ZERO);
-                expect(await masset.getWithdrawalFee()).bignumber.to.eq(ZERO);
-                expect(await masset.getWithdrawalBridgeFee()).bignumber.to.eq(ZERO);
-            });
-        });
-    });
-
     describe("precision conversion", async () => {
         const basset1Factor = new BN(100);
         const basset2Factor = new BN(-1000000);
@@ -826,6 +756,14 @@ async function initMassetV3(
     fees: Fees,
     txDetails: Truffle.TransactionDetails = { from: standardAccounts.default }
 ): Promise<void> {
+    const feesManager = await FeesManager.new();
+
+    await feesManager.initialize(
+        fees.deposit,
+        fees.depositBridge,
+        fees.withdrawal,
+        fees.withdrawalBridge,
+    );
 
     await masset.initialize(
         basketManagerAddress,
@@ -838,10 +776,7 @@ async function initMassetV3(
         basketManagerAddress,
         tokenAddress,
         vaultAddress,
-        fees.deposit,
-        fees.depositBridge,
-        fees.withdrawal,
-        fees.withdrawalBridge,
+        feesManager.address,
         txDetails
     );
 }

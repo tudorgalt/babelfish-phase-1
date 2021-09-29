@@ -94,55 +94,19 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         bytes userData
     );
 
-    /**
-     * @dev Emitted when deposit fee has changed.
-     * @param depositFee            Amount of the fee.
-     */
-    event DepositFeeChanged (uint256 depositFee);
-
-    /**
-     * @dev Emitted when deposit bridge fee has changed.
-     * @param depositBridgeFee      Amount of the fee.
-     */
-    event DepositBridgeFeeChanged (uint256 depositBridgeFee);
-
-    /**
-     * @dev Emitted when withdrawal fee has changed.
-     * @param withdrawalFee         Amount of the fee.
-     */
-    event WithdrawalFeeChanged (uint256 withdrawalFee);
-
-    /**
-     * @dev Emitted when withdrawal bridge fee has changed.
-     * @param withdrawalBridgeFee   Amount of the fee.
-     */
-    event WithdrawalBridgeFeeChanged (uint256 withdrawalBridgeFee);
-
     // state
 
-    /**
-     * @dev Factor of fees.
-     * @notice 1000 means that fees are in per mille.
-     */
-    uint256 constant private FEE_PRECISION = 1000;
     bytes32 constant ERC777_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
 
     string private version;
-
-    uint256 private depositFee;
-    uint256 private depositBridgeFee;
-    uint256 private withdrawalFee;
-    uint256 private withdrawalBridgeFee;
-
-    address private feesVaultAddress;
 
     BasketManagerV4 private basketManager;
     Token private token;
 
     FeesVault private feesVault;
+    FeesManager private feesManager;
     RewardsVault private rewardsVault;
     RewardsManager private rewardsManager;
-    FeesManager private feesManager;
 
     // internal
 
@@ -160,33 +124,19 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @dev Contract initializer.
      * @param _rewardsManagerAddress  Address of the rewards manager.
      * @param _rewardsVaultAddress    Address of the rewards vault.
-     * @param _feeManagerAddress      Address of the fees manager.
     */
     function initialize(
         address _rewardsManagerAddress,
-        address _rewardsVaultAddress,
-        address _feeManagerAddress
+        address _rewardsVaultAddress
     ) public {
         require(keccak256(bytes(version)) == keccak256(bytes("3.0")), "wrong version");
         require(_rewardsManagerAddress != address(0), "invalid rewards manager address");
         require(_rewardsVaultAddress != address(0), "invalid rewards vault address");
 
         rewardsVault = RewardsVault(_rewardsVaultAddress);
-        feesVault = FeesVault(feesVaultAddress);
         rewardsManager = RewardsManager(_rewardsManagerAddress);
-        feesManager = FeesManager(_feeManagerAddress);
 
         version = "4.0";
-    }
-
-    /**
-     * @dev Calculate and return fee amount based on massetAmount.
-     * @param _massetAmount  Amount of masset to deposit / withdraw.
-     * @param _feeAmount     Amount of fee in promils.
-     * @return fee           Calculated fee amount.
-     */
-    function calculateFee(uint256 _massetAmount, uint256 _feeAmount) public pure returns(uint256 fee) {
-        return _massetAmount.mul(_feeAmount).div(FEE_PRECISION);
     }
 
     /**
@@ -305,10 +255,10 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(_bAsset, _bAssetQuantity);
         require(basketManager.checkBasketBalanceForDeposit(_bAsset, bassetQuantity), "basket out of balance");
 
-        uint256 feeAmount = _bridgeFlag ? depositBridgeFee : depositFee;
-        fee = calculateFee(massetQuantity, feeAmount);
-
-        if (!_bridgeFlag) {
+        if (_bridgeFlag) {
+            fee = feesManager.calculateDepositBridgeFee(massetQuantity);
+        } else {
+            fee = feesManager.calculateDepositFee(massetQuantity);
             reward = calculateReward(_bAsset, massetQuantity, true);
         }
 
@@ -347,7 +297,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         (uint256 fee, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) = calculateMint(_basset, _bassetQuantity, false);
 
-        token.mint(feesVaultAddress, fee);
+        token.mint(address(feesVault), fee);
 
         uint256 transferedReward = 0;
 
@@ -445,10 +395,10 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         require(basketManager.isValidBasset(_basset), "invalid basset");
 
-        uint256 feeAmount = _bridgeFlag ? withdrawalBridgeFee : withdrawalFee;
-        fee = calculateFee(_massetQuantity, feeAmount);
-
-        if (!_bridgeFlag) {
+        if (_bridgeFlag) {
+            fee = feesManager.calculateRedeemBridgeFee(_massetQuantity);
+        } else {
+            fee = feesManager.calculateRedeemFee(_massetQuantity);
             reward = calculateReward(_basset, _massetQuantity, false);
         }
 
@@ -489,7 +439,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         (uint256 fee, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) = calculateRedeem(_basset, _massetQuantity, _bridgeFlag);
 
-        token.safeTransferFrom(msg.sender, feesVaultAddress, fee);
+        token.safeTransferFrom(msg.sender, address(feesVault), fee);
 
         // In case of withdrawal to bridge the receiveTokensAt is called instead of transfer.
         if(_bridgeFlag) {
@@ -648,7 +598,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         (uint256 fee,, uint256 massetsToMint, uint256 bassetsAmount) = calculateMint(basset, _orderAmount, true);
 
-        token.mint(feesVaultAddress, fee);
+        token.mint(address(feesVault), fee);
 
         token.mint(recipient, massetsToMint);
 
@@ -659,11 +609,19 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
     // Getters
 
     function getFeesVault() external view returns (address) {
-        return feesVaultAddress;
+        return address(feesVault);
     }
 
     function getRewardsVault() external view returns (address) {
         return address(rewardsVault);
+    }
+
+    function getFeesManager() external view returns (address) {
+        return address(feesManager);
+    }
+
+    function getRewardsManager() external view returns (address) {
+        return address(rewardsManager);
     }
 
     function getVersion() external view returns (string memory) {
@@ -676,51 +634,5 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     function getBasketManager() external view returns (address) {
         return address(basketManager);
-    }
-
-    function getDepositFee () external view returns(uint256) {
-        return depositFee;
-    }
-
-    function getDepositBridgeFee () external view returns(uint256) {
-        return depositBridgeFee;
-    }
-
-    function getWithdrawalFee () external view returns(uint256) {
-        return withdrawalFee;
-    }
-
-    function getWithdrawalBridgeFee () external view returns(uint256) {
-        return withdrawalBridgeFee;
-    }
-
-    // Governance methods
-
-    function setDepositFee (uint256 _amount) public onlyOwner {
-        require(_amount >= 0, "fee amount should be greater or equal zero");
-        depositFee = _amount;
-
-        emit DepositFeeChanged(_amount);
-    }
-
-    function setDepositBridgeFee (uint256 _amount) public onlyOwner {
-        require(_amount >= 0, "fee amount should be greater or equal zero");
-        depositBridgeFee = _amount;
-
-        emit DepositBridgeFeeChanged(_amount);
-    }
-
-    function setWithdrawalFee (uint256 _amount) public onlyOwner {
-        require(_amount >= 0, "fee amount should be greater or equal zero");
-        withdrawalFee = _amount;
-
-        emit WithdrawalFeeChanged(_amount);
-    }
-
-    function setWithdrawalBridgeFee (uint256 _amount) public onlyOwner {
-        require(_amount >= 0, "fee amount should be greater or equal zero");
-        withdrawalBridgeFee = _amount;
-
-        emit WithdrawalBridgeFeeChanged(_amount);
     }
 }

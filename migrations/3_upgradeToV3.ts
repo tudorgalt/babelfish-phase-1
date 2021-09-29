@@ -14,6 +14,8 @@ const MassetV3 = artifacts.require("MassetV3");
 const MassetProxy = artifacts.require("MassetProxy");
 const FeesVault = artifacts.require("FeesVault");
 const FeesVaultProxy = artifacts.require("FeesVaultProxy");
+const FeesManager = artifacts.require("FeesManager");
+const FeesManagerProxy = artifacts.require("FeesManagerProxy");
 
 const logger = new Logs().showInConsole(true);
 
@@ -136,6 +138,34 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             }
         }
 
+        const feesManager = await conditionalDeploy({
+            contract: FeesManager,
+            key: `${symbol}_FeesManager`,
+            deployfunc: deploy,
+            deployOptions: { from: default_ }
+        });
+        const feesManagerProxy = await conditionalDeploy({
+            contract: FeesManagerProxy,
+            key: `${symbol}_FeesManagerProxy`,
+            deployfunc: deploy,
+            deployOptions: { from: default_ }
+        });
+
+        await conditionalInitialize(`${symbol}_FeesManagerProxy`,
+            async () => { await feesManagerProxy.methods["initialize(address,address,bytes)"](feesManager.address, _admin, "0x"); }
+        );
+
+        const feesManagerFake = await FeesManager.at(feesManagerProxy.address);
+
+        await conditionalInitialize(`${symbol}_FeesManager`, async () => {
+            await feesManagerFake.initialize(
+                addressesForInstance.fees.deposit,
+                addressesForInstance.fees.depositBridge,
+                addressesForInstance.fees.withdrawal,
+                addressesForInstance.fees.withdrawalBridge
+            );
+        });
+
         const masset = await conditionalDeploy({
             contract: MassetV3,
             key: `${symbol}_MassetV3`,
@@ -150,10 +180,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             basketManagerFake.address,
             tokenAddress,
             vaultFake.address,
-            addressesForInstance.fees.deposit,
-            addressesForInstance.fees.depositBridge,
-            addressesForInstance.fees.withdrawal,
-            addressesForInstance.fees.withdrawalBridge
+            feesManagerFake.address
         );
     }
 

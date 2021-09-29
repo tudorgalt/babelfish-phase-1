@@ -17,8 +17,6 @@ const BasketManagerV4 = artifacts.require("BasketManagerV4");
 const BasketManagerProxy = artifacts.require("BasketManagerProxy");
 const MassetV4 = artifacts.require("MassetV4");
 const MassetProxy = artifacts.require("MassetProxy");
-const FeesManager = artifacts.require("FeesManager");
-const FeesManagerProxy = artifacts.require("FeesManagerProxy");
 const RewardsVault = artifacts.require("RewardsVault");
 const RewardsVaultProxy = artifacts.require("RewardsVaultProxy");
 const RewardsManager = artifacts.require("RewardsManager");
@@ -90,24 +88,6 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             async () => { await rewardsManagerFake.initialize(A_CURVE_DENOMINATOR); }
         );
 
-        const feesManager = await conditionalDeploy({
-            contract: FeesManager,
-            key: `${symbol}_FeesManager`,
-            deployfunc: deploy,
-            deployOptions: { from: default_ }
-        });
-        const feesManagerProxy = await conditionalDeploy({
-            contract: FeesManagerProxy,
-            key: `${symbol}_FeesManagerProxy`,
-            deployfunc: deploy,
-            deployOptions: { from: default_ }
-        });
-
-        await conditionalInitialize(`${symbol}_FeesManagerProxy`,
-            async () => { await feesManagerProxy.methods["initialize(address,address,bytes)"](feesManager.address, _admin, "0x"); }
-        );
-        const feesManagerFake = await FeesManager.at(feesManagerProxy.address);
-
         const massetV4 = await conditionalDeploy({
             contract: MassetV4,
             key: `${symbol}_MassetV4`,
@@ -123,8 +103,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
 
         await massetFake.initialize(
             rewardsManagerFake.address,
-            rewardsVaultFake.address,
-            feesManagerFake.address
+            rewardsVaultFake.address
         );
 
         const basketManagerV4 = await conditionalDeploy({
