@@ -366,12 +366,13 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
     ) public view returns(uint256 bassetsTransfered, uint256 massetsTaken) {
         (uint256 fee, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) = calculateRedeem(_bAsset, _massetQuantity, false);
 
-        uint256 transferedReward = 0;
+        uint256 finalMassetsTaken = massetsToTake;
         if (reward > 0) {
-            transferedReward = uint256(reward);
+            uint256 transferedReward = uint256(reward);
+            finalMassetsTaken = (transferedReward > massetsToTake) ? 0 : massetsToTake.sub(transferedReward);
+        } else {
+            finalMassetsTaken = finalMassetsTaken.add(uint256(-reward));
         }
-
-        uint256 finalMassetsTaken = (transferedReward > massetsToTake) ? 0 : massetsToTake.sub(transferedReward);
 
         return (bassetsToTransfer, finalMassetsTaken.add(fee));
     }
@@ -533,16 +534,6 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         address addr = abi.decode(data, (address));
         require(addr != address(0), "Converter: Error decoding extraData");
         return addr;
-    }
-
-    /**
-     * @dev Encode address to bytes data.
-     * @param _address          Address to encode.
-     * @return address          Decoded address.
-     */
-    function _encodeAddress(address _address) private pure returns (bytes memory) {
-        require(_address != address(0), "Converter: Error encoding extraData");
-        return abi.encode(_address);
     }
 
     /**
