@@ -1,7 +1,7 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { SignedSafeMath } from "../helpers/SignedSafeMath.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 
 /**
@@ -9,6 +9,8 @@ import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
  * @dev Contract is responsible for rewards calculations using specified curves.
  */
 contract RewardsManager is InitializableOwnable {
+    using SignedSafeMath for int256;
+
     // State
 
     int256 aCurveDenominator;
@@ -82,7 +84,7 @@ contract RewardsManager is InitializableOwnable {
         }else if(_x1 < 0 && _x2 < 0) {
             int256 dx2 = integrateOnCurve(-_x2);
             int256 dx1 = integrateOnCurve(-_x1);
-            return -(dx1 - dx2);    
+            return -(dx1.sub(dx2));    
         }
 
         int256 dx1 = integrateOnCurve(_x1);
@@ -109,7 +111,7 @@ contract RewardsManager is InitializableOwnable {
      */
     function valueOnCurve(int256 _x) public view returns(int256 y) {
         require(_x >= 0, "x must be greater than equal to 0");
-        return _x*_x / aCurveDenominator;
+        return _x.mul(_x).div(aCurveDenominator);
     }
 
     /**
@@ -119,7 +121,7 @@ contract RewardsManager is InitializableOwnable {
      */
     function integrateOnCurve(int256 _x) public view returns(int256 y) {
         require(_x >= 0, "x must be greater than equal to 0");
-        return _x*_x*_x / 3 / aCurveDenominator;
+        return _x.mul(_x).mul(_x).div(3).div(aCurveDenominator);
     }
 
     // Getters

@@ -82,7 +82,7 @@ contract FeesManager is InitializableOwnable {
     /**
      * @dev Calculate and return fee amount based on massetAmount and type of fee.
      */
-    function _calculateFee(uint256 _massetAmount, uint256 _feeAmount) internal view returns(uint256 fee) {
+    function _calculateFee(uint256 _massetAmount, uint256 _feeAmount) internal pure returns(uint256 fee) {
         return _massetAmount.mul(_feeAmount).div(FEE_PRECISION);
     }
 
@@ -115,7 +115,7 @@ contract FeesManager is InitializableOwnable {
         return _calculateFee(_massetAmount, withdrawalFee);
     }
 
-        /**
+    /**
      * @dev Calculate and return fee for redeem through bridge.
      * @param _massetAmount  Amount of masset.
      * @return fee           Calculated fee amount.
