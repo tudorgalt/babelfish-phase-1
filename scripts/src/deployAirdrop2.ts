@@ -8,13 +8,13 @@
 /* eslint-disable no-continue */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-restricted-syntax */
-import { BN } from "@utils/tools";
+import BN from "bn.js";
 import { conditionalDeploy, getDeployed, setNetwork } from "../state";
-import { AirdropVesterInstance, FishInstance, SenderInstance, TableInstance } from "types/generated";
+import { AirdropVesterInstance, FishInstance, TableInstance } from "types/generated";
 import { promises } from "fs";
 import Web3 from "web3";
 
-const countTables = async (): Promise<number> => {
+async function countTables() {
     const dir = await promises.readdir("contracts/airDrop/VestingTables", { withFileTypes: true });
     const count = dir.filter(file => file.name.includes("Table_") ).length;
     return count;
@@ -25,27 +25,27 @@ export default async function main(truffle, networkName): Promise<void> {
     const artifacts: Truffle.Artifacts = truffle.artifacts;
     const web3: Web3 = truffle.web3;
 
+    const address0 = web3.currentProvider['addresses'][0];
+    console.log('0: ', address0);
+
+
     console.log(1);
 
-    const tablesContracts: TableInstance[] = [];
+    //const MockToken = artifacts.require("MockToken");
+    //const token = await await conditionalDeploy(MockToken, "MockToken", () => MockToken.new("test", "test", 18));
 
     const FishToken = artifacts.require("Fish");
-    const AirdropVester = artifacts.require("AirdropVester");
-    const IVestingRegistry3 = artifacts.require("IVestingRegistry3");
+    const token: FishInstance = await FishToken.at('0x055A902303746382FBB7D18f6aE0df56eFDc5213');
 
-    const vestingRegistry = await IVestingRegistry3.at('0x036ab2DB0a3d1574469a4a7E09887Ed76fB56C41');
-
-    let abi = vestingRegistry.contract.methods['addAdmin(address)']().encodeABI();
-    console.log('abi for upgrade: ', abi);
+    console.log(2);
 
     const numberOfTables = await countTables();
-
     const tables = [];
+    const tablesContracts: TableInstance[] = [];
 
     for (let i = 1; i <= numberOfTables; i++) {
         const Name = `Table_${i}`;
         const TableContract = artifacts.require(Name as any);
-
         const table: TableInstance = await conditionalDeploy(TableContract, `Vesting_${Name}`,
             () => TableContract.new()
         );
@@ -53,34 +53,40 @@ export default async function main(truffle, networkName): Promise<void> {
         tables.push(table.address);
     }
 
+    console.log(3);
 
-    const token: FishInstance = await FishToken.at('0x055A902303746382FBB7D18f6aE0df56eFDc5213');
-
+    const AirdropVester = artifacts.require("AirdropVester");
     const vester: AirdropVesterInstance = await conditionalDeploy(AirdropVester, `AirdropVester`,
         () => AirdropVester.new(tables, token.address)
     );
 
-    let totalGasUsed = 0;
+    console.log(4);
 
-    try {
-        while (currentIndex.lt(total)) {
-            const { receipt } = await sender.sendTokens(batchSize);
-            totalGasUsed += receipt.gasUsed;
+    //await token.mint(vester.address, new BN('2942331958156000000000000'));
 
-            currentIndex = await sender.index();
-            console.log(`Sent to ${batchSize} addresses. Index: ${currentIndex.toString()}. Gas used: ${receipt.gasUsed}`);
-            let balance = await fishToken.balanceOf(sender.address);
-            console.log(`Current balance: ${balance.toString()}`);
-        }
-    } catch (e) {
-        console.log("ERROR");
-        console.log(e);
+    console.log(5);
+
+    let currentIndex = 0;
+    const batchSize = 100;
+
+    const totalLength = (await vester.totalLength()).toNumber();
+    currentIndex = (await vester.index()).toNumber();
+    console.log(`Sending to ${batchSize} addresses from index: ${currentIndex}, total: ${totalLength}`);
+
+    let balance = await token.balanceOf(vester.address);
+    console.log(`current balance: ${balance.toString()}`);
+
+    while (true) {
+        let [address, amount] = await vester.getCurrent.call();
+        console.log(address, amount.toString());
+        await vester.sendTokens.sendTransaction(batchSize);
+        currentIndex = (await vester.index()).toNumber();
+        console.log(`Sent to ${batchSize} addresses. New index: ${currentIndex}`);
+        if(currentIndex >= totalLength) break;
     }
 
-    const finalBalance = await fishToken.balanceOf(sender.address);
-    //const expectedBalance = initialBalance.sub(totalValue);
+    balance = await token.balanceOf(vester.address);
+    console.log(`current balance: ${balance.toString()}`);
 
-    //assert(finalBalance.eq(expectedBalance), "final balance is not valid");
-
-    console.log(`Sending completed. Total gas used: ${totalGasUsed}`);
+    console.log(6);
 };

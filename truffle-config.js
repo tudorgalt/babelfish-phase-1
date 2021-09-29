@@ -71,7 +71,8 @@ module.exports = {
       network_id: 30,
       gasPrice: 71680400, // 71GWei,
       skipDryRun: true,
-      networkCheckTimeout: 1e9
+      networkCheckTimeout: 1e9,
+      gas: 6800000
     },
   },
   mocha: {

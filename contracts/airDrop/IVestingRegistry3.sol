@@ -50,4 +50,6 @@ contract IVestingRegistry3 {
     function getTeamVesting(address _tokenOwner) public view returns (address);
 
     function addAdmin(address _admin) public;
+
+    function transferSOV(address _receiver, uint256 _amount) public;
 }
