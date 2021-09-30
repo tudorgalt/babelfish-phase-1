@@ -248,9 +248,8 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 _bAssetQuantity,
         bool _bridgeFlag
     ) public view returns (uint256 fee, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) {
-        require(_bAssetQuantity > 0, "quantity must not be 0");
-
         require(basketManager.isValidBasset(_bAsset), "invalid basset");
+        require(_bAssetQuantity > 0, "quantity must not be 0");
 
         (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(_bAsset, _bAssetQuantity);
         require(basketManager.checkBasketBalanceForDeposit(_bAsset, bassetQuantity), "basket out of balance");
@@ -293,7 +292,9 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
     )
     internal
     returns (uint256 massetMinted) {
+        require(basketManager.isValidBasset(_basset), "invalid basset");
         require(_recipient != address(0), "must be a valid recipient");
+        require(IERC20(_basset).balanceOf(msg.sender) >= _bassetQuantity, "insufficient balance");
 
         (uint256 fee, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) = calculateMint(_basset, _bassetQuantity, false);
 
@@ -366,13 +367,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
     ) public view returns(uint256 bassetsTransfered, uint256 massetsTaken) {
         (uint256 fee, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) = calculateRedeem(_bAsset, _massetQuantity, false);
 
-        uint256 finalMassetsTaken = massetsToTake;
-        if (reward > 0) {
-            uint256 transferedReward = uint256(reward);
-            finalMassetsTaken = (transferedReward > massetsToTake) ? 0 : massetsToTake.sub(transferedReward);
-        } else {
-            finalMassetsTaken = finalMassetsTaken.add(uint256(-reward));
-        }
+        uint256 finalMassetsTaken = reward > 0 ? massetsToTake : massetsToTake.add(uint256(-reward));
 
         return (bassetsToTransfer, finalMassetsTaken.add(fee));
     }
@@ -393,7 +388,6 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         bool _bridgeFlag
     ) public view returns (uint256 fee, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) {
         require(_massetQuantity > 0, "quantity must not be 0");
-
         require(basketManager.isValidBasset(_basset), "invalid basset");
 
         if (_bridgeFlag) {
@@ -401,20 +395,25 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         } else {
             fee = feesManager.calculateRedeemFee(_massetQuantity);
             reward = calculateReward(_basset, _massetQuantity, false);
+
+            if (reward > 0) {
+                uint256 balance = token.balanceOf(address(rewardsVault));
+                reward = uint256(reward) > balance ? int256(balance) : reward;
+            }    
         }
 
-        uint256 massetsToConvert = reward > 0
-            ? _massetQuantity
-            : _massetQuantity.sub(uint256(-reward));
+        uint256 massetsToTake = _massetQuantity.sub(fee);
+        massetsToTake = reward > 0 ? massetsToTake : massetsToTake.sub(uint256(-reward));
+
+        uint256 massetsToConvert = reward > 0 ? massetsToTake.add(uint256(reward)) : massetsToTake;
         
-        massetsToConvert = massetsToConvert.sub(fee);
+        (uint256 convertedBassetsToTransfer, uint256 massetsAfterConvert) = basketManager.convertMassetToBassetQuantity(_basset, massetsToConvert); // co jesli tutaj zostanie jakis reminder?
+        uint256 reminder = massetsToConvert.sub(massetsAfterConvert);
 
-        (uint256 convertedBassetsToTransfer, uint256 convertedMassetsToTake) = basketManager.convertMassetToBassetQuantity(_basset, massetsToConvert);
         require(convertedBassetsToTransfer > 0, "amount after reward and fee must be > 0");
-
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, convertedBassetsToTransfer), "basket out of balance");
 
-        return (fee, reward, convertedBassetsToTransfer, convertedMassetsToTake);
+        return (fee, reward, convertedBassetsToTransfer, massetsToTake.sub(reminder));
     }
 
     /***************************************
@@ -436,7 +435,9 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         address _recipient,
         bool _bridgeFlag
     ) internal returns (uint256 massetRedeemed) {
+        require(basketManager.isValidBasset(_basset), "invalid basset");
         require(_recipient != address(0), "must be a valid recipient");
+        require(token.balanceOf(msg.sender) >= _massetQuantity, "insufficient balance");
 
         (uint256 fee, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) = calculateRedeem(_basset, _massetQuantity, _bridgeFlag);
 
@@ -457,7 +458,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
             transferedReward = uint256(reward);
 
             rewardsVault.getApproval(transferedReward, address(token));
-            token.safeTransferFrom(address(rewardsVault), _recipient, transferedReward);
+            token.burn(address(rewardsVault), transferedReward);
         } else {
             token.safeTransferFrom(msg.sender, address(rewardsVault), uint256(-reward));
         }
@@ -466,7 +467,6 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         IERC20(_basset).safeTransfer(_recipient, bassetsToTransfer);
 
         uint256 finalMassetsTaken = massetsToTake.add(fee);
-        finalMassetsTaken = (transferedReward > finalMassetsTaken) ? 0 : finalMassetsTaken.sub(transferedReward);
 
         emit Redeemed(msg.sender, _recipient, finalMassetsTaken, _basset, bassetsToTransfer);
 

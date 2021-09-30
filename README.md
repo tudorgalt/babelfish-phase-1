@@ -63,8 +63,8 @@ Here is the list of available scripts:
 
 ##### **- rewards**
 -   when `reward > 0`
-    - transfer back calculated mAsset reward from vault to user
-    - it does not impact amount of bAssets to get in exchange
+    - transfer more bassets to user
+    - burn massets from vault
 -   when `reward < 0`
     - transfer calculated amount mAssets from user to vault
     - substract from amount to burn and 
