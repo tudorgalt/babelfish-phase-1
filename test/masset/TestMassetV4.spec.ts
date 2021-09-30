@@ -49,6 +49,23 @@ contract("MassetV4", async (accounts) => {
 
     before("before all", async () => { });
 
+    describe("initialization", async () => {
+        it("sets proper initial state", async () => {
+            const { deployedMassetV4, ...deployed } = await initSystem({
+                massetConfig: { fees: standardFees },
+                basketManagerConfig: { decimals: [18, 18], factors: [1, 1] }
+            });
+
+            expect(await deployedMassetV4.getFeesVault()).to.eq(deployed.deployedFeesVault.address);
+            expect(await deployedMassetV4.getRewardsVault()).to.eq(deployed.deployedRewardsVault.address);
+            expect(await deployedMassetV4.getFeesManager()).to.eq(deployed.deployedFeesManager.address);
+            expect(await deployedMassetV4.getRewardsManager()).to.eq(deployed.deployedRewardsManager.address);
+            expect(await deployedMassetV4.getVersion()).to.eq("4.0");
+            expect(await deployedMassetV4.getToken()).to.eq(deployed.deployedToken.address);
+            expect(await deployedMassetV4.getBasketManager()).to.eq(deployed.deployedBasketManagerV4.address);
+        });
+    });
+
     describe("mint", async () => {
         const factors = [1, 1];
 
@@ -579,10 +596,10 @@ contract("MassetV4", async (accounts) => {
                 /*
                     target ratio: 500%%
                     final ratio: 333%% // 1:2 = 333%%
-                */                
+                */
                 const deviationAfter = new BN(167);
                 const expectedReward = calculateCurve(deviationAfter);
-                
+
                 const expectedBassetQuantityInMasset = sum.sub(expectedFee).sub(expectedReward);
                 const expectedBassetQuantity = expectedBassetQuantityInMasset.mul(new BN(factors[0]));
 
@@ -1021,18 +1038,40 @@ contract("MassetV4", async (accounts) => {
 
         it("proper calculations", async () => {
             const factor = new BN(-10);
-            await initializePool(initialBassets, masset, [factor.toNumber(), 1], feesVault, rewardsVault, [600, 500]);
+            await initializePool(initialBassets, masset, [factor.toNumber(), 1], feesVault, rewardsVault, [500, 500]);
             await basketManager.setFactor(initialBassets.mockToken1.address, factor);
 
-            const massetAmount = tokens(3);
-            const fee = massetAmount.mul(standardFees.withdrawal).div(FEE_PRECISION);
-            const massetsToTake = massetAmount.sub(fee);
+            // make deposit to get some funds in vault
+            await initialBassets.mockToken1.mint(standardAccounts.default, tokens(10));
+            await initialBassets.mockToken1.approve(masset.address, tokens(10));
+            await masset.mint(initialBassets.mockToken1.address, tokens(10));
 
-            const converted = massetsToTake.div(factor.neg());
-            const [bassetAmount, massetsTaken] = await masset.calculateRedeemRatio(initialBassets.mockToken1.address, massetAmount);
+            { // ----- redeem of 1 basset (should get reward) -----
+                const massetAmount = tokens(3);
+                const fee = massetAmount.mul(standardFees.withdrawal).div(FEE_PRECISION);
+                const deviationBefore = new BN(45);
+                const deviationAfter = new BN(44);
+                const reward = calculateCurve(deviationBefore).sub(calculateCurve(deviationAfter));
+                const massetsToTake = massetAmount.sub(fee);
 
-            expect(massetsTaken).bignumber.to.eq(massetAmount);
-            expect(bassetAmount).bignumber.to.eq(converted);
+                const converted = massetsToTake.div(factor.neg());
+                const [bassetAmount, massetsTaken] = await masset.calculateRedeemRatio(initialBassets.mockToken1.address, massetAmount);
+
+                expect(massetsTaken).bignumber.to.eq(massetAmount.sub(reward));
+                expect(bassetAmount).bignumber.to.eq(converted);
+            }
+            { // ----- redeem of 2 basset (should be punished) -----
+                const amount = tokens(3);
+                const fee = amount.mul(standardFees.withdrawal).div(FEE_PRECISION);
+                const deviationBefore = new BN(45);
+                const deviationAfter = new BN(44); // 503/1103
+                const punishment = calculateCurve(deviationAfter).sub(calculateCurve(deviationBefore)).neg();
+
+                const [bassetAmount, massetsTaken] = await masset.calculateRedeemRatio(initialBassets.mockToken2.address, amount);
+
+                expect(massetsTaken).bignumber.to.eq(amount);
+                expect(bassetAmount).bignumber.to.eq(amount.sub(punishment).sub(fee));
+            }
         });
     });
 
@@ -1376,6 +1415,8 @@ async function initSystem({ massetConfig, basketManagerConfig }: InitSystemArg) 
         deployedFeesVault: feesVault,
         deployedRewardsVault: rewardsVault,
         deployedMassetV4: massetV4Mock,
+        deployedFeesManager: feesManager,
+        deployedRewardsManager: rewardsManager,
         deployedInitialBassets: initialBassets,
         deployedBasketManagerV4: basketManagerV4Mock
     };
