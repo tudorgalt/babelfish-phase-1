@@ -262,7 +262,7 @@ contract("RewardsManager", async (accounts) => {
                 const tx = await rewardsManager.setACurveDenominator(aDominator, { from: admin });
                 expect (await rewardsManager.getACurveDenominator()).bignumber.to.eq(aDominator);
 
-                await expectEvent(tx.receipt, "ADominatorChanged", { aDominator });
+                await expectEvent(tx.receipt, "ADenominatorChanged", { aDominator });
             });
         });
     });
