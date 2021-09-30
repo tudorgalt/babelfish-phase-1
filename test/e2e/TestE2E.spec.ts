@@ -105,10 +105,9 @@ contract("E2E test", async (accounts) => {
 
         const redeemAmount = tokens(5);
         const redeemFee = redeemAmount.mul(redeemFeePromil).div(FEE_PRECISION);
-        const [redeemedBassets] = await basketManagerMock.convertMassetToBassetQuantity(basset1, redeemAmount.sub(redeemFee));
-
         const [deviationBeforeRedeem, deviationAfterRedeem] = await basketManagerMock.getBassetRatioDeviation(basset1, depositAmount, false);
         const redeemReward = await rewardsManagerMock.calculateReward(deviationBeforeRedeem, deviationAfterRedeem, false);
+        const [redeemedBassets] = await basketManagerMock.convertMassetToBassetQuantity(basset1, redeemAmount.sub(redeemFee).add(redeemReward));
 
         await token.approve(massetMock.address, redeemAmount);
         await massetMock.redeem(basset1, redeemAmount);
@@ -131,7 +130,7 @@ contract("E2E test", async (accounts) => {
             "proper rewards distribution"
         );
         expect(massetBalanceAfterRedeem).bignumber.to.eq(
-            massetBalanceAfterDeposit.sub(redeemAmount).add(redeemReward),
+            massetBalanceAfterDeposit.sub(redeemAmount),
             "masset balance is invalid"
         );
 
