@@ -59,15 +59,15 @@ Here is the list of available scripts:
 &NewLine;
 ##### **- fees**
 -   transfer calculated amount before all conversions
--   substract from amount to burn and convert
+-   substract from massets to burn and bassets to transfer
 
 ##### **- rewards**
 -   when `reward > 0`
     - transfer more bassets to user
     - burn massets from vault
 -   when `reward < 0`
-    - transfer calculated amount mAssets from user to vault
-    - substract from amount to burn and 
+    - transfer calculated mAssets amount from user to vault
+    - substract from massets to burn and bassets to transfer
 
 ## **5. Graph**
 
