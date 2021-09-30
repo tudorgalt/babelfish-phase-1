@@ -22,7 +22,7 @@ contract RewardsManager is InitializableOwnable {
      * @dev Emitted when curve parameter has changed.
      * @param aDominator    New curve parameter.
      */
-    event ADominatorChanged(int256 aDominator);
+    event ADenominatorChanged(int256 aDominator);
 
     // Initializer
 
@@ -136,6 +136,6 @@ contract RewardsManager is InitializableOwnable {
         require(_aCurveDenominator > 0, "x^2/A: A must be greater than zero.");
         aCurveDenominator = _aCurveDenominator;
 
-        emit ADominatorChanged(_aCurveDenominator);
+        emit ADenominatorChanged(_aCurveDenominator);
     }
 }

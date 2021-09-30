@@ -224,7 +224,7 @@ contract("MassetV4", async (accounts) => {
             it("if amount is greater than the balance", async () => {
                 await expectRevert(
                     masset.mint(initialBassets.mockToken1.address, 100000),
-                    "VM Exception while processing transaction: reverted with reason string 'SafeERC20: low-level call failed'",
+                    "VM Exception while processing transaction: reverted with reason string 'insufficient balance'",
                 );
             });
         });
@@ -653,12 +653,12 @@ contract("MassetV4", async (accounts) => {
                 const redeemSum = tokens(INITIAL_RATIOS[0] / 4);
 
                 const expectedFee = redeemSum.mul(standardFees.withdrawal).div(FEE_PRECISION);
-
+                
                 const deviationBefore = new BN(100);
                 const deviationAfter = new BN(55);
                 const expectedReward = calculateCurve(deviationAfter).sub(calculateCurve(deviationBefore)).neg();
 
-                const expectedBassetQuantityInMasset = redeemSum.sub(expectedFee);
+                const expectedBassetQuantityInMasset = redeemSum.sub(expectedFee).add(expectedReward);
                 const expectedBassetQuantity = expectedBassetQuantityInMasset.mul(new BN(factors[0]));
 
                 await token.approve(masset.address, redeemSum, { from: depositor });
@@ -666,7 +666,7 @@ contract("MassetV4", async (accounts) => {
 
                 const massetBalance = await token.balanceOf(depositor);
                 expect(massetBalance).bignumber.to.eq(
-                    massetBalanceAfterDeposit.sub(redeemSum).add(expectedReward),
+                    massetBalanceAfterDeposit.sub(redeemSum),
                     "proper amount of massets should be taken"
                 );
 
@@ -712,18 +712,20 @@ contract("MassetV4", async (accounts) => {
                 let mintedMassets = calculated[0];
 
                 mintedMassets = mintedMassets.sub(mintFee);
-
+                
                 let balance = await token.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.equal(mintedMassets);
 
+                
                 balance = await initialBassets.mockToken1.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.equal(initialBalance.sub(bassetsLeft));
-
+                
                 const withdrawalFee = mintedMassets.mul(standardFees.withdrawal).div(FEE_PRECISION);
                 const massetsSubFee = mintedMassets.sub(withdrawalFee);
+                const withdrawnBassets = massetsSubFee.div(factor.abs());
+
                 const redeemReminder = massetsSubFee.mod(factor.abs());
-                const massetsLeft = massetsSubFee.sub(redeemReminder);
-                const withdrawnBassets = massetsLeft.div(factor.abs());
+                const roundedRedeemAmount = massetsSubFee.sub(redeemReminder);
 
                 await token.approve(masset.address, mintedMassets, {
                     from: standardAccounts.dummy1,
@@ -735,7 +737,7 @@ contract("MassetV4", async (accounts) => {
                 await expectEvent(tx.receipt, "Redeemed", {
                     redeemer: standardAccounts.dummy1,
                     recipient: standardAccounts.dummy1,
-                    massetQuantity: mintedMassets.sub(redeemReminder),
+                    massetQuantity: roundedRedeemAmount.add(withdrawalFee),
                     bAsset: initialBassets.mockToken1.address,
                     bassetQuantity: withdrawnBassets,
                 });
@@ -745,6 +747,9 @@ contract("MassetV4", async (accounts) => {
 
                 balance = await initialBassets.mockToken1.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.equal(initialBalance.sub(sum.sub(withdrawnBassets)));
+
+                const feesVaultBalance = await token.balanceOf(feesVault.address);
+                expect(feesVaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
 
                 const sumOfOperations = mintFee
                     .add(withdrawalFee)
@@ -756,9 +761,6 @@ contract("MassetV4", async (accounts) => {
                     sum,
                     "check that sum of funds in system after deposit and redeem is the same as before"
                 );
-
-                const feesVaultBalance = await token.balanceOf(feesVault.address);
-                expect(feesVaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
             });
         });
         context("should fail", () => {
@@ -782,7 +784,7 @@ contract("MassetV4", async (accounts) => {
 
                 await expectRevert(
                     masset.redeem(initialBassets.mockToken1.address, 1000, { from: standardAccounts.dummy1 }),
-                    "VM Exception while processing transaction: reverted with reason string 'balance is not sufficient'"
+                    "VM Exception while processing transaction: reverted with reason string 'insufficient balance'"
                 );
             });
             it("if amount is greater than balance", async () => {
@@ -794,7 +796,7 @@ contract("MassetV4", async (accounts) => {
 
                 await expectRevert( // should revert because fee from minting was taken
                     masset.redeem(initialBassets.mockToken1.address, sum, { from: standardAccounts.dummy1 }),
-                    "VM Exception while processing transaction: reverted with reason string 'ERC20: burn amount exceeds balance'"
+                    "VM Exception while processing transaction: reverted with reason string 'insufficient balance'"
                 );
             });
         });
@@ -1054,10 +1056,12 @@ contract("MassetV4", async (accounts) => {
                 const reward = calculateCurve(deviationBefore).sub(calculateCurve(deviationAfter));
                 const massetsToTake = massetAmount.sub(fee);
 
-                const converted = massetsToTake.div(factor.neg());
+                const converted = (massetsToTake.add(reward)).div(factor.neg());
+                const reminder = (massetsToTake.add(reward)).mod(factor.neg());
+
                 const [bassetAmount, massetsTaken] = await masset.calculateRedeemRatio(initialBassets.mockToken1.address, massetAmount);
 
-                expect(massetsTaken).bignumber.to.eq(massetAmount.sub(reward));
+                expect(massetsTaken).bignumber.to.eq(massetAmount.sub(reminder));
                 expect(bassetAmount).bignumber.to.eq(converted);
             }
             { // ----- redeem of 2 basset (should be punished) -----
@@ -1262,7 +1266,7 @@ contract("MassetV4", async (accounts) => {
 
             expect(await getBalance(token, standardAccounts.dummy2)).bignumber.to.equal(expectedReminder);
 
-            const expectedBalance = amount.sub(withdrawalFee).sub(expectedReminder).div(basset2Factor.neg());
+            const expectedBalance = amount.sub(withdrawalFee).sub(reward).div(basset2Factor.neg());
             expect(await getBalance(initialBassets.mockToken2, standardAccounts.dummy2)).bignumber.to.equal(expectedBalance);
 
             const totalFee = fee.mul(new BN(2)).add(withdrawalFee); // 2 mints and one redeem
