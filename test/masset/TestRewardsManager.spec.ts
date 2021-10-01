@@ -3,6 +3,7 @@ import { expectRevert, expectEvent } from "@openzeppelin/test-helpers";
 import { BN } from "@utils/tools";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { RewardsManagerInstance } from "types/generated";
+import { calculateCurve } from "./utils";
 
 const RewardsManager = artifacts.require("RewardsManager");
 
@@ -51,12 +52,20 @@ contract("RewardsManager", async (accounts) => {
 
         context("should calculate", async () => {
             it("correct points for points on curve", async () => {
+                
                 expect(await rewardsManager.pointOnCurve(0)).bignumber.to.eq("0");
                 expect(await rewardsManager.pointOnCurve(2)).bignumber.to.eq("4");
                 expect(await rewardsManager.pointOnCurve(100)).bignumber.to.eq("10000");
 
                 expect(await rewardsManager.pointOnCurve(-2)).bignumber.to.eq("-4");
                 expect(await rewardsManager.pointOnCurve(-100)).bignumber.to.eq("-10000");
+            });
+
+            it("correct points for points on curve", async () => {    
+                expect(await rewardsManager.valueOnCurveSigmoid(370)).bignumber.to.eq("369");
+                expect(await rewardsManager.valueOnCurveSigmoid(40000)).bignumber.to.eq("37994");
+                expect(await rewardsManager.valueOnCurveSigmoid(300000)).bignumber.to.eq("99505");
+                expect(await rewardsManager.valueOnCurveSigmoid(1000000)).bignumber.to.eq("99999");
             });
         });
     });
@@ -79,6 +88,11 @@ contract("RewardsManager", async (accounts) => {
             });
             it("from 0 to 100", async () => {
                 expect(await rewardsManager.integrateOnCurve(100)).bignumber.to.eq("333333");
+            });
+            it("from 0 to 100", async () => {
+                expect(await rewardsManager.integrateOnCurveSigmoid(1)).bignumber.to.eq("333333");
+                expect(await rewardsManager.integrateOnCurveSigmoid(100)).bignumber.to.eq("333333");
+
             });
         });
     });
@@ -115,9 +129,11 @@ contract("RewardsManager", async (accounts) => {
     });
 
     describe("calculateReward", async () => {
+        const aDenominator = new BN(1);
+
         beforeEach(async () => {
             rewardsManager = await RewardsManager.new({ from: sa.default });
-            await rewardsManager.initialize(1, { from: sa.default });
+            await rewardsManager.initialize(aDenominator, { from: sa.default });
         });
 
         context("should calculate deposit reward, curve aDenominator=1", async () => {
@@ -128,7 +144,12 @@ contract("RewardsManager", async (accounts) => {
                 expect(await rewardsManager.calculateReward(100, 100, true)).bignumber.to.eq("-10000");
             });
             it("ratio deviation from 99 to 101", async () => {
-                expect(await rewardsManager.calculateReward(100, 101, true)).bignumber.to.eq("-10100");
+                const deviationBefore = new BN(100);
+                const deviationAfter = new BN(101);
+
+                expect(await rewardsManager.calculateReward(deviationBefore, deviationAfter, true)).bignumber.to.eq(
+                    calculateCurve(deviationBefore, aDenominator).sub(calculateCurve(deviationAfter, aDenominator))
+                );
             });
             it("ratio deviation from 0 to 100", async () => {
                 expect(await rewardsManager.calculateReward(0, 100, true)).bignumber.to.eq("-333333");

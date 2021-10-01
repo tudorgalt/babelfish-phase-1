@@ -1,3 +1,4 @@
+import { BN } from "@utils/tools";
 import { BasketManagerProxyInstance, BasketManagerV3Instance, BasketManagerV4Instance } from "types/generated";
 
 const Token = artifacts.require("Token");
@@ -49,4 +50,10 @@ export const upgradeBasketManagerToV4 = async (
     await basketManagerV4Mock.initialize(ratios);
 
     return basketManagerV4Mock;
+};
+
+export const A_CURVE_DENOMINATOR = new BN(1000);
+
+export const calculateCurve = (deviation: BN, aDeniminator = A_CURVE_DENOMINATOR) => {
+    return deviation.pow(new BN(3)).div(new BN(3)).div(aDeniminator);
 };

@@ -2,7 +2,11 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import { SignedSafeMath } from "../helpers/SignedSafeMath.sol";
+import { ABDKMathQuad } from "../helpers/ABDKMathQuad.sol";
+
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
+
+import "hardhat/console.sol";
 
 /**
  * @title RewardsManager
@@ -122,6 +126,89 @@ contract RewardsManager is InitializableOwnable {
     function integrateOnCurve(int256 _x) public view returns(int256 y) {
         require(_x >= 0, "x must be greater than equal to 0");
         return _x.mul(_x).mul(_x).div(3).div(aCurveDenominator);
+    }
+
+        /**
+     * @dev Calculate curve value at given point for x >= 0;
+     * @param _x    Point
+     * @return y    Value
+     */
+    function valueOnCurveSigmoid(int256 _x) public view returns(int256 y) {
+        require(_x >= 0, "x must be greater than equal to 0");
+
+        uint256 w = 100000;
+        uint256 p = 200000;
+
+        bytes16 precision = ABDKMathQuad.fromUInt(100000);
+
+        bytes16 wabd = ABDKMathQuad.fromUInt(w);
+        bytes16 rabd = ABDKMathQuad.div(
+            ABDKMathQuad.fromUInt(p),
+            precision
+        );
+        rabd = ABDKMathQuad.div(rabd, wabd);
+
+        bytes16 xabd = ABDKMathQuad.fromInt(_x);
+
+        bytes16 nominator = ABDKMathQuad.add(wabd, wabd);
+
+        bytes16 rx = ABDKMathQuad.mul(rabd, xabd);
+        rx = ABDKMathQuad.neg(rx);
+
+        bytes16 denominator = ABDKMathQuad.exp(rx);
+        denominator = ABDKMathQuad.add(denominator, ABDKMathQuad.fromUInt(1));
+
+        bytes16 value = ABDKMathQuad.div(nominator, denominator);
+        value = ABDKMathQuad.sub(value, wabd);
+        return ABDKMathQuad.toInt(value);
+    }
+
+    /**
+     * @dev Integrate curve value from x=0 to given point;
+     * @param _x    Point
+     * @return y    Value
+     */
+    function integrateOnCurveSigmoid(int256 _x) public view returns(int256 y) {
+        require(_x >= 0, "x must be greater than equal to 0");
+
+        uint256 w = 100000;
+        uint256 p = 200000;
+
+        bytes16 precision = ABDKMathQuad.fromUInt(100000);
+
+        /*
+            r = p / precission / w
+            rx = r * x
+            wr = 2w / r
+            wx = w * x
+            value = ln(e ^ (rx) + 1) * wr - wx
+        */
+
+        bytes16 wabd = ABDKMathQuad.fromUInt(w);
+        bytes16 rabd = ABDKMathQuad.div(
+            ABDKMathQuad.fromUInt(p),
+            precision
+        );
+        rabd = ABDKMathQuad.div(rabd, wabd);
+
+        bytes16 xabd = ABDKMathQuad.fromInt(_x);
+
+        bytes16 rx = ABDKMathQuad.mul(rabd, xabd);
+
+        bytes16 wr = ABDKMathQuad.add(wabd, wabd);
+        wr = ABDKMathQuad.div(wr, rabd);
+        
+        bytes16 wx = ABDKMathQuad.mul(wabd, xabd);
+        bytes16 value = ABDKMathQuad.exp(rx);
+        value = ABDKMathQuad.add(value, ABDKMathQuad.fromUInt(1));
+        value = ABDKMathQuad.ln(value);
+        value = ABDKMathQuad.mul(value, wr);
+        value = ABDKMathQuad.sub(value, wx);
+
+        console.log("calka");
+        console.logInt(ABDKMathQuad.toInt(value));
+
+        return ABDKMathQuad.toInt(value);
     }
 
     // Getters

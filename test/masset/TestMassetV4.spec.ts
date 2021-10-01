@@ -7,7 +7,7 @@ import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { Fees } from "types";
 import { MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance, MassetV4Instance, BasketManagerV4Instance, RewardsVaultInstance } from "types/generated";
-import { createBasketManagerV3, createToken, upgradeBasketManagerToV4 } from "./utils";
+import { calculateCurve, createBasketManagerV3, createToken, upgradeBasketManagerToV4 } from "./utils";
 
 const { expect } = envSetup.configure();
 
@@ -1287,10 +1287,6 @@ type BasketManagerConfig = {
     factors: Array<number | BN>,
     bridges?: string[]
 };
-
-function calculateCurve(deviation: BN) {
-    return deviation.pow(new BN(3)).div(new BN(3)).div(A_CURVE_DENOMINATOR);
-}
 
 async function addInitialBassets(
     basketManager: BasketManagerV4Instance,
