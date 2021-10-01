@@ -6,8 +6,6 @@ import { ABDKMathQuad } from "../helpers/ABDKMathQuad.sol";
 
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title RewardsManager
  * @dev Contract is responsible for rewards calculations using specified curves.
@@ -17,28 +15,34 @@ contract RewardsManager is InitializableOwnable {
 
     // State
 
-    int256 aCurveDenominator;
+    uint256 private maxValue;
+    uint256 private slope;
+
     bool initialized;
 
     // Events
 
     /**
-     * @dev Emitted when curve parameter has changed.
-     * @param aDominator    New curve parameter.
+     * @dev Emitted when curve parameters has changed.
+     * @param maxValue  New max value parameter.
+     * @param slope     New slope parameter.
      */
-    event ADenominatorChanged(int256 aDominator);
+    event CurveParametersChanged(uint256 maxValue, uint256 slope);
 
     // Initializer
 
     /**
      * @dev Contract initializer.
-     * @param _aCurveDenominator  Curve parameter a. f(x) = 1/a * x^2
+     * @param _maxValue     Max value of curve in point.
+     * @param _slope        Slope regulation value.
+
     */
-    function initialize(int256 _aCurveDenominator) external {
+    function initialize(uint256 _maxValue, uint256 _slope) external {
         require(initialized == false, "already initialized");
         _initialize();
 
-        setACurveDenominator(_aCurveDenominator);
+        setMaxValue(_maxValue);
+        setSlope(_slope);
         initialized = true;
     }
 
@@ -103,63 +107,39 @@ contract RewardsManager is InitializableOwnable {
      */
     function pointOnCurve(int256 _x) public view returns(int256 y) {
         if(_x < 0) {
-            return -valueOnCurve(-_x);
+            return -valueOnSigmoidCurve(-_x);
         }
-        return valueOnCurve(_x);
+        return valueOnSigmoidCurve(_x);
     }
 
-    /**
-     * @dev Calculate curve value at given point for x >= 0;
-     * @param _x    Point
-     * @return y    Value
-     */
-    function valueOnCurve(int256 _x) public view returns(int256 y) {
-        require(_x >= 0, "x must be greater than equal to 0");
-        return _x.mul(_x).div(aCurveDenominator);
-    }
-
-    /**
-     * @dev Integrate curve value from x=0 to given point;
-     * @param _x    Point
-     * @return y    Value
-     */
     function integrateOnCurve(int256 _x) public view returns(int256 y) {
-        require(_x >= 0, "x must be greater than equal to 0");
-        return _x.mul(_x).mul(_x).div(3).div(aCurveDenominator);
+        return integrateOnSigmoidCurve(_x);
     }
 
-        /**
+    /**
      * @dev Calculate curve value at given point for x >= 0;
      * @param _x    Point
      * @return y    Value
      */
-    function valueOnCurveSigmoid(int256 _x) public view returns(int256 y) {
+    function valueOnSigmoidCurve(int256 _x) public view returns(int256 y) {
         require(_x >= 0, "x must be greater than equal to 0");
 
-        uint256 w = 100000;
-        uint256 p = 200000;
-
-        bytes16 precision = ABDKMathQuad.fromUInt(100000);
+        uint256 w = maxValue;
+        uint256 z = slope;
 
         bytes16 wabd = ABDKMathQuad.fromUInt(w);
-        bytes16 rabd = ABDKMathQuad.div(
-            ABDKMathQuad.fromUInt(p),
-            precision
-        );
-        rabd = ABDKMathQuad.div(rabd, wabd);
-
+        bytes16 zabd = ABDKMathQuad.fromUInt(z);
         bytes16 xabd = ABDKMathQuad.fromInt(_x);
 
-        bytes16 nominator = ABDKMathQuad.add(wabd, wabd);
-
-        bytes16 rx = ABDKMathQuad.mul(rabd, xabd);
-        rx = ABDKMathQuad.neg(rx);
-
-        bytes16 denominator = ABDKMathQuad.exp(rx);
-        denominator = ABDKMathQuad.add(denominator, ABDKMathQuad.fromUInt(1));
+        bytes16 wz = ABDKMathQuad.mul(wabd, zabd);
+        bytes16 nominator = ABDKMathQuad.mul(wabd, xabd);
+        bytes16 xsqr = ABDKMathQuad.mul(xabd, xabd);
+        
+        bytes16 denominator = ABDKMathQuad.add(xsqr, wz);
+        denominator = ABDKMathQuad.sqrt(denominator);
 
         bytes16 value = ABDKMathQuad.div(nominator, denominator);
-        value = ABDKMathQuad.sub(value, wabd);
+        
         return ABDKMathQuad.toInt(value);
     }
 
@@ -168,61 +148,53 @@ contract RewardsManager is InitializableOwnable {
      * @param _x    Point
      * @return y    Value
      */
-    function integrateOnCurveSigmoid(int256 _x) public view returns(int256 y) {
+    function integrateOnSigmoidCurve(int256 _x) public view returns(int256 y) {
         require(_x >= 0, "x must be greater than equal to 0");
 
-        uint256 w = 100000;
-        uint256 p = 200000;
-
-        bytes16 precision = ABDKMathQuad.fromUInt(100000);
-
-        /*
-            r = p / precission / w
-            rx = r * x
-            wr = 2w / r
-            wx = w * x
-            value = ln(e ^ (rx) + 1) * wr - wx
-        */
+        uint256 w = maxValue;
+        uint256 z = slope;
 
         bytes16 wabd = ABDKMathQuad.fromUInt(w);
-        bytes16 rabd = ABDKMathQuad.div(
-            ABDKMathQuad.fromUInt(p),
-            precision
-        );
-        rabd = ABDKMathQuad.div(rabd, wabd);
-
+        bytes16 zabd = ABDKMathQuad.fromUInt(z);
         bytes16 xabd = ABDKMathQuad.fromInt(_x);
 
-        bytes16 rx = ABDKMathQuad.mul(rabd, xabd);
-
-        bytes16 wr = ABDKMathQuad.add(wabd, wabd);
-        wr = ABDKMathQuad.div(wr, rabd);
+        bytes16 wz = ABDKMathQuad.mul(wabd, zabd);
+        bytes16 xsqr = ABDKMathQuad.mul(xabd, xabd);
         
-        bytes16 wx = ABDKMathQuad.mul(wabd, xabd);
-        bytes16 value = ABDKMathQuad.exp(rx);
-        value = ABDKMathQuad.add(value, ABDKMathQuad.fromUInt(1));
-        value = ABDKMathQuad.ln(value);
-        value = ABDKMathQuad.mul(value, wr);
-        value = ABDKMathQuad.sub(value, wx);
+        bytes16 wzsqrt =ABDKMathQuad.sqrt(wz);
 
-        console.log("calka");
-        console.logInt(ABDKMathQuad.toInt(value));
+        bytes16 value = ABDKMathQuad.add(xsqr, wz);
+        value = ABDKMathQuad.sqrt(value);
+        value = ABDKMathQuad.sub(value, wzsqrt);
+        value = ABDKMathQuad.mul(value, wabd);
 
         return ABDKMathQuad.toInt(value);
     }
 
     // Getters
 
-    function getACurveDenominator () public view returns(int256) {
-        return aCurveDenominator;
+    function getMaxValue () public view returns(uint256) {
+        return maxValue;
+    }
+
+    function getSlope () public view returns(uint256) {
+        return slope;
     }
 
     // Governance
 
-    function setACurveDenominator (int256 _aCurveDenominator) public onlyOwner {
-        require(_aCurveDenominator > 0, "x^2/A: A must be greater than zero.");
-        aCurveDenominator = _aCurveDenominator;
+    function setMaxValue (uint256 _maxValue) public onlyOwner {
+        require(_maxValue > 0, "max value must be greater than 0");
+        maxValue = _maxValue;
 
-        emit ADenominatorChanged(_aCurveDenominator);
+        emit CurveParametersChanged(_maxValue, slope);
+    }
+
+
+    function setSlope (uint256 _slope) public onlyOwner {
+        require(_slope > 0, "slope must be greater than 0");
+        slope = _slope;
+
+        emit CurveParametersChanged(maxValue, _slope);
     }
 }

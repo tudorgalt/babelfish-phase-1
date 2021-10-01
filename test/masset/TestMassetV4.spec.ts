@@ -7,7 +7,7 @@ import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { Fees } from "types";
 import { MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance, MassetV4Instance, BasketManagerV4Instance, RewardsVaultInstance } from "types/generated";
-import { calculateCurve, createBasketManagerV3, createToken, upgradeBasketManagerToV4 } from "./utils";
+import { calculateCurve, createBasketManagerV3, createToken, MAX_VALUE, SLOPE, upgradeBasketManagerToV4 } from "./utils";
 
 const { expect } = envSetup.configure();
 
@@ -25,7 +25,6 @@ const BasketManagerProxy = artifacts.require("BasketManagerProxy");
 
 let standardAccounts: StandardAccounts;
 
-const A_CURVE_DENOMINATOR = new BN(1000);
 const INITIAL_RATIOS = [500, 500];
 
 const standardFees: Fees = {
@@ -653,7 +652,7 @@ contract("MassetV4", async (accounts) => {
                 const redeemSum = tokens(INITIAL_RATIOS[0] / 4);
 
                 const expectedFee = redeemSum.mul(standardFees.withdrawal).div(FEE_PRECISION);
-                
+
                 const deviationBefore = new BN(100);
                 const deviationAfter = new BN(55);
                 const expectedReward = calculateCurve(deviationAfter).sub(calculateCurve(deviationBefore)).neg();
@@ -712,14 +711,14 @@ contract("MassetV4", async (accounts) => {
                 let mintedMassets = calculated[0];
 
                 mintedMassets = mintedMassets.sub(mintFee);
-                
+
                 let balance = await token.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.equal(mintedMassets);
 
-                
+
                 balance = await initialBassets.mockToken1.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.equal(initialBalance.sub(bassetsLeft));
-                
+
                 const withdrawalFee = mintedMassets.mul(standardFees.withdrawal).div(FEE_PRECISION);
                 const massetsSubFee = mintedMassets.sub(withdrawalFee);
                 const withdrawnBassets = massetsSubFee.div(factor.abs());
@@ -1067,9 +1066,9 @@ contract("MassetV4", async (accounts) => {
             { // ----- redeem of 2 basset (should be punished) -----
                 const amount = tokens(3);
                 const fee = amount.mul(standardFees.withdrawal).div(FEE_PRECISION);
-                const deviationBefore = new BN(45);
-                const deviationAfter = new BN(44); // 503/1103
-                const punishment = calculateCurve(deviationAfter).sub(calculateCurve(deviationBefore)).neg();
+                const deviationBefore = new BN(46);
+                const deviationAfter = new BN(47); // 497/1097
+                const punishment = calculateCurve(deviationAfter).sub(calculateCurve(deviationBefore));
 
                 const [bassetAmount, massetsTaken] = await masset.calculateRedeemRatio(initialBassets.mockToken2.address, amount);
 
@@ -1259,7 +1258,10 @@ contract("MassetV4", async (accounts) => {
                 from: standardAccounts.dummy2,
             });
 
-            const reward = new BN(41666); // punishment for withdrawal that will run pool out of balance
+            const deviationBefore = new BN(0);
+            const deviationAfter = new BN(-500);
+            const reward = calculateCurve(deviationBefore).sub(calculateCurve(deviationAfter)).neg(); // punishment for withdrawal that will run pool out of balance
+
             const withdrawalFee = amount.mul(standardFees.withdrawal).div(FEE_PRECISION);
 
             const expectedReminder = amount.sub(withdrawalFee).sub(reward).mod(basset2Factor);
@@ -1343,7 +1345,7 @@ async function initSystem({ massetConfig, basketManagerConfig }: InitSystemArg) 
     const rewardsManager = await RewardsManager.new();
     const feesManager = await FeesManager.new();
 
-    await rewardsManager.initialize(A_CURVE_DENOMINATOR);
+    await rewardsManager.initialize(MAX_VALUE, SLOPE);
     await rewardsVault.initialize();
     await feesManager.initialize(
         fees.deposit,
