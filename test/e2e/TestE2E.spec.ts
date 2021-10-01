@@ -107,7 +107,8 @@ contract("E2E test", async (accounts) => {
         const redeemFee = redeemAmount.mul(redeemFeePromil).div(FEE_PRECISION);
         const [deviationBeforeRedeem, deviationAfterRedeem] = await basketManagerMock.getBassetRatioDeviation(basset1, depositAmount, false);
         const redeemReward = await rewardsManagerMock.calculateReward(deviationBeforeRedeem, deviationAfterRedeem, false);
-        const [redeemedBassets] = await basketManagerMock.convertMassetToBassetQuantity(basset1, redeemAmount.sub(redeemFee).add(redeemReward));
+        const massetsToTake = redeemAmount.sub(redeemFee).add(redeemReward);
+        const [redeemedBassets, takenMassets] = await basketManagerMock.convertMassetToBassetQuantity(basset1, massetsToTake);
 
         await token.approve(massetMock.address, redeemAmount);
         await massetMock.redeem(basset1, redeemAmount);
@@ -116,6 +117,8 @@ contract("E2E test", async (accounts) => {
 
         const basset1BalanceAfterRedeem = await basset1Token.balanceOf(sa.default);
         const massetBalanceAfterRedeem = await token.balanceOf(sa.default);
+
+        const reminder = massetsToTake.sub(takenMassets);
 
         expect(basset1BalanceAfterRedeem).bignumber.to.eq(
             basset1BalanceAfterDeposit.add(redeemedBassets),
@@ -130,7 +133,7 @@ contract("E2E test", async (accounts) => {
             "proper rewards distribution"
         );
         expect(massetBalanceAfterRedeem).bignumber.to.eq(
-            massetBalanceAfterDeposit.sub(redeemAmount),
+            massetBalanceAfterDeposit.sub(redeemAmount).add(reminder),
             "masset balance is invalid"
         );
 

@@ -24,7 +24,8 @@ const RewardsManagerProxy = artifacts.require("RewardsManagerProxy");
 
 const logger = new Logs().showInConsole(true);
 
-const A_CURVE_DENOMINATOR = 1000;
+const MAX_VALUE = 100000;
+const SLOPE = 900;
 
 const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatRuntimeEnvironment) => {
     logger.info("Starting upgrade to v4 migration");
@@ -85,7 +86,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
         const rewardsManagerFake = await RewardsManager.at(rewardsManagerProxy.address);
 
         await conditionalInitialize(`${symbol}_RewardsManager`,
-            async () => { await rewardsManagerFake.initialize(A_CURVE_DENOMINATOR); }
+            async () => { await rewardsManagerFake.initialize(MAX_VALUE, SLOPE); }
         );
 
         const massetV4 = await conditionalDeploy({

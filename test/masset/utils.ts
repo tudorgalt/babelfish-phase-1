@@ -1,3 +1,4 @@
+import { BN } from "@utils/tools";
 import { BasketManagerProxyInstance, BasketManagerV3Instance, BasketManagerV4Instance } from "types/generated";
 
 const Token = artifacts.require("Token");
@@ -44,9 +45,37 @@ export const upgradeBasketManagerToV4 = async (
     const basketManagerV4 = await BasketManagerV4.new(txDetails);
 
     await proxy.upgradeTo(basketManagerV4.address, { from: admin });
-    
+
     const basketManagerV4Mock = await BasketManagerV4.at(proxy.address);
     await basketManagerV4Mock.initialize(ratios);
 
     return basketManagerV4Mock;
 };
+
+export const MAX_VALUE = new BN(1000);
+export const SLOPE = new BN(900);
+
+const calculateSigmoidCurve = (deviation: BN, maxValue = MAX_VALUE, slope = SLOPE) => {
+    const x = deviation.toNumber();
+
+    const w = maxValue.toNumber();
+    const z = slope.toNumber();
+
+    let value = w * (Math.sqrt(x * x + w * z) - Math.sqrt(w * z));
+    value = Math.floor(value);
+
+    return new BN(value);
+};
+
+const calculateSigmoidValue = (deviation: BN, maxValue = MAX_VALUE, slope = SLOPE) => {
+    const x = deviation.toNumber();
+    const w = maxValue.toNumber();
+    const z = slope.toNumber();
+
+    const value = w * x / Math.sqrt(x * x + w * z);
+    return new BN(value);
+};
+
+
+export const calculateCurve = calculateSigmoidCurve;
+export const calculateCurveValue = calculateSigmoidValue;
