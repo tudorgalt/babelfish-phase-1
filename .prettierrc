@@ -1,6 +1,6 @@
 # .prettierrc
-printWidth: 100
+printWidth: 140
 parser: typescript
 tabWidth: 4
-trailingComma: all
+trailingComma: none
 arrowParens: always
