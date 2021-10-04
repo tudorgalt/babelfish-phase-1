@@ -26,6 +26,7 @@ const logger = new Logs().showInConsole(true);
 
 const MAX_VALUE = 100000;
 const SLOPE = 900;
+const RATIO_PRECISION = 10000000000;
 
 const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatRuntimeEnvironment) => {
     logger.info("Starting upgrade to v4 migration");
@@ -86,7 +87,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
         const rewardsManagerFake = await RewardsManager.at(rewardsManagerProxy.address);
 
         await conditionalInitialize(`${symbol}_RewardsManager`,
-            async () => { await rewardsManagerFake.initialize(MAX_VALUE, SLOPE); }
+            async () => { await rewardsManagerFake.initialize(MAX_VALUE, SLOPE, RATIO_PRECISION); }
         );
 
         const massetV4 = await conditionalDeploy({
@@ -118,7 +119,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
         const basketManagerProxy = await BasketManagerProxy.at(basketManagerFake.address);
 
         await basketManagerProxy.upgradeTo(basketManagerV4.address, { from: _admin });
-        await basketManagerFake.initialize(addressesForInstance.ratios);
+        await basketManagerFake.initialize(addressesForInstance.ratios, RATIO_PRECISION);
     }
 
     await upgradeInstance('ETHs', addressesForNetwork.ETHs);

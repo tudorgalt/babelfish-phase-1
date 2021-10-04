@@ -24,17 +24,17 @@ contract("RewardsManager", async (accounts) => {
 
         context("should fail", async () => {
             it("when it's called for the second time", async () => {
-                await rewardsManager.initialize(1000, 900, { from: sa.default });
-                await expectRevert(rewardsManager.initialize(1000, 900, { from: sa.default }), "already initialized");
+                await rewardsManager.initialize(1000, 900, 1000, { from: sa.default });
+                await expectRevert(rewardsManager.initialize(1000, 900, 1000, { from: sa.default }), "already initialized");
             });
             it("when maxValue and slope is equal to zero", async () => {
-                await expectRevert(rewardsManager.initialize(0, 0, { from: sa.default }), "max value must be greater than 0");
+                await expectRevert(rewardsManager.initialize(0, 0, 1000, { from: sa.default }), "max value must be greater than 0");
             });
         });
 
         context("shoud succeed", async () => {
             it("with proper aDenominator", async () => {
-                await rewardsManager.initialize(1000, 900, { from: sa.default });
+                await rewardsManager.initialize(1000, 900, 1000, { from: sa.default });
 
                 expect(await rewardsManager.getMaxValue()).bignumber.to.eq("1000");
                 expect(await rewardsManager.getSlope()).bignumber.to.eq("900");
@@ -45,19 +45,19 @@ contract("RewardsManager", async (accounts) => {
     describe("pointOnCurve", async () => {
         beforeEach(async () => {
             rewardsManager = await RewardsManager.new({ from: sa.default });
-            await rewardsManager.initialize(MAX_VALUE, SLOPE, { from: sa.default });
+            await rewardsManager.initialize(MAX_VALUE, SLOPE, 1000, { from: sa.default });
         });
 
         context("should calculate point on curve", async () => {
             const numberOfPoints = 8;
             const startingPoint = Math.floor(Math.random() * -2 * MAX_VALUE.toNumber());
+
             const step = Math.floor(4 * MAX_VALUE.toNumber() / numberOfPoints);
 
             let point = startingPoint;
 
             const checkValueForPoint = (_point: number) => {
-                const expectedValue = calculateCurveValue(new BN(_point));
-
+                const expectedValue = calculateCurveValue(new BN(_point), MAX_VALUE, SLOPE, 1000);
                 it(`Point ${_point} should equal ${expectedValue.toString()}`, async () => {
                     expect(await rewardsManager.pointOnCurve(_point)).bignumber.to.eq(
                         expectedValue,
@@ -77,7 +77,7 @@ contract("RewardsManager", async (accounts) => {
     describe("integrateOnCurve", async () => {
         beforeEach(async () => {
             rewardsManager = await RewardsManager.new({ from: sa.default });
-            await rewardsManager.initialize(MAX_VALUE, SLOPE, { from: sa.default });
+            await rewardsManager.initialize(MAX_VALUE, SLOPE, 1000, { from: sa.default });
         });
 
         context("should fail", async () => {
@@ -94,7 +94,7 @@ contract("RewardsManager", async (accounts) => {
             let point = 0;
 
             const checkIntegrateForPoint = (_point: number) => {
-                const expectedValue = calculateCurve(new BN(_point));
+                const expectedValue = calculateCurve(new BN(_point), MAX_VALUE, SLOPE, 1000);
 
                 it(`Point ${_point} should equal ${expectedValue.toString()}`, async () => {
                     expect(await rewardsManager.integrateOnCurve(_point)).bignumber.to.eq(
@@ -119,7 +119,7 @@ contract("RewardsManager", async (accounts) => {
     describe("segmentOnCurve", async () => {
         beforeEach(async () => {
             rewardsManager = await RewardsManager.new({ from: sa.default });
-            await rewardsManager.initialize(MAX_VALUE, SLOPE, { from: sa.default });
+            await rewardsManager.initialize(MAX_VALUE, SLOPE, 1000, { from: sa.default });
         });
 
         context("should calculate segment on curve", async () => {
@@ -131,7 +131,7 @@ contract("RewardsManager", async (accounts) => {
 
             const checkIntegrateForPoint = (_point: number) => {
                 const point2 = Math.floor(_point + Math.random() * step * 2 + 1);
-                const expectedValue = calculateCurve(new BN(point2)).sub(calculateCurve(new BN(_point)));
+                const expectedValue = calculateCurve(new BN(point2), MAX_VALUE, SLOPE, 1000).sub(calculateCurve(new BN(_point), MAX_VALUE, SLOPE, 1000));
 
                 it(`Segment from (${_point} to ${point2}) should equal ${expectedValue.toString()}`, async () => {
                     expect(await rewardsManager.segmentOnCurve(_point, point2)).bignumber.to.eq(
@@ -152,7 +152,7 @@ contract("RewardsManager", async (accounts) => {
     describe("calculateReward", async () => {
         beforeEach(async () => {
             rewardsManager = await RewardsManager.new({ from: sa.default });
-            await rewardsManager.initialize(MAX_VALUE, SLOPE, { from: sa.default });
+            await rewardsManager.initialize(MAX_VALUE, SLOPE, 1000, { from: sa.default });
         });
 
         context("should calculate deposit reward", async () => {
@@ -169,7 +169,7 @@ contract("RewardsManager", async (accounts) => {
                 } else {
                     point2 = Math.floor(_point - Math.random() * step * 2);
                 }
-                let expectedValue = calculateCurve(new BN(point2)).sub(calculateCurve(new BN(_point)));
+                let expectedValue = calculateCurve(new BN(point2), MAX_VALUE, SLOPE, 1000).sub(calculateCurve(new BN(_point), MAX_VALUE, SLOPE, 1000));
                 if (isAsc) {
                     expectedValue = expectedValue.neg();
                 }
@@ -205,7 +205,7 @@ contract("RewardsManager", async (accounts) => {
             let point = startingPoint;
 
             const checkValueForPoint = (_point: number) => {
-                const expectedValue = calculateCurveValue(new BN(_point)).neg();
+                const expectedValue = calculateCurveValue(new BN(_point), MAX_VALUE, SLOPE, 1000).neg();
 
                 it(`Point ${_point} should equal ${expectedValue.toString()}`, async () => {
                     expect(await rewardsManager.calculateReward(_point, _point, true)).bignumber.to.eq(
@@ -236,7 +236,7 @@ contract("RewardsManager", async (accounts) => {
                 } else {
                     point2 = Math.floor(_point - Math.random() * step * 2);
                 }
-                let expectedValue = calculateCurve(new BN(point2)).sub(calculateCurve(new BN(_point)));
+                let expectedValue = calculateCurve(new BN(point2), MAX_VALUE, SLOPE, 1000).sub(calculateCurve(new BN(_point), MAX_VALUE, SLOPE, 1000));
                 if (!isAsc) {
                     expectedValue = expectedValue.neg();
                 }
@@ -272,7 +272,7 @@ contract("RewardsManager", async (accounts) => {
             let point = startingPoint;
 
             const checkValueForPoint = (_point: number) => {
-                const expectedValue = calculateCurveValue(new BN(_point));
+                const expectedValue = calculateCurveValue(new BN(_point), MAX_VALUE, SLOPE, 1000);
 
                 it(`Point ${_point} should equal ${expectedValue.toString()}`, async () => {
                     expect(await rewardsManager.calculateReward(_point, _point, false)).bignumber.to.eq(

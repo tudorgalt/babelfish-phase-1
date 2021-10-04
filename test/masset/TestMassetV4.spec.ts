@@ -7,7 +7,7 @@ import { ZERO_ADDRESS, FEE_PRECISION, ZERO } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { Fees } from "types";
 import { MockBridgeInstance, MockERC20Instance, TokenInstance, FeesVaultInstance, MassetV4Instance, BasketManagerV4Instance, RewardsVaultInstance } from "types/generated";
-import { calculateCurve, createBasketManagerV3, createToken, MAX_VALUE, SLOPE, upgradeBasketManagerToV4 } from "./utils";
+import { calculateCurve, createBasketManagerV3, createToken, RATIO_PRECISION, MAX_VALUE, SLOPE, upgradeBasketManagerToV4 } from "./utils";
 
 const { expect } = envSetup.configure();
 
@@ -1345,7 +1345,7 @@ async function initSystem({ massetConfig, basketManagerConfig }: InitSystemArg) 
     const rewardsManager = await RewardsManager.new();
     const feesManager = await FeesManager.new();
 
-    await rewardsManager.initialize(MAX_VALUE, SLOPE);
+    await rewardsManager.initialize(MAX_VALUE, SLOPE, RATIO_PRECISION);
     await rewardsVault.initialize();
     await feesManager.initialize(
         fees.deposit,

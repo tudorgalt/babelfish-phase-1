@@ -19,6 +19,8 @@ export type CreateBasketV3Args = {
 
 export type UpgradeBasketToV4Args = Omit<CreateBasketV3Args, 'massetAddress'>;
 
+export const RATIO_PRECISION = 1000;
+
 export const createBasketManagerV3 = async (
     proxy: BasketManagerProxyInstance,
     config: CreateBasketV3Args
@@ -47,16 +49,17 @@ export const upgradeBasketManagerToV4 = async (
     await proxy.upgradeTo(basketManagerV4.address, { from: admin });
 
     const basketManagerV4Mock = await BasketManagerV4.at(proxy.address);
-    await basketManagerV4Mock.initialize(ratios);
+    await basketManagerV4Mock.initialize(ratios, RATIO_PRECISION);
 
     return basketManagerV4Mock;
 };
 
-export const MAX_VALUE = new BN(10000);
-export const SLOPE = new BN(9000000000);
+export const MAX_VALUE = new BN(1000);
+export const SLOPE = new BN(900);
 
-const calculateSigmoidCurve = (deviation: BN, maxValue = MAX_VALUE, slope = SLOPE) => {
-    const x = deviation.toNumber();
+const calculateSigmoidCurve = (deviation: BN, maxValue = MAX_VALUE, slope = SLOPE, deviationPresicion = RATIO_PRECISION) => {
+    let x = deviation.toNumber();
+    x /= (deviationPresicion / 1000);
 
     const w = maxValue.toNumber();
     const z = slope.toNumber();
@@ -67,9 +70,11 @@ const calculateSigmoidCurve = (deviation: BN, maxValue = MAX_VALUE, slope = SLOP
     return new BN(value);
 };
 
-const calculateSigmoidValue = (deviation: BN, maxValue = MAX_VALUE, slope = SLOPE) => {
-    const x = deviation.toNumber();
+const calculateSigmoidValue = (deviation: BN, maxValue = MAX_VALUE, slope = SLOPE, deviationPresicion = RATIO_PRECISION) => {
+    let x = deviation.toNumber();
+    x /= (deviationPresicion / 1000);
     const w = maxValue.toNumber();
+
     const z = slope.toNumber();
 
     const value = w * x / Math.sqrt(x * x + w * z);

@@ -14,6 +14,7 @@ contract RewardsManager is InitializableOwnable {
     using SignedSafeMath for int256;
 
     // State
+    uint256 public deviationPrecision;
 
     uint256 private maxValue;
     uint256 private slope;
@@ -33,16 +34,20 @@ contract RewardsManager is InitializableOwnable {
 
     /**
      * @dev Contract initializer.
-     * @param _maxValue     Max value of curve in point.
-     * @param _slope        Slope regulation value.
-
+     * @param _maxValue             Max value of curve in point.
+     * @param _slope                Slope regulation value.
+     * @param _deviationPrecision   Deviation precision. Should be the same as in BasketManagerv4.
     */
-    function initialize(uint256 _maxValue, uint256 _slope) external {
+    function initialize(uint256 _maxValue, uint256 _slope, uint256 _deviationPrecision) external {
         require(initialized == false, "already initialized");
+        require(_deviationPrecision >= 1000, "precision should be greater or equal to 1000");
+
         _initialize();
 
         setMaxValue(_maxValue);
         setSlope(_slope);
+        // we div by 1000 because we operate on promils
+        deviationPrecision = _deviationPrecision / 1000;
         initialized = true;
     }
 
@@ -130,6 +135,7 @@ contract RewardsManager is InitializableOwnable {
         bytes16 wabd = ABDKMathQuad.fromUInt(w);
         bytes16 zabd = ABDKMathQuad.fromUInt(z);
         bytes16 xabd = ABDKMathQuad.fromInt(_x);
+        xabd = ABDKMathQuad.div(xabd, ABDKMathQuad.fromUInt(deviationPrecision));
 
         bytes16 wz = ABDKMathQuad.mul(wabd, zabd);
         bytes16 nominator = ABDKMathQuad.mul(wabd, xabd);
@@ -157,6 +163,7 @@ contract RewardsManager is InitializableOwnable {
         bytes16 wabd = ABDKMathQuad.fromUInt(w);
         bytes16 zabd = ABDKMathQuad.fromUInt(z);
         bytes16 xabd = ABDKMathQuad.fromInt(_x);
+        xabd = ABDKMathQuad.div(xabd, ABDKMathQuad.fromUInt(deviationPrecision));
 
         bytes16 wz = ABDKMathQuad.mul(wabd, zabd);
         bytes16 xsqr = ABDKMathQuad.mul(xabd, xabd);

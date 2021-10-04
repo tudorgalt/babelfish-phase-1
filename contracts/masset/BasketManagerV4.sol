@@ -60,7 +60,6 @@ contract BasketManagerV4 is InitializableOwnable {
     event PausedChanged (address basset, bool paused);
 
     uint256 constant MAX_VALUE = 1000;
-    uint256 constant RATIO_PRECISION = 1000;
 
     // state
     string version;
@@ -72,6 +71,7 @@ contract BasketManagerV4 is InitializableOwnable {
     mapping(address => uint256) private maxMap;
     mapping(address => uint256) private targetRatioMap;
     mapping(address => bool) private pausedMap;
+    uint256 public ratioPrecision;
 
     // Modifiers
 
@@ -112,16 +112,17 @@ contract BasketManagerV4 is InitializableOwnable {
 
     /**
    * @dev Contract initializer.
-   * @param _targetRatios   array of targetRatios for existing bassets
+   * @param _targetRatios       Array of targetRatios for existing bassets
+   * @param _ratioPrecision     Precision of ratio. Should be the same as in RewardsManager.
    */
-    function initialize(uint256[] calldata _targetRatios) external {
+    function initialize(uint256[] calldata _targetRatios, uint256 _ratioPrecision) external {
         require(keccak256(bytes(version)) == keccak256(bytes("3.0")), "wrong version");
         require(_targetRatios.length == bassetsArray.length, "targetRatios array length does not match number of existing bassets");
 
         for (uint256 i; i < _targetRatios.length; i++) {
             setTargetRatio(bassetsArray[i], _targetRatios[i]);
         }
-
+        ratioPrecision = _ratioPrecision;
         version = "4.0";
     }
 
@@ -257,7 +258,7 @@ contract BasketManagerV4 is InitializableOwnable {
             return 0;
         }
 
-        return bassetBalanceInMasset.mul(RATIO_PRECISION).div(total);
+        return bassetBalanceInMasset.mul(ratioPrecision).div(total);
     }
 
     /**
@@ -289,7 +290,7 @@ contract BasketManagerV4 is InitializableOwnable {
     // Getters
 
     function getBassetTargetRatio(address _basset) public view validBasset(_basset) returns(uint256 ratio) {
-        return targetRatioMap[_basset].mul(RATIO_PRECISION.div(1000));
+        return targetRatioMap[_basset].mul(ratioPrecision.div(1000));
     }
 
     /**
