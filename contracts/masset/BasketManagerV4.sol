@@ -60,6 +60,7 @@ contract BasketManagerV4 is InitializableOwnable {
     event PausedChanged (address basset, bool paused);
 
     uint256 constant MAX_VALUE = 1000;
+    uint256 constant RATIO_PRECISION = 1000;
 
     // state
     string version;
@@ -242,7 +243,6 @@ contract BasketManagerV4 is InitializableOwnable {
         uint256 bassetBalance = IERC20(_basset).balanceOf(masset); // convert
         (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
-
         if (_isDeposit) {
             total = total.add(_offsetInMasset);
             bassetBalanceInMasset = bassetBalanceInMasset.add(_offsetInMasset);
@@ -257,7 +257,7 @@ contract BasketManagerV4 is InitializableOwnable {
             return 0;
         }
 
-        return bassetBalanceInMasset.mul(1000).div(total);
+        return bassetBalanceInMasset.mul(RATIO_PRECISION).div(total);
     }
 
     /**
@@ -265,7 +265,7 @@ contract BasketManagerV4 is InitializableOwnable {
      * @param  _basset      Address of basset to check ratio for
      * @param  _offsetInMasset       Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
      * @param  _isDeposit    Flag to determine offset direction(deposit/redeem).
-     * @return Numbers between -1000 and 1000. Represents deviation from target ratio.
+     * @return Numbers between -RATIO_PRECISION and RATIO_PRECISION. Represents deviation from target ratio.
      *         deviationBefore: current deviation
      *         deviationAfter:  deviation after deposit/redeem
      */
@@ -289,7 +289,7 @@ contract BasketManagerV4 is InitializableOwnable {
     // Getters
 
     function getBassetTargetRatio(address _basset) public view validBasset(_basset) returns(uint256 ratio) {
-        return targetRatioMap[_basset];
+        return targetRatioMap[_basset].mul(RATIO_PRECISION.div(1000));
     }
 
     /**

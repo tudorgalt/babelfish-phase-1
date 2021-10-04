@@ -130,7 +130,7 @@ contract("RewardsManager", async (accounts) => {
             let point = startingPoint;
 
             const checkIntegrateForPoint = (_point: number) => {
-                const point2 = Math.floor(_point + Math.random() * step * 2);
+                const point2 = Math.floor(_point + Math.random() * step * 2 + 1);
                 const expectedValue = calculateCurve(new BN(point2)).sub(calculateCurve(new BN(_point)));
 
                 it(`Segment from (${_point} to ${point2}) should equal ${expectedValue.toString()}`, async () => {
@@ -197,6 +197,31 @@ contract("RewardsManager", async (accounts) => {
             }
         });
 
+        context("should calculate deposit reward; deviationBefore == deviationAfter", async () => {
+            const numberOfPoints = 8;
+            const startingPoint = Math.floor(Math.random() * -2 * MAX_VALUE.toNumber());
+            const step = Math.floor(4 * MAX_VALUE.toNumber() / numberOfPoints);
+
+            let point = startingPoint;
+
+            const checkValueForPoint = (_point: number) => {
+                const expectedValue = calculateCurveValue(new BN(_point)).neg();
+
+                it(`Point ${_point} should equal ${expectedValue.toString()}`, async () => {
+                    expect(await rewardsManager.calculateReward(_point, _point, true)).bignumber.to.eq(
+                        expectedValue,
+                        `invalid value for ${_point}`
+                    );
+                });
+            };
+
+            for (let i = 0; i < numberOfPoints; i++) {
+                checkValueForPoint(point);
+
+                point += step;
+            }
+        });
+
         context("should calculate redeem reward", async () => {
             const numberOfPoints = 8;
             const startingPoint = Math.floor(Math.random() * -2 * MAX_VALUE.toNumber());
@@ -236,6 +261,31 @@ contract("RewardsManager", async (accounts) => {
                 checkIntegrateForPoint(reversePoint, false);
 
                 reversePoint -= step;
+            }
+        });
+
+        context("should calculate redeem reward; deviationBefore == deviationAfter", async () => {
+            const numberOfPoints = 8;
+            const startingPoint = Math.floor(Math.random() * -2 * MAX_VALUE.toNumber());
+            const step = Math.floor(4 * MAX_VALUE.toNumber() / numberOfPoints);
+
+            let point = startingPoint;
+
+            const checkValueForPoint = (_point: number) => {
+                const expectedValue = calculateCurveValue(new BN(_point));
+
+                it(`Point ${_point} should equal ${expectedValue.toString()}`, async () => {
+                    expect(await rewardsManager.calculateReward(_point, _point, false)).bignumber.to.eq(
+                        expectedValue,
+                        `invalid value for ${_point}`
+                    );
+                });
+            };
+
+            for (let i = 0; i < numberOfPoints; i++) {
+                checkValueForPoint(point);
+
+                point += step;
             }
         });
 

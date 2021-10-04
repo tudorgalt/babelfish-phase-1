@@ -52,8 +52,8 @@ export const upgradeBasketManagerToV4 = async (
     return basketManagerV4Mock;
 };
 
-export const MAX_VALUE = new BN(1000);
-export const SLOPE = new BN(900);
+export const MAX_VALUE = new BN(10000);
+export const SLOPE = new BN(9000000000);
 
 const calculateSigmoidCurve = (deviation: BN, maxValue = MAX_VALUE, slope = SLOPE) => {
     const x = deviation.toNumber();
