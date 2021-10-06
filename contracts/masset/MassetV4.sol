@@ -152,9 +152,9 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 _massetQuantity,
         bool _isDeposit
     ) internal view returns(int256 rewardAmount) {
-        (int256 deviationBefore, int256 deviationAfter) = basketManager.getBassetRatioDeviation(_basset, _massetQuantity, _isDeposit);
+        (uint256 deviation, uint256 deviationAfter, uint256 total, uint256 totalAfter) = basketManager.getBassetRatioDeviation(_basset, _massetQuantity, _isDeposit);
 
-        rewardAmount = rewardsManager.calculateReward(deviationBefore, deviationAfter, _isDeposit);
+        rewardAmount = rewardsManager.calculateReward(deviation, deviationAfter, total, totalAfter); // 
 
         if(rewardAmount < 0) {
             require(uint256(-rewardAmount) < _massetQuantity, "Insufficient balance to cover rewards."); // CO Z TYM !!!!!!!!, czy to na pewno powinno sie wywalac w metodze view?

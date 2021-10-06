@@ -228,40 +228,6 @@ contract BasketManagerV4 is InitializableOwnable {
     }
 
     /**
-     * @dev Calculate ratio of specyfic basset in basket
-     * @param  _basset      Address of basset to check ratio for
-     * @param  _offsetInMasset      Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
-     * @param  _isDeposit   Flag to determine offset direction(deposit/redeem).
-     * @return ratio        Ratio of basset to total of basset in promils
-     */
-    function getBassetRatio(
-        address _basset,
-        uint256 _offsetInMasset,
-        bool _isDeposit
-    ) public view validBasset(_basset) returns (uint256 ratio) {
-        uint256 total = getTotalMassetBalance();
-
-        uint256 bassetBalance = IERC20(_basset).balanceOf(masset); // convert
-        (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
-
-        if (_isDeposit) {
-            total = total.add(_offsetInMasset);
-            bassetBalanceInMasset = bassetBalanceInMasset.add(_offsetInMasset);
-        } else {
-            require(_offsetInMasset <= bassetBalanceInMasset, "balance is not sufficient");
-
-            total = total.sub(_offsetInMasset);
-            bassetBalanceInMasset = bassetBalanceInMasset.sub(_offsetInMasset);
-        }
-
-        if(total == 0) {
-            return 0;
-        }
-
-        return bassetBalanceInMasset.mul(ratioPrecision).div(total);
-    }
-
-    /**
      * @dev Calculate deviation from target ratio
      * @param  _basset      Address of basset to check ratio for
      * @param  _offsetInMasset       Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
@@ -274,17 +240,42 @@ contract BasketManagerV4 is InitializableOwnable {
         address _basset,
         uint256 _offsetInMasset,
         bool _isDeposit
-    ) public view returns(int256 deviationBefore, int256 deviationAfter) {
-        int256 targetRatio = int256(getBassetTargetRatio(_basset));
+    ) public view validBasset(_basset) returns (uint256 deviation, uint256 deviationWithOffset, uint256 total, uint256 totalWithOffset) {
+        uint256 total = getTotalMassetBalance();
+        uint256 totalWithOffset = _isDeposit
+            ? total.add(_offsetInMasset)
+            : total.sub(_offsetInMasset);
 
-        int256 currentRatio = int256(getBassetRatio(_basset, 0, _isDeposit));
+        uint256 sum = 0;
+        uint256 sumWithOffset = 0;
+        uint256 bassetCount = bassetsArray.length;
 
-        deviationBefore = currentRatio - targetRatio;
+        for(uint i=0; i<bassetCount; i++) {
+            address basset = bassetsArray[i];
+            uint256 balance = IERC20(basset).balanceOf(masset);
+            uint256 target = getBassetTargetRatio(basset);
+            (uint256 massetQuantity, ) = convertBassetToMassetQuantity(basset, balance);
 
-        int256 ratioAfterModification = int256(getBassetRatio(_basset, _offsetInMasset, _isDeposit));
-        deviationAfter = ratioAfterModification - targetRatio;
+            uint256 ratio = massetQuantity.mul(ratioPrecision).div(total);
+            uint256 deviation = target.sub(ratio);
+            sum = sum.add(deviation.mul(deviation));
 
-        return (deviationBefore, deviationAfter);
+            if (_basset == basset && _isDeposit) {
+                massetQuantity = massetQuantity.add(_offsetInMasset);
+            } else if(_basset == basset && !_isDeposit) {
+                require(_offsetInMasset <= massetQuantity, "balance is not sufficient");
+                massetQuantity = massetQuantity.sub(_offsetInMasset);
+            }
+
+            ratio = massetQuantity.mul(ratioPrecision).div(total);
+            deviation = target.sub(ratio);
+            sumWithOffset = sumWithOffset.add(deviation.mul(deviation));
+        }
+
+        uint256 deviation = sum.div(bassetCount);
+        uint256 deviationWithOffset = sumWithOffset.div(bassetCount);
+
+        return (deviation, deviationWithOffset, total, totalWithOffset);
     }
 
     // Getters

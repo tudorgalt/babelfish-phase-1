@@ -55,26 +55,28 @@ contract RewardsManager is InitializableOwnable {
 
     /**
      * @dev Calculate and return reward amount based on deviation before action and deviation after action.
-     * @param _deviationBefore      Deviation before action.
-     * @param _deviationAfter       Deviation after action.
-     * @param _isDeposit            Flag to determine action(mint/redeem).
-     * @return reward               Calculated reward amount.
+     * @param _deviation        Deviation before action.
+     * @param _deviationAfter   Deviation after action.
+     * @param _total            Total pool amount before action.
+     * @param _totalAfter       Total pool amount after action.
+     * @return reward           Calculated reward amount.
      */
-    function calculateReward(int256 _deviationBefore, int256 _deviationAfter, bool _isDeposit) public view returns(int256 reward) {
+    function calculateReward(uint256 _deviation, uint256 _deviationAfter, uint256 _total, uint256 _totalAfter) public view returns(int256 reward) {
         require(initialized, "not initialized");
 
-        int256 y = 0;
-        if (_deviationBefore == _deviationAfter) {
-            y = pointOnCurve(_deviationBefore);
-        }else if(_deviationBefore > _deviationAfter) {
-            y = segmentOnCurve(_deviationAfter, _deviationBefore);
-        }else {
-            y = segmentOnCurve(_deviationBefore, _deviationAfter);
-        }
+        return 0;
+        // int256 y = 0;
+        // if (_deviationBefore == _deviationAfter) {
+        //     y = pointOnCurve(_deviationBefore);
+        // }else if(_deviationBefore > _deviationAfter) {
+        //     y = segmentOnCurve(_deviationAfter, _deviationBefore);
+        // }else {
+        //     y = segmentOnCurve(_deviationBefore, _deviationAfter);
+        // }
 
-        int256 ammount = y;
+        // int256 ammount = y;
 
-        return _isDeposit ? -ammount : ammount;
+        // return _isDeposit ? -ammount : ammount;
     }
 
     /**
