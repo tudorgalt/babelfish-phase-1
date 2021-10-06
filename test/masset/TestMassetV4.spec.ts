@@ -1,3 +1,5 @@
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-plusplus */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { expectRevert, expectEvent } from "@openzeppelin/test-helpers";
@@ -203,6 +205,51 @@ contract("MassetV4", async (accounts) => {
                 expect(rewardsvaultBalance).bignumber.to.eq(
                     expectedReward,
                     "rewards vault should be empty"
+                );
+            });
+
+            it.only("lots of deposits with small amount", async () => {
+                const depositor = standardAccounts.other;
+                const amount = new BN(10);
+                const numberOfDeposits = 10;
+
+                const { initialFeesVaultBalance } = await initializePool(initialBassets, masset, [1, 1], feesVault, rewardsVault, [600, 400]);
+
+                const totalDepositSum = amount.mul(new BN(numberOfDeposits));
+                const expected1DepositFee = totalDepositSum.mul(standardFees.deposit).div(FEE_PRECISION);
+
+                await initialBassets.mockToken1.mint(depositor, totalDepositSum, { from: standardAccounts.default });
+                await initialBassets.mockToken2.mint(depositor, totalDepositSum, { from: standardAccounts.default });
+
+                // make first deposit to get some funds in vault and make pool unbalanced
+                await initialBassets.mockToken1.approve(masset.address, totalDepositSum, { from: depositor });
+                await masset.mint(initialBassets.mockToken1.address, totalDepositSum, { from: depositor });
+
+                expect((await token.balanceOf(rewardsVault.address)).gt(ZERO)).to.eq(
+                    true,
+                    "Punishment for deposit of first basset should be greater than 0"
+                );
+
+                // make couple of small deposits
+                await initialBassets.mockToken2.approve(masset.address, amount.mul(new BN(numberOfDeposits)), { from: depositor });
+                for (let i = 0; i< numberOfDeposits; i++) {
+                    await masset.mint(initialBassets.mockToken2.address, amount, { from: depositor });
+                }
+
+                // check balances
+                expect(await token.balanceOf(rewardsVault.address)).bignumber.eq(
+                    ZERO,
+                    "Punishment for deposit of first basset should be equal to sum of rewards for deposits of second basset"
+                );
+                expect(await token.balanceOf(feesVault.address)).bignumber.to.eq(
+                    initialFeesVaultBalance.add(expected1DepositFee),
+                    "Fees should be collected only for first deposit. Amount of next ones is too small"
+                );
+                expect(await token.balanceOf(depositor)).bignumber.to.eq(
+                    totalDepositSum
+                        .add(totalDepositSum)
+                        .sub(expected1DepositFee),
+                    "Should get proper amount of tokens"
                 );
             });
         });
