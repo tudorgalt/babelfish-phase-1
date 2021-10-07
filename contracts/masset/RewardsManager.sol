@@ -14,10 +14,8 @@ contract RewardsManager is InitializableOwnable {
     using SignedSafeMath for int256;
 
     // State
-    uint256 public deviationPrecision;
-
-    uint256 private maxValue;
-    uint256 private slope;
+    bytes16 public deviationPrecision;
+    bytes16 private slope;
 
     bool initialized;
 
@@ -25,29 +23,26 @@ contract RewardsManager is InitializableOwnable {
 
     /**
      * @dev Emitted when curve parameters has changed.
-     * @param maxValue  New max value parameter.
-     * @param slope     New slope parameter.
+     * @param slope  New curve parameter.
      */
-    event CurveParametersChanged(uint256 maxValue, uint256 slope);
+    event CurveParametersChanged(uint256 slope);
 
     // Initializer
 
     /**
      * @dev Contract initializer.
-     * @param _maxValue             Max value of curve in point.
-     * @param _slope                Slope regulation value.
+     * @param _slope                Slope regulation value. In thousands parts.
      * @param _deviationPrecision   Deviation precision. Should be the same as in BasketManagerv4.
     */
-    function initialize(uint256 _maxValue, uint256 _slope, uint256 _deviationPrecision) external {
+    function initialize(uint256 _slope, uint256 _deviationPrecision) external {
         require(initialized == false, "already initialized");
         require(_deviationPrecision >= 1000, "precision should be greater or equal to 1000");
 
         _initialize();
 
-        setMaxValue(_maxValue);
         setSlope(_slope);
         // we div by 1000 because we operate on promils
-        deviationPrecision = _deviationPrecision / 1000;
+        deviationPrecision = ABDKMathQuad.fromUInt(_deviationPrecision / 1000);
         initialized = true;
     }
 
@@ -64,146 +59,52 @@ contract RewardsManager is InitializableOwnable {
     function calculateReward(uint256 _deviation, uint256 _deviationAfter, uint256 _total, uint256 _totalAfter) public view returns(int256 reward) {
         require(initialized, "not initialized");
 
-        return 0;
-        // int256 y = 0;
-        // if (_deviationBefore == _deviationAfter) {
-        //     y = pointOnCurve(_deviationBefore);
-        // }else if(_deviationBefore > _deviationAfter) {
-        //     y = segmentOnCurve(_deviationAfter, _deviationBefore);
-        // }else {
-        //     y = segmentOnCurve(_deviationBefore, _deviationAfter);
-        // }
+        bytes16 value = calculateValue(_deviation, _total);
+        bytes16 valueAfter = calculateValue(_deviationAfter, _totalAfter);
 
-        // int256 ammount = y;
+        bytes16 reward = ABDKMathQuad.sub(valueAfter, value);
 
-        // return _isDeposit ? -ammount : ammount;
+        return ABDKMathQuad.toInt(reward);
     }
+
+    // Internal
 
     /**
-     * @dev Calculate a surface area under a segment of a curve.
-     * @param _x1   From point
-     * @param _x2   To point
-     * @return y    Area
+     * @dev Calculate reward amount for certain deviation.
+     * @param _deviation        Deviation before action.
+     * @param _total            Total pool amount before action.
+     * @return reward           Calculated reward value.
      */
-    function segmentOnCurve(int256 _x1, int256 _x2) public view returns(int256 y) {
-        require(_x1 < _x2, "x1 must be less than x2");
+    function calculateValue(uint256 _deviation, uint256 _total) internal view returns(bytes16 value) {
+        bytes16 total = ABDKMathQuad.fromUInt(_total);
 
-        if(_x1 == 0) {
-            return integrateOnCurve(_x2);
-        }else if(_x2 == 0) {
-            return -integrateOnCurve(-_x1);
-        }else if(_x1 < 0 && _x2 > 0) {
-            int256 dx1 = integrateOnCurve(-_x1);
-            int256 dx2 = integrateOnCurve(_x2);
-            return dx2 - dx1;
-        }else if(_x1 < 0 && _x2 < 0) {
-            int256 dx2 = integrateOnCurve(-_x2);
-            int256 dx1 = integrateOnCurve(-_x1);
-            return -(dx1.sub(dx2));    
-        }
+        bytes16 deviation = ABDKMathQuad.fromUInt(_deviation);
+        deviation = ABDKMathQuad.div(deviation, deviationPrecision);
 
-        int256 dx1 = integrateOnCurve(_x1);
-        int256 dx2 = integrateOnCurve(_x2);
-        return dx2 - dx1;
-    }
+        bytes16 c = ABDKMathQuad.div(slope, ABDKMathQuad.fromUInt(1000));
 
-    /**
-     * @dev Calculate curve value at given point.
-     * @param _x    Point
-     * @return y    Value
-     */
-    function pointOnCurve(int256 _x) public view returns(int256 y) {
-        if(_x < 0) {
-            return -valueOnSigmoidCurve(-_x);
-        }
-        return valueOnSigmoidCurve(_x);
-    }
+        bytes16 denominator = ABDKMathQuad.fromUInt(1);
+        denominator = ABDKMathQuad.sub(denominator, deviation);
 
-    function integrateOnCurve(int256 _x) public view returns(int256 y) {
-        return integrateOnSigmoidCurve(_x);
-    }
-
-    /**
-     * @dev Calculate curve value at given point for x >= 0;
-     * @param _x    Point
-     * @return y    Value
-     */
-    function valueOnSigmoidCurve(int256 _x) public view returns(int256 y) {
-        require(_x >= 0, "x must be greater than equal to 0");
-
-        uint256 w = maxValue;
-        uint256 z = slope;
-
-        bytes16 wabd = ABDKMathQuad.fromUInt(w);
-        bytes16 zabd = ABDKMathQuad.fromUInt(z);
-        bytes16 xabd = ABDKMathQuad.fromInt(_x);
-        xabd = ABDKMathQuad.div(xabd, ABDKMathQuad.fromUInt(deviationPrecision));
-
-        bytes16 wz = ABDKMathQuad.mul(wabd, zabd);
-        bytes16 nominator = ABDKMathQuad.mul(wabd, xabd);
-        bytes16 xsqr = ABDKMathQuad.mul(xabd, xabd);
-        
-        bytes16 denominator = ABDKMathQuad.add(xsqr, wz);
-        denominator = ABDKMathQuad.sqrt(denominator);
+        bytes16 nominator = ABDKMathQuad.mul(c, total);
+        nominator = ABDKMathQuad.mul(nominator, deviation);
 
         bytes16 value = ABDKMathQuad.div(nominator, denominator);
-        
-        return ABDKMathQuad.toInt(value);
-    }
-
-    /**
-     * @dev Integrate curve value from x=0 to given point;
-     * @param _x    Point
-     * @return y    Value
-     */
-    function integrateOnSigmoidCurve(int256 _x) public view returns(int256 y) {
-        require(_x >= 0, "x must be greater than equal to 0");
-
-        uint256 w = maxValue;
-        uint256 z = slope;
-
-        bytes16 wabd = ABDKMathQuad.fromUInt(w);
-        bytes16 zabd = ABDKMathQuad.fromUInt(z);
-        bytes16 xabd = ABDKMathQuad.fromInt(_x);
-        xabd = ABDKMathQuad.div(xabd, ABDKMathQuad.fromUInt(deviationPrecision));
-
-        bytes16 wz = ABDKMathQuad.mul(wabd, zabd);
-        bytes16 xsqr = ABDKMathQuad.mul(xabd, xabd);
-        
-        bytes16 wzsqrt =ABDKMathQuad.sqrt(wz);
-
-        bytes16 value = ABDKMathQuad.add(xsqr, wz);
-        value = ABDKMathQuad.sqrt(value);
-        value = ABDKMathQuad.sub(value, wzsqrt);
-        value = ABDKMathQuad.mul(value, wabd);
-
-        return ABDKMathQuad.toInt(value);
+        return value;
     }
 
     // Getters
 
-    function getMaxValue () public view returns(uint256) {
-        return maxValue;
-    }
-
     function getSlope () public view returns(uint256) {
-        return slope;
+        return ABDKMathQuad.toUInt(slope);
     }
 
     // Governance
 
-    function setMaxValue (uint256 _maxValue) public onlyOwner {
-        require(_maxValue > 0, "max value must be greater than 0");
-        maxValue = _maxValue;
-
-        emit CurveParametersChanged(_maxValue, slope);
-    }
-
-
     function setSlope (uint256 _slope) public onlyOwner {
         require(_slope > 0, "slope must be greater than 0");
-        slope = _slope;
+        slope = ABDKMathQuad.fromUInt(_slope);
 
-        emit CurveParametersChanged(maxValue, _slope);
+        emit CurveParametersChanged( _slope);
     }
 }

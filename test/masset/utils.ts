@@ -54,33 +54,27 @@ export const upgradeBasketManagerToV4 = async (
     return basketManagerV4Mock;
 };
 
-export const MAX_VALUE = new BN(1000);
-export const SLOPE = new BN(900);
+export const SLOPE = new BN(400);
+export const SLOPE_PRECISION = new BN(1000);
+export const DEVIATION_PRECISION = new BN(1000);
 
-const calculateSigmoidCurve = (deviation: BN, maxValue = MAX_VALUE, slope = SLOPE, deviationPresicion = RATIO_PRECISION) => {
-    let x = deviation.toNumber();
-    x /= (deviationPresicion / 1000);
+// const calculateDeviation = (targetRatios: number[], ratios: number[]) => {
 
-    const w = maxValue.toNumber();
-    const z = slope.toNumber();
+// }
 
-    let value = w * (Math.sqrt(x * x + w * z) - Math.sqrt(w * z));
-    value = Math.floor(value);
+export const calculateValue = (deviation: number, total: number) => {
+    const c = SLOPE.toNumber() / SLOPE_PRECISION.toNumber();
+    const preciseDeviation = deviation / DEVIATION_PRECISION.toNumber();
 
-    return new BN(value);
+    const denominator = 1 - preciseDeviation;
+    const nominator = c * total * preciseDeviation;
+
+    return Math.floor(nominator / denominator);
 };
 
-const calculateSigmoidValue = (deviation: BN, maxValue = MAX_VALUE, slope = SLOPE, deviationPresicion = RATIO_PRECISION) => {
-    let x = deviation.toNumber();
-    x /= (deviationPresicion / 1000);
-    const w = maxValue.toNumber();
+export const calculateReward = (deviation: number, deviationAfter: number, total: number, totalAfter: number) => {
+    const value = calculateValue(deviation, total);
+    const valueAfter = calculateValue(deviationAfter, totalAfter);
 
-    const z = slope.toNumber();
-
-    const value = w * x / Math.sqrt(x * x + w * z);
-    return new BN(value);
+    return valueAfter - value;
 };
-
-
-export const calculateCurve = calculateSigmoidCurve;
-export const calculateCurveValue = calculateSigmoidValue;

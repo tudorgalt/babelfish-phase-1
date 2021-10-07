@@ -152,7 +152,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 _massetQuantity,
         bool _isDeposit
     ) internal view returns(int256 rewardAmount) {
-        (uint256 deviation, uint256 deviationAfter, uint256 total, uint256 totalAfter) = basketManager.getBassetRatioDeviation(_basset, _massetQuantity, _isDeposit);
+        (uint256 deviation, uint256 deviationAfter, uint256 total, uint256 totalAfter) = basketManager.getPoolDeviation(_basset, _massetQuantity, _isDeposit);
 
         rewardAmount = rewardsManager.calculateReward(deviation, deviationAfter, total, totalAfter); // 
 

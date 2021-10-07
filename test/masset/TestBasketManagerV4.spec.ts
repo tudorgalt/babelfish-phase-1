@@ -388,118 +388,143 @@ contract("BasketManagerV4", async (accounts) => {
         });
     });
 
-    describe("getBassetRatio", async () => {
-        beforeEach("before each", async () => {
-            mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
-            mockToken2 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
+    describe("getPoolDeviation", async () => {
+        let mockToken3: MockERC20Instance;
+        const targetRatios = [400, 400, 200];
+        const initialFactors = [1, 1, 1];
 
-            const bassets = [mockToken1.address, mockToken2.address];
+        beforeEach("before each", async () => {
+            // set perfect initial ratio
+            mockToken1 = await MockERC20.new("", "", 18, massetMock, tokens(40), { from: owner });
+            mockToken2 = await MockERC20.new("", "", 18, massetMock, tokens(40), { from: owner });
+            mockToken3 = await MockERC20.new("", "", 18, massetMock, tokens(20), { from: owner });
 
             basketManager = await initializeBasketManager({});
-
-            await basketManager.addBassets(bassets, factors, bridges, mins, maxs, ratios, pauses, { from: owner });
         });
-
-        context("should succeed", async () => {
-            beforeEach(async () => {
-                await mockToken1.giveMe(tokens(10), { from: massetMock });
-                await mockToken2.giveMe(tokens(10), { from: massetMock });
-            });
-
-            it("calculates ratio properly with no offset", async () => {
-                expect(await basketManager.getBassetRatio(mockToken1.address, 0, true)).bignumber.to.eq("500");
-                await mockToken2.giveMe(tokens(10), { from: massetMock });
-                expect(await basketManager.getBassetRatio(mockToken1.address, 0, true)).bignumber.to.eq("333");
-                await mockToken2.giveMe(tokens(36), { from: massetMock });
-                expect(await basketManager.getBassetRatio(mockToken1.address, 0, true)).bignumber.to.eq("151"); // 10/66 ~= 151
-                await mockToken2.giveMe(tokens(10000000), { from: massetMock });
-                expect(await basketManager.getBassetRatio(mockToken1.address, 0, true)).bignumber.to.eq("0");
-            });
-
-            it("calculates ratio properly in case of deposit with offset", async () => {
-                expect(await basketManager.getBassetRatio(mockToken1.address, tokens(10), true)).bignumber.to.eq("666");
-                await mockToken2.giveMe(tokens(10), { from: massetMock });
-                expect(await basketManager.getBassetRatio(mockToken1.address, tokens(1), true)).bignumber.to.eq("354"); // 11/31 ~= 354
-                await mockToken2.giveMe(tokens(36), { from: massetMock });
-                expect(await basketManager.getBassetRatio(mockToken1.address, tokens(100000), true)).bignumber.to.eq("999");
-            });
-
-            it("calculates ratio properly in case of redeem with offset", async () => {
-                expect(await basketManager.getBassetRatio(mockToken1.address, tokens(10), false)).bignumber.to.eq("0"); // withdrawal of all bassets
-                await mockToken2.giveMe(tokens(10), { from: massetMock });
-                expect(await basketManager.getBassetRatio(mockToken1.address, tokens(1), false)).bignumber.to.eq("310"); // 9/29 ~= 310
-            });
-        });
-
+        
         context("should fail", async () => {
-            it("when offset is greater than total", async () => {
-                await expectRevert(
-                    basketManager.getBassetRatio(mockToken1.address, tokens(10), false),
-                    "VM Exception while processing transaction: reverted with reason string 'balance is not sufficient'"
-                );
-            });
+            it("when offset is bigger than balance", async () => {
+                const bassets = [mockToken1.address, mockToken2.address, mockToken3.address];
+                await basketManager.addBassets(bassets, initialFactors, bridges, mins, maxs, targetRatios, pauses, { from: owner });
 
-            it("when offset is greater than bassetBalance", async () => {
-                await mockToken1.giveMe(tokens(1), { from: massetMock });
-                await mockToken2.giveMe(tokens(10), { from: massetMock });
+                await expectRevert(basketManager.getPoolDeviation(mockToken1.address, tokens(100), false), "dupa");
 
-                await expectRevert(
-                    basketManager.getBassetRatio(mockToken1.address, tokens(10), false),
-                    "VM Exception while processing transaction: reverted with reason string 'balance is not sufficient'"
-                );
             });
         });
     });
 
-    describe("getBassetRatioDeviation", async () => {
-        const targetRatios = [600, 400];
+    // describe("getBassetRatio", async () => {
+    //     beforeEach("before each", async () => {
+    //         mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
+    //         mockToken2 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
 
-        const checkDeviations = async (
-            token: string,
-            offset: BN | string | number,
-            expected: readonly [BN | string, BN | string],
-            isDeposit = true,
-            msg = ""
-        ) => {
-            const [before, after] = await basketManager.getBassetRatioDeviation(token, offset, isDeposit);
+    //         const bassets = [mockToken1.address, mockToken2.address];
 
-            expect(before).bignumber.to.eq(expected[0], `original deviation is invalid ${msg}`);
-            expect(after).bignumber.to.eq(expected[1], `offset deviation is invalid ${msg}`);
-        };
+    //         basketManager = await initializeBasketManager({});
 
-        beforeEach("before each", async () => {
-            mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
-            mockToken2 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
+    //         await basketManager.addBassets(bassets, factors, bridges, mins, maxs, ratios, pauses, { from: owner });
+    //     });
 
-            const bassets = [mockToken1.address, mockToken2.address];
-            basketManager = await initializeBasketManager({});
-            await basketManager.addBassets(bassets, factors, bridges, mins, maxs, targetRatios, pauses, { from: owner });
+    //     context("should succeed", async () => {
+    //         beforeEach(async () => {
+    //             await mockToken1.giveMe(tokens(10), { from: massetMock });
+    //             await mockToken2.giveMe(tokens(10), { from: massetMock });
+    //         });
 
-            // set perfect ratio at start
-            await mockToken1.giveMe(tokens(60), { from: massetMock });
-            await mockToken2.giveMe(tokens(40), { from: massetMock });
-        });
+    //         it("calculates ratio properly with no offset", async () => {
+    //             expect(await basketManager.getBassetRatio(mockToken1.address, 0, true)).bignumber.to.eq("500");
+    //             await mockToken2.giveMe(tokens(10), { from: massetMock });
+    //             expect(await basketManager.getBassetRatio(mockToken1.address, 0, true)).bignumber.to.eq("333");
+    //             await mockToken2.giveMe(tokens(36), { from: massetMock });
+    //             expect(await basketManager.getBassetRatio(mockToken1.address, 0, true)).bignumber.to.eq("151"); // 10/66 ~= 151
+    //             await mockToken2.giveMe(tokens(10000000), { from: massetMock });
+    //             expect(await basketManager.getBassetRatio(mockToken1.address, 0, true)).bignumber.to.eq("0");
+    //         });
 
-        it("calculates ratio deviation correctly", async () => {
-            await checkDeviations(mockToken1.address, 0, [ZERO, ZERO]);
+    //         it("calculates ratio properly in case of deposit with offset", async () => {
+    //             expect(await basketManager.getBassetRatio(mockToken1.address, tokens(10), true)).bignumber.to.eq("666");
+    //             await mockToken2.giveMe(tokens(10), { from: massetMock });
+    //             expect(await basketManager.getBassetRatio(mockToken1.address, tokens(1), true)).bignumber.to.eq("354"); // 11/31 ~= 354
+    //             await mockToken2.giveMe(tokens(36), { from: massetMock });
+    //             expect(await basketManager.getBassetRatio(mockToken1.address, tokens(100000), true)).bignumber.to.eq("999");
+    //         });
 
-            await mockToken1.giveMe(tokens(10), { from: massetMock }); // set ratio to 636
+    //         it("calculates ratio properly in case of redeem with offset", async () => {
+    //             expect(await basketManager.getBassetRatio(mockToken1.address, tokens(10), false)).bignumber.to.eq("0"); // withdrawal of all bassets
+    //             await mockToken2.giveMe(tokens(10), { from: massetMock });
+    //             expect(await basketManager.getBassetRatio(mockToken1.address, tokens(1), false)).bignumber.to.eq("310"); // 9/29 ~= 310
+    //         });
+    //     });
 
-            await checkDeviations(mockToken1.address, 0, ["36", "36"]);
+    //     context("should fail", async () => {
+    //         it("when offset is greater than total", async () => {
+    //             await expectRevert(
+    //                 basketManager.getBassetRatio(mockToken1.address, tokens(10), false),
+    //                 "VM Exception while processing transaction: reverted with reason string 'balance is not sufficient'"
+    //             );
+    //         });
 
-            await mockToken1.giveMe(tokens(1000030), { from: massetMock }); // set ratio to 999
+    //         it("when offset is greater than bassetBalance", async () => {
+    //             await mockToken1.giveMe(tokens(1), { from: massetMock });
+    //             await mockToken2.giveMe(tokens(10), { from: massetMock });
 
-            await checkDeviations(mockToken1.address, 0, ["399", "399"]);
-            await checkDeviations(mockToken2.address, 0, ["-400", "-400"]);
-        });
+    //             await expectRevert(
+    //                 basketManager.getBassetRatio(mockToken1.address, tokens(10), false),
+    //                 "VM Exception while processing transaction: reverted with reason string 'balance is not sufficient'"
+    //             );
+    //         });
+    //     });
+    // });
 
-        it("works fine with offset", async () => {
-            await checkDeviations(mockToken1.address, tokens(60), [ZERO, "-600"], false, "in case of withdrawal of all funds");
-            await checkDeviations(mockToken1.address, tokens(10), [ZERO, "-45"], false);  // 555 - 600
-            await checkDeviations(mockToken1.address, tokens(50), [ZERO, "133"], true);   // 733 - 600
-            await checkDeviations(mockToken1.address, tokens(10000000), [ZERO, "399"], true);  // 999 - 600
-        });
-    });
+    // describe("getBassetRatioDeviation", async () => {
+    //     const targetRatios = [600, 400];
+
+    //     const checkDeviations = async (
+    //         token: string,
+    //         offset: BN | string | number,
+    //         expected: readonly [BN | string, BN | string],
+    //         isDeposit = true,
+    //         msg = ""
+    //     ) => {
+    //         const [before, after] = await basketManager.getBassetRatioDeviation(token, offset, isDeposit);
+
+    //         expect(before).bignumber.to.eq(expected[0], `original deviation is invalid ${msg}`);
+    //         expect(after).bignumber.to.eq(expected[1], `offset deviation is invalid ${msg}`);
+    //     };
+
+    //     beforeEach("before each", async () => {
+    //         mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
+    //         mockToken2 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
+
+    //         const bassets = [mockToken1.address, mockToken2.address];
+    //         basketManager = await initializeBasketManager({});
+    //         await basketManager.addBassets(bassets, factors, bridges, mins, maxs, targetRatios, pauses, { from: owner });
+
+    //         // set perfect ratio at start
+    //         await mockToken1.giveMe(tokens(60), { from: massetMock });
+    //         await mockToken2.giveMe(tokens(40), { from: massetMock });
+    //     });
+
+    //     it("calculates ratio deviation correctly", async () => {
+    //         await checkDeviations(mockToken1.address, 0, [ZERO, ZERO]);
+
+    //         await mockToken1.giveMe(tokens(10), { from: massetMock }); // set ratio to 636
+
+    //         await checkDeviations(mockToken1.address, 0, ["36", "36"]);
+
+    //         await mockToken1.giveMe(tokens(1000030), { from: massetMock }); // set ratio to 999
+
+    //         await checkDeviations(mockToken1.address, 0, ["399", "399"]);
+    //         await checkDeviations(mockToken2.address, 0, ["-400", "-400"]);
+    //     });
+
+    //     it("works fine with offset", async () => {
+    //         await checkDeviations(mockToken1.address, tokens(60), [ZERO, "-600"], false, "in case of withdrawal of all funds");
+    //         await checkDeviations(mockToken1.address, tokens(10), [ZERO, "-45"], false);  // 555 - 600
+    //         await checkDeviations(mockToken1.address, tokens(50), [ZERO, "133"], true);   // 733 - 600
+    //         await checkDeviations(mockToken1.address, tokens(10000000), [ZERO, "399"], true);  // 999 - 600
+    //     });
+    // });
 
     describe("addBassets", async () => {
         beforeEach(async () => {
