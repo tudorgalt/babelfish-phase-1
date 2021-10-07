@@ -1,3 +1,4 @@
+/* eslint-disable no-plusplus */
 import { BN } from "@utils/tools";
 import { BasketManagerProxyInstance, BasketManagerV3Instance, BasketManagerV4Instance } from "types/generated";
 
@@ -19,7 +20,7 @@ export type CreateBasketV3Args = {
 
 export type UpgradeBasketToV4Args = Omit<CreateBasketV3Args, 'massetAddress'>;
 
-export const RATIO_PRECISION = 1000;
+export const RATIO_PRECISION = new BN(10 ** 10);
 
 export const createBasketManagerV3 = async (
     proxy: BasketManagerProxyInstance,
@@ -54,27 +55,40 @@ export const upgradeBasketManagerToV4 = async (
     return basketManagerV4Mock;
 };
 
-export const SLOPE = new BN(400);
+export const SLOPE = new BN(900);
 export const SLOPE_PRECISION = new BN(1000);
-export const DEVIATION_PRECISION = new BN(1000);
 
-// const calculateDeviation = (targetRatios: number[], ratios: number[]) => {
+export const calculateDeviation = (targetRatios: BN[], assets: BN[]) => {
+    let sum = new BN(0);
+    const total = assets.reduce((prev, curr) => prev.add(curr), new BN(0));
 
-// }
+    for (let i = 0; i < assets.length; i++) {
+        const asssetAmount = assets[i];
+        const ratio = asssetAmount.mul(RATIO_PRECISION).div(total);
 
-export const calculateValue = (deviation: number, total: number) => {
-    const c = SLOPE.toNumber() / SLOPE_PRECISION.toNumber();
-    const preciseDeviation = deviation / DEVIATION_PRECISION.toNumber();
+        const target = targetRatios[i].mul(RATIO_PRECISION).div(new BN(1000));
 
-    const denominator = 1 - preciseDeviation;
-    const nominator = c * total * preciseDeviation;
+        const deviation = target.sub(ratio);
+        sum = sum.add(deviation.mul(deviation));
+    }
 
-    return Math.floor(nominator / denominator);
+    const deviation = sum.div(new BN(targetRatios.length)).div(RATIO_PRECISION);
+
+    return { total, deviation };
 };
 
-export const calculateReward = (deviation: number, deviationAfter: number, total: number, totalAfter: number) => {
+export const calculateValue = (deviation: BN, total: BN) => {
+    const denominator = RATIO_PRECISION.sub(deviation);
+    const nominator = SLOPE.mul(total).mul(deviation);
+
+    const value = nominator.div(denominator).div(SLOPE_PRECISION);
+
+    return value;
+};
+
+export const calculateReward = (deviation: BN, deviationAfter: BN, total: BN, totalAfter: BN) => {
     const value = calculateValue(deviation, total);
     const valueAfter = calculateValue(deviationAfter, totalAfter);
 
-    return valueAfter - value;
+    return valueAfter.sub(value).neg();
 };

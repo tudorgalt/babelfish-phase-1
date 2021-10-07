@@ -6,7 +6,7 @@ import { expectRevert } from "@openzeppelin/test-helpers";
 import { BN } from "@utils/tools";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { RewardsManagerInstance } from "types/generated";
-import { SLOPE, DEVIATION_PRECISION, calculateReward } from "./utils";
+import { SLOPE, RATIO_PRECISION, calculateReward, calculateDeviation } from "./utils";
 
 const RewardsManager = artifacts.require("RewardsManager");
 
@@ -28,7 +28,10 @@ contract("RewardsManager", async (accounts) => {
                 await expectRevert(rewardsManager.initialize(400, 1000, { from: sa.default }), "already initialized");
             });
             it("when slope is equal to zero", async () => {
-                await expectRevert(rewardsManager.initialize(0, 1000, { from: sa.default }), "max value must be greater than 0");
+                await expectRevert(rewardsManager.initialize(0, 1000, { from: sa.default }), "slope must be > 0");
+            });
+            it("when precision is not a power of 10", async () => {
+                await expectRevert(rewardsManager.initialize(10, 55), "precision must be a power of 10");
             });
         });
 
@@ -43,145 +46,113 @@ contract("RewardsManager", async (accounts) => {
     describe("calculateReward", async () => {
         beforeEach(async () => {
             rewardsManager = await RewardsManager.new({ from: sa.default });
-            await rewardsManager.initialize(SLOPE, DEVIATION_PRECISION, { from: sa.default });
+            await rewardsManager.initialize(SLOPE, RATIO_PRECISION, { from: sa.default });
         });
 
-        context("should calculate deposit reward", async () => {
+        context("should calculate for 2 assets in pool, unbalanced pool", async () => {
             const numberOfPoints = 8;
-            const startingPoint = Math.floor(Math.random() * -2 * MAX_VALUE.toNumber());
-            const step = Math.floor(4 * MAX_VALUE.toNumber() / numberOfPoints);
+            const startingPoint = 0;
+            const maxValue = 1600;
+            const step = maxValue / numberOfPoints;
 
-            let point = startingPoint;
+            let depositValue = startingPoint;
 
-            const checkIntegrateForPoint = (_point: number, isAsc: boolean) => {
-                let point2 = 0;
-                if (isAsc) {
-                    point2 = Math.floor(_point + Math.random() * step * 2);
-                } else {
-                    point2 = Math.floor(_point - Math.random() * step * 2);
-                }
+            const targetRatios = [new BN(500), new BN(500)];
+            const checkIntegrateForPoint = (amount: BN) => {
+                const asset1Amount = new BN(maxValue);
+                const asset2Amount = new BN(700);
 
-                const deviaion = 
-                const total =
-                const deviationAfter =
-                const totalAfter = 
+                const {
+                    total,
+                    deviation
+                } = calculateDeviation(targetRatios, [asset1Amount, asset2Amount]);
 
-                const expectedValue = calculateReward(deviaion, deviationAfter, total, totalAfter);
+                const {
+                    total: totalAfter,
+                    deviation: deviationAfter
+                } = calculateDeviation(targetRatios, [asset1Amount.add(amount), asset2Amount]);
 
-                it(`${isAsc ? "Ascending" : "Descending"} deviation from (${_point} to ${point2}) should equal ${expectedValue.toString()}`, async () => {
-                    expect(await rewardsManager.calculateReward(deviaion, deviationAfter, total, totalAfter)).bignumber.to.eq(
+                const expectedValue = calculateReward(deviation, deviationAfter, total, totalAfter);
+
+                it(`${!amount.isNeg() ? "Ascending" : "Descending"} deviation from ${deviation.toString()} to ${deviationAfter.toString()} should equal ${expectedValue.toString()}
+                    (Assets amounts in pool: ${asset1Amount.add(amount).toString()}, ${asset2Amount.toString()}})
+                    `, async () => {
+                    expect(await rewardsManager.calculateReward(deviation, deviationAfter, total, totalAfter)).bignumber.to.eq(
                         expectedValue,
-                        `invalid value for (${_point} to ${point2})`
+                        "invalid value"
                     );
                 });
             };
 
-            for (let i = 0; i < numberOfPoints; i++) {
-                checkIntegrateForPoint(point, true);
+            // ----- deposit -----
+            for (let i = 0; i <= numberOfPoints; i++) {
+                checkIntegrateForPoint(new BN(depositValue));
 
-                point += step;
+                depositValue += step;
             }
 
-            let reversePoint = startingPoint * -1;
+            // ----- redeem -----
+            let redeemValue = startingPoint;
 
-            for (let i = 0; i < numberOfPoints; i++) {
-                checkIntegrateForPoint(reversePoint, false);
+            for (let i = 0; i <= numberOfPoints; i++) {
+                checkIntegrateForPoint(new BN(redeemValue));
 
-                reversePoint -= step;
+                redeemValue -= step;
             }
         });
 
-        //     context("should calculate deposit reward; deviationBefore == deviationAfter", async () => {
-        //         const numberOfPoints = 8;
-        //         const startingPoint = Math.floor(Math.random() * -2 * MAX_VALUE.toNumber());
-        //         const step = Math.floor(4 * MAX_VALUE.toNumber() / numberOfPoints);
+        context("should calculate for 3 assets in pool, unbalanced pool", async () => {
+            const numberOfPoints = 6;
+            const startingPoint = 0;
+            const maxValue = 600;
+            const step = maxValue / numberOfPoints;
 
-        //         let point = startingPoint;
+            let depositValue = startingPoint;
 
-        //         const checkValueForPoint = (_point: number) => {
-        //             const expectedValue = calculateCurveValue(new BN(_point), MAX_VALUE, SLOPE, 1000).neg();
+            const targetRatios = [new BN(300), new BN(300), new BN(400)];
+            const checkIntegrateForPoint = (amount: BN) => {
+                const asset1Amount = new BN(maxValue);
+                const asset2Amount = new BN(700);
+                const asset3Amount = new BN(800);
 
-        //             it(`Point ${_point} should equal ${expectedValue.toString()}`, async () => {
-        //                 expect(await rewardsManager.calculateReward(_point, _point, true)).bignumber.to.eq(
-        //                     expectedValue,
-        //                     `invalid value for ${_point}`
-        //                 );
-        //             });
-        //         };
+                const {
+                    total,
+                    deviation
+                } = calculateDeviation(targetRatios, [asset1Amount, asset2Amount, asset3Amount]);
 
-        //         for (let i = 0; i < numberOfPoints; i++) {
-        //             checkValueForPoint(point);
+                const {
+                    total: totalAfter,
+                    deviation: deviationAfter
+                } = calculateDeviation(targetRatios, [asset1Amount.add(amount), asset2Amount, asset3Amount]);
 
-        //             point += step;
-        //         }
-        //     });
+                const expectedValue = calculateReward(deviation, deviationAfter, total, totalAfter);
 
-        //     context("should calculate redeem reward", async () => {
-        //         const numberOfPoints = 8;
-        //         const startingPoint = Math.floor(Math.random() * -2 * MAX_VALUE.toNumber());
-        //         const step = Math.floor(4 * MAX_VALUE.toNumber() / numberOfPoints);
+                it(`${!amount.isNeg() ? "Ascending" : "Descending"} deviation from ${deviation.toString()} to ${deviationAfter.toString()} should equal ${expectedValue.toString()}
+                    (Assets amounts in pool: ${asset1Amount.add(amount).toString()}, ${asset2Amount.toString()}, ${asset3Amount.toString()})
+                    `, async () => {
+                    expect(await rewardsManager.calculateReward(deviation, deviationAfter, total, totalAfter)).bignumber.to.eq(
+                        expectedValue,
+                        "invalid value"
+                    );
+                });
+            };
 
-        //         let point = startingPoint;
+            // ----- deposit -----
+            for (let i = 0; i <= numberOfPoints; i++) {
+                checkIntegrateForPoint(new BN(depositValue));
 
-        //         const checkIntegrateForPoint = (_point: number, isAsc: boolean) => {
-        //             let point2 = 0;
-        //             if (isAsc) {
-        //                 point2 = Math.floor(_point + Math.random() * step * 2);
-        //             } else {
-        //                 point2 = Math.floor(_point - Math.random() * step * 2);
-        //             }
-        //             let expectedValue = calculateCurve(new BN(point2), MAX_VALUE, SLOPE, 1000).sub(calculateCurve(new BN(_point), MAX_VALUE, SLOPE, 1000));
-        //             if (!isAsc) {
-        //                 expectedValue = expectedValue.neg();
-        //             }
+                depositValue += step;
+            }
 
-        //             it(`${isAsc ? "Ascending" : "Descending"} deviation from (${_point} to ${point2}) should equal ${expectedValue.toString()}`, async () => {
-        //                 expect(await rewardsManager.calculateReward(_point, point2, false)).bignumber.to.eq(
-        //                     expectedValue,
-        //                     `invalid value for (${_point} to ${point2})`
-        //                 );
-        //             });
-        //         };
+            // ----- redeem -----
+            let redeemValue = startingPoint;
 
-        //         for (let i = 0; i < numberOfPoints; i++) {
-        //             checkIntegrateForPoint(point, true);
+            for (let i = 0; i <= numberOfPoints; i++) {
+                checkIntegrateForPoint(new BN(redeemValue));
 
-        //             point += step;
-        //         }
-
-        //         let reversePoint = startingPoint * -1;
-
-        //         for (let i = 0; i < numberOfPoints; i++) {
-        //             checkIntegrateForPoint(reversePoint, false);
-
-        //             reversePoint -= step;
-        //         }
-        //     });
-
-        //     context("should calculate redeem reward; deviationBefore == deviationAfter", async () => {
-        //         const numberOfPoints = 8;
-        //         const startingPoint = Math.floor(Math.random() * -2 * MAX_VALUE.toNumber());
-        //         const step = Math.floor(4 * MAX_VALUE.toNumber() / numberOfPoints);
-
-        //         let point = startingPoint;
-
-        //         const checkValueForPoint = (_point: number) => {
-        //             const expectedValue = calculateCurveValue(new BN(_point), MAX_VALUE, SLOPE, 1000);
-
-        //             it(`Point ${_point} should equal ${expectedValue.toString()}`, async () => {
-        //                 expect(await rewardsManager.calculateReward(_point, _point, false)).bignumber.to.eq(
-        //                     expectedValue,
-        //                     `invalid value for ${_point}`
-        //                 );
-        //             });
-        //         };
-
-        //         for (let i = 0; i < numberOfPoints; i++) {
-        //             checkValueForPoint(point);
-
-        //             point += step;
-        //         }
-        //     });
+                redeemValue -= step;
+            }
+        });
 
         context("should fail", async () => {
             it("in case it's not initialized", async () => {
@@ -189,6 +160,16 @@ contract("RewardsManager", async (accounts) => {
                 await expectRevert(
                     manager.calculateReward(1, 2, 10, 11),
                     "not initialized"
+                );
+            });
+
+            it("in case deviation is greater than 1", async () => {
+                rewardsManager = await RewardsManager.new();
+                await rewardsManager.initialize(SLOPE, 100);
+
+                await expectRevert(
+                    rewardsManager.calculateReward(50, 101, 100, 110),
+                    "deviaiton must be less than 1"
                 );
             });
         });

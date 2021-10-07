@@ -7,7 +7,7 @@ import envSetup from "@utils/env_setup";
 import { ZERO, ZERO_ADDRESS } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { BasketManagerV4Instance, MockERC20Instance } from "types/generated";
-import { createBasketManagerV3, CreateBasketV3Args, upgradeBasketManagerToV4 } from "./utils";
+import { createBasketManagerV3, CreateBasketV3Args, RATIO_PRECISION, upgradeBasketManagerToV4 } from "./utils";
 
 const MockERC20 = artifacts.require("MockERC20");
 const BasketManagerProxy = artifacts.require("BasketManagerProxy");
@@ -18,6 +18,8 @@ const { expect } = envSetup.configure();
 const tokens = (amount: string | number): BN => toWei(new BN(amount), 'ether');
 
 let sa: StandardAccounts;
+
+const TARGET_RATIO_PRECISION = new BN(1000);
 
 contract("BasketManagerV4", async (accounts) => {
     const [owner, user, massetMock] = accounts;
@@ -383,32 +385,52 @@ contract("BasketManagerV4", async (accounts) => {
                 expect((await basketManager.getFactor(mockToken1.address)).toString()).to.equal('1');
                 expect((await basketManager.getBridge(mockToken1.address)).toString()).to.equal(ZERO_ADDRESS);
                 expect((await basketManager.getPaused(mockToken1.address))).to.equal(false);
-                expect((await basketManager.getBassetTargetRatio(mockToken1.address))).bignumber.to.equal(new BN(500));
+                expect((await basketManager.getBassetTargetRatio(mockToken1.address))).bignumber.to.equal(new BN(500).mul(RATIO_PRECISION).div(TARGET_RATIO_PRECISION));
             });
         });
     });
 
     describe("getPoolDeviation", async () => {
-        let mockToken3: MockERC20Instance;
-        const targetRatios = [400, 400, 200];
-        const initialFactors = [1, 1, 1];
+        context("with 2 bassets in pool", async () => {
 
-        beforeEach("before each", async () => {
-            // set perfect initial ratio
-            mockToken1 = await MockERC20.new("", "", 18, massetMock, tokens(40), { from: owner });
-            mockToken2 = await MockERC20.new("", "", 18, massetMock, tokens(40), { from: owner });
-            mockToken3 = await MockERC20.new("", "", 18, massetMock, tokens(20), { from: owner });
-
-            basketManager = await initializeBasketManager({});
         });
-        
+
+        context("with 3 bassets in pool", async () => {
+            const targetRatios = [400, 400, 200];
+            const initialFactors = [1, 1, 1];
+            const initialMins = [10, 10, 10];
+            const initialMaxes = [100, 100];
+            const initialPauses = [false, false, false];
+            const initialBridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
+            let initialBassets: string[];
+
+            let mockToken3: MockERC20Instance;
+            
+            beforeEach("before each", async () => {
+                // set perfect initial ratio
+                mockToken1 = await MockERC20.new("", "", 18, massetMock, tokens(40), { from: owner });
+                mockToken2 = await MockERC20.new("", "", 18, massetMock, tokens(40), { from: owner });
+                mockToken3 = await MockERC20.new("", "", 18, massetMock, tokens(20), { from: owner });
+                initialBassets = [mockToken1.address, mockToken2.address, mockToken3.address];
+    
+                basketManager = await initializeBasketManager({});
+                await basketManager.addBassets(initialBassets, initialFactors, initialBridges, initialMins, initialMaxes, targetRatios, initialPauses);
+            });
+        });
+
         context("should fail", async () => {
-            it("when offset is bigger than balance", async () => {
-                const bassets = [mockToken1.address, mockToken2.address, mockToken3.address];
-                await basketManager.addBassets(bassets, initialFactors, bridges, mins, maxs, targetRatios, pauses, { from: owner });
+            beforeEach(async () => {
+                basketManager = await initializeBasketManager({});
+                mockToken1 = await MockERC20.new("", "", 18, massetMock, 40, { from: owner });
+                mockToken2 = await MockERC20.new("", "", 18, massetMock, 40, { from: owner });
+                await basketManager.addBassets([mockToken1.address, mockToken2.address], factors, bridges, mins, maxs, ratios, pauses, { from: owner });
+            });
 
-                await expectRevert(basketManager.getPoolDeviation(mockToken1.address, tokens(100), false), "dupa");
-
+            it("when offset is bigger than basket balance", async () => {
+                await expectRevert(basketManager.getPoolDeviation(mockToken1.address, tokens(100), false), "not enough funds in basket");
+            });
+            it("when offset is bigger than basket balance", async () => {
+                await expectRevert(basketManager.getPoolDeviation(mockToken1.address, tokens(50), false), "basset balance is not sufficient");
             });
         });
     });

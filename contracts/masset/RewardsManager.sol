@@ -1,9 +1,7 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import { SignedSafeMath } from "../helpers/SignedSafeMath.sol";
-import { ABDKMathQuad } from "../helpers/ABDKMathQuad.sol";
-
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 
 /**
@@ -11,11 +9,12 @@ import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
  * @dev Contract is responsible for rewards calculations using specified curves.
  */
 contract RewardsManager is InitializableOwnable {
-    using SignedSafeMath for int256;
+    using SafeMath for uint256;
 
     // State
-    bytes16 public deviationPrecision;
-    bytes16 private slope;
+    uint256 constant SLOPE_PRECISION = 1000;
+    uint256 public deviationPrecision;
+    uint256 private slope;
 
     bool initialized;
 
@@ -36,13 +35,12 @@ contract RewardsManager is InitializableOwnable {
     */
     function initialize(uint256 _slope, uint256 _deviationPrecision) external {
         require(initialized == false, "already initialized");
-        require(_deviationPrecision >= 1000, "precision should be greater or equal to 1000");
+        require(isPowerOfTen(_deviationPrecision), "precision must be a power of 10");
 
         _initialize();
 
         setSlope(_slope);
-        // we div by 1000 because we operate on promils
-        deviationPrecision = ABDKMathQuad.fromUInt(_deviationPrecision / 1000);
+        deviationPrecision = _deviationPrecision;
         initialized = true;
     }
 
@@ -59,12 +57,15 @@ contract RewardsManager is InitializableOwnable {
     function calculateReward(uint256 _deviation, uint256 _deviationAfter, uint256 _total, uint256 _totalAfter) public view returns(int256 reward) {
         require(initialized, "not initialized");
 
-        bytes16 value = calculateValue(_deviation, _total);
-        bytes16 valueAfter = calculateValue(_deviationAfter, _totalAfter);
+        uint256 value = calculateValue(_deviation, _total);
+        uint256 valueAfter = calculateValue(_deviationAfter, _totalAfter);
 
-        bytes16 reward = ABDKMathQuad.sub(valueAfter, value);
+        int256 reward = valueAfter > value
+            ? int256(valueAfter.sub(value))
+            : int256(-value.sub(valueAfter));
+        reward = -reward;
 
-        return ABDKMathQuad.toInt(reward);
+        return reward;
     }
 
     // Internal
@@ -75,35 +76,43 @@ contract RewardsManager is InitializableOwnable {
      * @param _total            Total pool amount before action.
      * @return reward           Calculated reward value.
      */
-    function calculateValue(uint256 _deviation, uint256 _total) internal view returns(bytes16 value) {
-        bytes16 total = ABDKMathQuad.fromUInt(_total);
+    function calculateValue(uint256 _deviation, uint256 _total) internal view returns(uint256 value) {
+        require(_deviation < deviationPrecision, "deviaiton must be less than 1");
 
-        bytes16 deviation = ABDKMathQuad.fromUInt(_deviation);
-        deviation = ABDKMathQuad.div(deviation, deviationPrecision);
+        uint256 nominator = slope.mul(_total).mul(_deviation);
+        uint256 denominator = deviationPrecision.sub(_deviation);
+        uint256 value = nominator.div(denominator).div(SLOPE_PRECISION);
 
-        bytes16 c = ABDKMathQuad.div(slope, ABDKMathQuad.fromUInt(1000));
-
-        bytes16 denominator = ABDKMathQuad.fromUInt(1);
-        denominator = ABDKMathQuad.sub(denominator, deviation);
-
-        bytes16 nominator = ABDKMathQuad.mul(c, total);
-        nominator = ABDKMathQuad.mul(nominator, deviation);
-
-        bytes16 value = ABDKMathQuad.div(nominator, denominator);
         return value;
+    }
+
+    /**
+     * @dev Returns true if the number is power of ten.
+     * @param x     Number to be checked.
+     * @return      Is the number power of ten.
+     */
+    function isPowerOfTen(uint256 x) public view returns (bool result) {
+        uint256 number = x;
+
+        while (number >= 10 && number % 10 == 0) {
+            number /= 10;
+        }
+
+        result = number == 1;
     }
 
     // Getters
 
     function getSlope () public view returns(uint256) {
-        return ABDKMathQuad.toUInt(slope);
+        return slope;
     }
 
     // Governance
 
     function setSlope (uint256 _slope) public onlyOwner {
-        require(_slope > 0, "slope must be greater than 0");
-        slope = ABDKMathQuad.fromUInt(_slope);
+        require(_slope > 0, "slope must be > 0");
+        require(_slope < SLOPE_PRECISION, "slope must be lesser than precision");
+        slope = _slope;
 
         emit CurveParametersChanged( _slope);
     }

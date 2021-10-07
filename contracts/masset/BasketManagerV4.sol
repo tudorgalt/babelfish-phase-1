@@ -60,6 +60,7 @@ contract BasketManagerV4 is InitializableOwnable {
     event PausedChanged (address basset, bool paused);
 
     uint256 constant MAX_VALUE = 1000;
+    uint256 constant TARGET_RATIO_PRECISION = 1000;
 
     // state
     string version;
@@ -118,6 +119,7 @@ contract BasketManagerV4 is InitializableOwnable {
     function initialize(uint256[] calldata _targetRatios, uint256 _ratioPrecision) external {
         require(keccak256(bytes(version)) == keccak256(bytes("3.0")), "wrong version");
         require(_targetRatios.length == bassetsArray.length, "targetRatios array length does not match number of existing bassets");
+        require(isPowerOfTen(int256(_ratioPrecision)));
 
         for (uint256 i; i < _targetRatios.length; i++) {
             setTargetRatio(bassetsArray[i], _targetRatios[i]);
@@ -255,6 +257,8 @@ contract BasketManagerV4 is InitializableOwnable {
         bool _isDeposit
     ) public view validBasset(_basset) returns (uint256 deviation, uint256 deviationWithOffset, uint256 total, uint256 totalWithOffset) {
         total = getTotalMassetBalance();
+        require(_offsetInMasset <= total, "not enough funds in basket");
+
         totalWithOffset = _isDeposit
             ? total.add(_offsetInMasset)
             : total.sub(_offsetInMasset);
@@ -272,7 +276,7 @@ contract BasketManagerV4 is InitializableOwnable {
             if (_basset == basset && _isDeposit) {
                 massetQuantity = massetQuantity.add(_offsetInMasset);
             } else if(_basset == basset && !_isDeposit) {
-                require(_offsetInMasset <= massetQuantity, "balance is not sufficient");
+                require(_offsetInMasset <= massetQuantity, "basset balance is not sufficient");
                 massetQuantity = massetQuantity.sub(_offsetInMasset);
             }
 
@@ -280,8 +284,8 @@ contract BasketManagerV4 is InitializableOwnable {
             sumWithOffset = sumWithOffset.add(deviation.mul(deviation));
         }
 
-        deviation = sum.div(bassetsArray.length);
-        deviationWithOffset = sumWithOffset.div(bassetsArray.length);
+        deviation = sum.div(bassetsArray.length).div(ratioPrecision);
+        deviationWithOffset = sumWithOffset.div(bassetsArray.length).div(ratioPrecision);
 
         return (deviation, deviationWithOffset, total, totalWithOffset);
     }
@@ -289,7 +293,7 @@ contract BasketManagerV4 is InitializableOwnable {
     // Getters
 
     function getBassetTargetRatio(address _basset) public view validBasset(_basset) returns(uint256 ratio) {
-        return targetRatioMap[_basset].mul(ratioPrecision.div(1000));
+        return targetRatioMap[_basset].mul(ratioPrecision.div(TARGET_RATIO_PRECISION));
     }
 
     /**
@@ -402,7 +406,7 @@ contract BasketManagerV4 is InitializableOwnable {
     }
 
     function setTargetRatio(address _basset, uint256 _ratio) public validBasset(_basset) onlyOwner {
-        require(_ratio < 1000, "ratio should be less than 1000%%");
+        require(_ratio < TARGET_RATIO_PRECISION, "ratio should be less than 1");
         targetRatioMap[_basset] = _ratio;
     }
 
