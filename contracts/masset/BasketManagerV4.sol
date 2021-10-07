@@ -15,6 +15,7 @@ import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 contract BasketManagerV4 is InitializableOwnable {
 
     using SafeMath for uint256;
+    uint256 constant MAX_PERMILLE = 1000;
 
     // Events
 
@@ -53,13 +54,18 @@ contract BasketManagerV4 is InitializableOwnable {
     event RangeChanged (address basset, uint256 min, uint256 max);
 
     /**
+     * @dev Event emitted when target weight changes.
+     * @param basset    Address of the bAsset contract.
+     * @param targetWeights New target weights
+     */
+    event TargetWeightChanged (address basset, uint256 targetWeights);
+
+    /**
      * @dev Event emitted when paused changes.
      * @param basset    Address of the bAsset contract.
      * @param paused    Determine if paused or not.
      */
     event PausedChanged (address basset, bool paused);
-
-    uint256 constant MAX_VALUE = 1000;
 
     // state
     string version;
@@ -69,9 +75,8 @@ contract BasketManagerV4 is InitializableOwnable {
     mapping(address => address) private bridgeMap;
     mapping(address => uint256) private minMap;
     mapping(address => uint256) private maxMap;
-    mapping(address => uint256) private targetRatioMap;
+    mapping(address => uint256) private targetWeightMap;
     mapping(address => bool) private pausedMap;
-    uint256 public ratioPrecision;
 
     // Modifiers
 
@@ -112,17 +117,8 @@ contract BasketManagerV4 is InitializableOwnable {
 
     /**
    * @dev Contract initializer.
-   * @param _targetRatios       Array of targetRatios for existing bassets
-   * @param _ratioPrecision     Precision of ratio. Should be the same as in RewardsManager.
    */
-    function initialize(uint256[] calldata _targetRatios, uint256 _ratioPrecision) external {
-        require(keccak256(bytes(version)) == keccak256(bytes("3.0")), "wrong version");
-        require(_targetRatios.length == bassetsArray.length, "targetRatios array length does not match number of existing bassets");
-
-        for (uint256 i; i < _targetRatios.length; i++) {
-            setTargetRatio(bassetsArray[i], _targetRatios[i]);
-        }
-        ratioPrecision = _ratioPrecision;
+    function initialize() external {
         version = "4.0";
     }
 
@@ -136,7 +132,25 @@ contract BasketManagerV4 is InitializableOwnable {
     }
 
     /**
-     * @dev Checks if ratio of bAssets in basket is within limits to make a deposit of specific asset.
+     * @dev Returns true if the number is power of ten.
+     * @param x     Number to be checked.
+     * @return      Is the number power of ten.
+     */
+    function isPowerOfTen(int256 x) public pure returns (bool result) {
+        uint256 number;
+
+        if (x < 0) number = uint256(-x);
+        else number = uint256(x);
+
+        while (number >= 10 && number % 10 == 0) {
+            number /= 10;
+        }
+
+        result = number == 1;
+    }
+
+    /**
+     * @dev Checks if weight of bAssets in basket is within limits to make a deposit of specific asset.
      * @param _basset           Address of bAsset to deposit.
      * @param _bassetQuantity   Amount of bAssets to deposit.
      * @return Flag indicating whether a deposit can be made.
@@ -147,18 +161,17 @@ contract BasketManagerV4 is InitializableOwnable {
 
         (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
         uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
+        (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
-        (uint256 totalBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
-
-        uint256 balance = totalBassetBalanceInMasset.add(massetQuantity);
-        uint256 total = getTotalMassetBalance().add(massetQuantity);
-        uint256 ratio = balance.mul(MAX_VALUE).div(total);
+        uint256 balance = bassetBalanceInMasset.add(massetQuantity);
+        uint256 total = getTotalBassetsInMasset().add(massetQuantity);
+        uint256 weight = balance.mul(MAX_PERMILLE).div(total);
         uint256 max = maxMap[_basset];
-        return ratio <= max;
+        return weight <= max;
     }
 
     /**
-     * @dev Checks if ratio of bAssets in basket is within limits to make a withdrawal of specific asset.
+     * @dev Checks if weight of bAssets in basket is within limits to make a withdrawal of specific asset.
      * @param _basset           Address of bAsset to redeem.
      * @param _bassetQuantity   Amount of bAssets to redeem.
      * @return Flag indicating whether a withdrawal can be made.
@@ -169,24 +182,24 @@ contract BasketManagerV4 is InitializableOwnable {
 
         (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
         uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
-        (uint256 totalBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
+        (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
-        require(totalBassetBalanceInMasset >= massetQuantity, "basset balance is not sufficient");
+        require(bassetBalanceInMasset >= massetQuantity, "basset balance is not sufficient");
 
-        uint256 balance = totalBassetBalanceInMasset.sub(massetQuantity);
-        uint256 total = getTotalMassetBalance().sub(massetQuantity);
+        uint256 balance = bassetBalanceInMasset.sub(massetQuantity);
+        uint256 total = getTotalBassetsInMasset().sub(massetQuantity);
 
         uint256 min = minMap[_basset];
         if (total == 0) return min == 0;
 
-        uint256 ratio = balance.mul(MAX_VALUE).div(total);
-        return ratio >= min;
+        uint256 weight = balance.mul(MAX_PERMILLE).div(total);
+        return weight >= min;
     }
 
     /**
      * @dev Converts bAsset to mAsset quantity. This is used to adjust precision.
-     *      Despite bAssets and mAssets having 1:1 ratio, they may have diffrent decimal factors.
-     *      Since the ratio may cause fractions, the bAsset is adjusted to match nearest non fraction amount and returned.
+     *      Despite bAssets and mAssets having 1:1 weight, they may have diffrent decimal factors.
+     *      Since the weight may cause fractions, the bAsset is adjusted to match nearest non fraction amount and returned.
      * @param _basset           Address of bAsset.
      * @param _bassetQuantity   Amount of bAssets to check.
      * @return Calculated amount of mAssets and Adjusted amount of bAssets.
@@ -207,8 +220,8 @@ contract BasketManagerV4 is InitializableOwnable {
 
     /**
      * @dev Converts mAsset to bAsset quantity. This is used to adjust precisions.
-     *      Despite bAssets and mAssets having 1:1 ratio, they may have diffrent decimal factors.
-     *      Since the ratio may cause fractions, the mAsset is adjusted to match nearest non fraction amount and returned.
+     *      Despite bAssets and mAssets having 1:1 weight, they may have diffrent decimal factors.
+     *      Since the weight may cause fractions, the mAsset is adjusted to match nearest non fraction amount and returned.
      * @param _basset           Address of bAsset.
      * @param _massetQuantity   Amount of mAssets to check.
      * @return Calculated amount of bAssets and Adjusted amount of mAssets.
@@ -228,81 +241,70 @@ contract BasketManagerV4 is InitializableOwnable {
     }
 
     /**
-     * @dev Calculate ratio of specyfic basset in basket
-     * @param  _basset      Address of basset to check ratio for
-     * @param  _offsetInMasset      Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
-     * @param  _isDeposit   Flag to determine offset direction(deposit/redeem).
-     * @return ratio        Ratio of basset to total of basset in promils
+     * @dev Calculate weight of a basset in basket
+     * @param  _basset      Address of basset to check weight for
+     * @param  _additionalAmount    Amount of tokens to deposit/redeem. Set to zero to check current weight.
+     * @return weight        Weight of basset to total of basset in permille
      */
-    function getBassetRatio(
+    function getBassetWeight(
         address _basset,
-        uint256 _offsetInMasset,
-        bool _isDeposit
-    ) public view validBasset(_basset) returns (uint256 ratio) {
-        uint256 total = getTotalMassetBalance();
+        uint256 _additionalAmount
+    ) public view validBasset(_basset) returns (uint256 weight) {
 
-        uint256 bassetBalance = IERC20(_basset).balanceOf(masset); // convert
-        (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
+        (uint256 additionalAmountInMasset, ) = convertBassetToMassetQuantity(_basset, _additionalAmount);
 
-        if (_isDeposit) {
-            total = total.add(_offsetInMasset);
-            bassetBalanceInMasset = bassetBalanceInMasset.add(_offsetInMasset);
-        } else {
-            require(_offsetInMasset <= bassetBalanceInMasset, "balance is not sufficient");
-
-            total = total.sub(_offsetInMasset);
-            bassetBalanceInMasset = bassetBalanceInMasset.sub(_offsetInMasset);
-        }
-
+        uint256 total = getTotalBassetsInMasset();
+        total = total.add(additionalAmountInMasset);
         if(total == 0) {
             return 0;
         }
 
-        return bassetBalanceInMasset.mul(ratioPrecision).div(total);
+        uint256 bassetBalance = getBassetBalance(_basset);
+        (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
+        bassetBalanceInMasset = bassetBalanceInMasset.add(additionalAmountInMasset);
+
+        return bassetBalanceInMasset.mul(MAX_PERMILLE).div(total);
     }
 
     /**
-     * @dev Calculate deviation from target ratio
-     * @param  _basset      Address of basset to check ratio for
-     * @param  _offsetInMasset       Amount of tokens to deposit/redeem in massets. Set to zero to check current ratio.
-     * @param  _isDeposit    Flag to determine offset direction(deposit/redeem).
-     * @return Numbers between -RATIO_PRECISION and RATIO_PRECISION. Represents deviation from target ratio.
+     * @dev Calculate deviation from target weight
+     * @param  _basset      Address of basset to check weight for
+     * @param  _additionalAmount       Amount of tokens to deposit/redeem. Set to zero to check current weight.
+     * @return Numbers between -1 and 1 in permille. Represents deviation from target weight.
      *         deviationBefore: current deviation
      *         deviationAfter:  deviation after deposit/redeem
      */
-    function getBassetRatioDeviation(
+    function getBassetWeightDeviation(
         address _basset,
-        uint256 _offsetInMasset,
-        bool _isDeposit
+        uint256 _additionalAmount
     ) public view returns(int256 deviationBefore, int256 deviationAfter) {
-        int256 targetRatio = int256(getBassetTargetRatio(_basset));
 
-        int256 currentRatio = int256(getBassetRatio(_basset, 0, _isDeposit));
+        int256 targetWeight = int256(getBassetTargetWeight(_basset));
+        int256 currentWeight = int256(getBassetWeight(_basset, 0));
 
-        deviationBefore = currentRatio - targetRatio;
+        deviationBefore = currentWeight - targetWeight;
 
-        int256 ratioAfterModification = int256(getBassetRatio(_basset, _offsetInMasset, _isDeposit));
-        deviationAfter = ratioAfterModification - targetRatio;
+        int256 weightAfterModification = int256(getBassetWeight(_basset, _additionalAmount));
 
-        return (deviationBefore, deviationAfter);
+        deviationAfter = weightAfterModification - targetWeight;
     }
 
     // Getters
 
-    function getBassetTargetRatio(address _basset) public view validBasset(_basset) returns(uint256 ratio) {
-        return targetRatioMap[_basset].mul(ratioPrecision.div(1000));
+    function getBassetTargetWeight(address _basset) public view validBasset(_basset) returns(uint256 weight) {
+        return targetWeightMap[_basset];
     }
 
     /**
-     * @dev Calculates total mAsset balance.
+     * @dev Calculates total bassets balance.
      * @return Calculated total balance.
      */
-    function getTotalMassetBalance() public view returns (uint256 total) {
+    function getTotalBassetsInMasset() public view returns (uint256 total) {
         for(uint i=0; i<bassetsArray.length; i++) {
             address basset = bassetsArray[i];
-            uint256 balance = IERC20(basset).balanceOf(masset);
+            uint256 balance = getBassetBalance(basset);
             (uint256 massetQuantity, ) = convertBassetToMassetQuantity(basset, balance);
-            total += massetQuantity;
+            total = total.add(massetQuantity);
         }
     }
 
@@ -342,9 +344,8 @@ contract BasketManagerV4 is InitializableOwnable {
      * @param _basset       Address of bAsset.
      * @param _factor       Factor amount.
      * @param _bridge       Address of bridge.
-     * @param _min          Minimum ratio in basket.
-     * @param _max          Maximum ratio in basket.
-     * @param _ratio        Ratio of basset to total of basset in promils
+     * @param _min          Minimum weight in basket.
+     * @param _max          Maximum weight in basket.
      * @param _paused       Flag to determine if basset should be paused.
      */
     function addBasset(
@@ -353,7 +354,6 @@ contract BasketManagerV4 is InitializableOwnable {
         address _bridge,
         uint256 _min,
         uint256 _max,
-        uint256 _ratio,
         bool _paused
     ) public onlyOwner {
         require(_basset != address(0), "invalid basset address");
@@ -363,10 +363,13 @@ contract BasketManagerV4 is InitializableOwnable {
         bassetsArray.push(_basset);
 
         setFactor(_basset, _factor);
-        setTargetRatio(_basset, _ratio);
         setRange(_basset, _min, _max);
         setBridge(_basset, _bridge);
         setPaused(_basset, _paused);
+        // if this is the first basset ever, set its target weight to 1
+        if(bassetsArray.length == 1) {
+            _setTargetWeight(_basset, MAX_PERMILLE);
+        }
 
         emit BassetAdded(_basset);
     }
@@ -377,7 +380,7 @@ contract BasketManagerV4 is InitializableOwnable {
      */
     function addBassets(
         address[] memory _bassets, int256[] memory _factors, address[] memory _bridges,
-        uint256[] memory _mins, uint256[] memory _maxs, uint256[] memory _ratios, bool[] memory _pausedFlags) public onlyOwner {
+        uint256[] memory _mins, uint256[] memory _maxs, bool[] memory _pausedFlags) public onlyOwner {
 
         uint length = _bassets.length;
         require(
@@ -388,13 +391,18 @@ contract BasketManagerV4 is InitializableOwnable {
             _pausedFlags.length == length, "invalid lengths");
 
         for(uint i=0; i<length; i++) {
-            addBasset(_bassets[i], _factors[i], _bridges[i], _mins[i], _maxs[i], _ratios[i], _pausedFlags[i]);
+            addBasset(_bassets[i], _factors[i], _bridges[i], _mins[i], _maxs[i], _pausedFlags[i]);
         }
     }
 
+    /**
+     * @dev Sets the max and min values for a bAssets.
+     * @param _min          Minimum weight in basket.
+     * @param _max          Maximum weight in basket.
+     */
     function setRange(address _basset, uint256 _min, uint256 _max) public validBasset(_basset) onlyOwner {
-        require(_min <= MAX_VALUE, "invalid minimum");
-        require(_max <= MAX_VALUE, "invalid maximum");
+        require(_min <= MAX_PERMILLE, "invalid minimum");
+        require(_max <= MAX_PERMILLE, "invalid maximum");
         require(_max >= _min, "invalid range");
         minMap[_basset] = _min;
         maxMap[_basset] = _max;
@@ -402,27 +410,25 @@ contract BasketManagerV4 is InitializableOwnable {
         emit RangeChanged(_basset, _min, _max);
     }
 
-    function setTargetRatio(address _basset, uint256 _ratio) public validBasset(_basset) onlyOwner {
-        require(_ratio < 1000, "ratio should be less than 1000%%");
-        targetRatioMap[_basset] = _ratio;
+    function _setTargetWeight(address _basset, uint256 _weight) internal validBasset(_basset) {
+        require(_weight <= MAX_PERMILLE, "target weight should be equal or less than 1000%%");
+        targetWeightMap[_basset] = _weight;
+        emit TargetWeightChanged(_basset, _weight);
     }
 
     /**
-     * @dev Returns true if the number is power of ten.
-     * @param x     Number to be checked.
-     * @return      Is the number power of ten.
+     * @dev Sets the target weights for all bassets in the basket.
+     * @param _weights  Target weights
      */
-    function isPowerOfTen(int256 x) public pure returns (bool result) {
-        uint256 number;
+    function setTargetWeights(uint256[] memory _weights) public onlyOwner {
 
-        if (x < 0) number = uint256(-x);
-        else number = uint256(x);
-
-        while (number >= 10 && number % 10 == 0) {
-            number /= 10;
+        uint total = 0;
+        for(uint i=0; i<_weights.length; i++) {
+            total = total.add(_weights[i]);
+            address basset = bassetsArray[i];
+            _setTargetWeight(basset, _weights[i]);
         }
-
-        result = number == 1;
+        require(total == MAX_PERMILLE, "target weights should add up to 1000%%");
     }
 
     function setFactor(address _basset, int256 _factor) public onlyOwner {

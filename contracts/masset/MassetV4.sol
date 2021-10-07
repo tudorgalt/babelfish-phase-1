@@ -142,31 +142,17 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
     /**
      * @dev Calculate and return reward amount.
      * @param _basset           Address of basset to deposit/withdraw.
-     * @param _massetQuantity   Amount of masset to deposit / withdraw.
-     * @param _isDeposit        Type of action deposit / withdraw. It's used to determine offset direction.
+     * @param _massetQuantity   Amount of basset to deposit / withdraw.
      * @return rewardAmount     Calculated reward amount.
      *         Positive value means that user will be rewarded, negative that this amount will be taken.
      */
     function calculateReward (
         address _basset,
-        uint256 _massetQuantity,
-        bool _isDeposit
+        uint256 _bassetQuantity
     ) internal view returns(int256 rewardAmount) {
-        (int256 deviationBefore, int256 deviationAfter) = basketManager.getBassetRatioDeviation(_basset, _massetQuantity, _isDeposit);
 
-        rewardAmount = rewardsManager.calculateReward(deviationBefore, deviationAfter, _isDeposit);
-
-        if(rewardAmount < 0) {
-            require(uint256(-rewardAmount) < _massetQuantity, "Insuficient balance to cover rewards.");
-        }else if(rewardAmount > 0) {
-            uint256 rewardsVaultBalance = token.balanceOf(address(rewardsVault));
-
-            if (rewardsVaultBalance < uint256(rewardAmount)) {
-                rewardAmount = int256(rewardsVaultBalance);
-            }
-        }
-
-        return rewardAmount;
+        (int256 deviationBefore, int256 deviationAfter) = basketManager.getBassetRatioDeviation(_basset, _bassetQuantity);
+        rewardAmount = rewardsManager.calculateReward(deviationBefore, deviationAfter);
     }
 
     /***************************************
@@ -258,7 +244,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
             fee = feesManager.calculateDepositBridgeFee(massetQuantity);
         } else {
             fee = feesManager.calculateDepositFee(massetQuantity);
-            reward = calculateReward(_bAsset, massetQuantity, true);
+            reward = calculateReward(_bAsset, massetQuantity);
         }
 
         uint256 massetsAfterReward = reward > 0
@@ -394,7 +380,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
             fee = feesManager.calculateRedeemBridgeFee(_massetQuantity);
         } else {
             fee = feesManager.calculateRedeemFee(_massetQuantity);
-            reward = calculateReward(_basset, _massetQuantity, false);
+            reward = calculateReward(_basset, _massetQuantity);
 
             if (reward > 0) {
                 uint256 balance = token.balanceOf(address(rewardsVault));
