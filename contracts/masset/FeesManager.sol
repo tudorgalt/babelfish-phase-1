@@ -17,8 +17,7 @@ contract FeesManager is InitializableOwnable {
      * @dev Factor of fees.
      * @notice 1000 means that fees are in per mille.
      */
-    uint256 constant private FEE_PRECISION = 1000;
-    bool private initialized;
+    uint256 constant public PRECISION = 1000;
 
     uint256 private depositFee;
     uint256 private depositBridgeFee;
@@ -66,15 +65,12 @@ contract FeesManager is InitializableOwnable {
         uint256 _withdrawalFee,
         uint256 _withdrawalBridgeFee
     ) public {
-        require(initialized == false, "already initialized");
         InitializableOwnable._initialize();
 
         setDepositFee(_depositFee);
         setDepositBridgeFee(_depositBridgeFee);
         setWithdrawalFee(_withdrawalFee);
         setWithdrawalBridgeFee(_withdrawalBridgeFee);
-
-        initialized = true;
     }
 
     // Internal
@@ -82,8 +78,8 @@ contract FeesManager is InitializableOwnable {
     /**
      * @dev Calculate and return fee amount based on massetAmount and type of fee.
      */
-    function _calculateFee(uint256 _massetAmount, uint256 _feeAmount) internal pure returns(uint256 fee) {
-        return _massetAmount.mul(_feeAmount).div(FEE_PRECISION);
+    function _calculateFee(uint256 _massetAmount, uint256 _fee) internal pure returns(uint256) {
+        return _massetAmount.mul(_fee).div(PRECISION);
     }
 
     // Public
@@ -93,7 +89,7 @@ contract FeesManager is InitializableOwnable {
      * @param _massetAmount  Amount of masset to deposit.
      * @return fee           Calculated fee amount.
      */
-    function calculateDepositFee(uint256 _massetAmount) public view returns(uint256 fee) {
+    function calculateDepositFee(uint256 _massetAmount) public view returns(uint256) {
         return _calculateFee(_massetAmount, depositFee);
     }
 
@@ -102,7 +98,7 @@ contract FeesManager is InitializableOwnable {
      * @param _massetAmount  Amount of masset to deposit.
      * @return fee           Calculated fee amount.
      */
-    function calculateDepositBridgeFee(uint256 _massetAmount) public view returns(uint256 fee) {
+    function calculateDepositBridgeFee(uint256 _massetAmount) public view returns(uint256) {
         return _calculateFee(_massetAmount, depositBridgeFee);
     }
 
@@ -111,7 +107,7 @@ contract FeesManager is InitializableOwnable {
      * @param _massetAmount  Amount of masset.
      * @return fee           Calculated fee amount.
      */
-    function calculateRedeemFee(uint256 _massetAmount) public view returns(uint256 fee) {
+    function calculateRedeemFee(uint256 _massetAmount) public view returns(uint256) {
         return _calculateFee(_massetAmount, withdrawalFee);
     }
 
@@ -120,7 +116,7 @@ contract FeesManager is InitializableOwnable {
      * @param _massetAmount  Amount of masset.
      * @return fee           Calculated fee amount.
      */
-    function calculateRedeemBridgeFee(uint256 _massetAmount) public view returns(uint256 fee) {
+    function calculateRedeemBridgeFee(uint256 _massetAmount) public view returns(uint256) {
         return _calculateFee(_massetAmount, withdrawalBridgeFee);
     }
 
@@ -145,28 +141,24 @@ contract FeesManager is InitializableOwnable {
     // Governance methods
 
     function setDepositFee (uint256 _amount) public onlyOwner {
-        require(_amount >= 0, "fee amount should be greater or equal zero");
         depositFee = _amount;
 
         emit DepositFeeChanged(_amount);
     }
 
     function setDepositBridgeFee (uint256 _amount) public onlyOwner {
-        require(_amount >= 0, "fee amount should be greater or equal zero");
         depositBridgeFee = _amount;
 
         emit DepositBridgeFeeChanged(_amount);
     }
 
     function setWithdrawalFee (uint256 _amount) public onlyOwner {
-        require(_amount >= 0, "fee amount should be greater or equal zero");
         withdrawalFee = _amount;
 
         emit WithdrawalFeeChanged(_amount);
     }
 
     function setWithdrawalBridgeFee (uint256 _amount) public onlyOwner {
-        require(_amount >= 0, "fee amount should be greater or equal zero");
         withdrawalBridgeFee = _amount;
 
         emit WithdrawalBridgeFeeChanged(_amount);

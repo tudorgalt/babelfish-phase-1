@@ -1,5 +1,6 @@
 pragma solidity ^0.5.17;
 
+import { SignedSafeMath } from "../helpers/SignedSafeMath.sol";
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
@@ -14,8 +15,10 @@ import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 
 contract BasketManagerV4 is InitializableOwnable {
 
+    using SignedSafeMath for int256;
     using SafeMath for uint256;
-    uint256 constant MAX_PERMILLE = 1000;
+
+    uint256 public constant WEIGHT_PRECISION = 1000;
 
     // Events
 
@@ -56,9 +59,9 @@ contract BasketManagerV4 is InitializableOwnable {
     /**
      * @dev Event emitted when target weight changes.
      * @param basset    Address of the bAsset contract.
-     * @param targetWeights New target weights
+     * @param targetWeight New target weight
      */
-    event TargetWeightChanged (address basset, uint256 targetWeights);
+    event TargetWeightChanged (address basset, uint256 targetWeight);
 
     /**
      * @dev Event emitted when paused changes.
@@ -115,7 +118,7 @@ contract BasketManagerV4 is InitializableOwnable {
 
     // Initializer
 
-    /**
+    /**s
    * @dev Contract initializer.
    */
     function initialize() external {
@@ -160,12 +163,12 @@ contract BasketManagerV4 is InitializableOwnable {
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
         (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
-        uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
+        uint256 bassetBalance = getBassetBalance(_basset);
         (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
         uint256 balance = bassetBalanceInMasset.add(massetQuantity);
         uint256 total = getTotalBassetsInMasset().add(massetQuantity);
-        uint256 weight = balance.mul(MAX_PERMILLE).div(total);
+        uint256 weight = balance.mul(WEIGHT_PRECISION).div(total);
         uint256 max = maxMap[_basset];
         return weight <= max;
     }
@@ -181,7 +184,7 @@ contract BasketManagerV4 is InitializableOwnable {
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
         (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
-        uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
+        uint256 bassetBalance = getBassetBalance(_basset);
         (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
         require(bassetBalanceInMasset >= massetQuantity, "basset balance is not sufficient");
@@ -192,7 +195,7 @@ contract BasketManagerV4 is InitializableOwnable {
         uint256 min = minMap[_basset];
         if (total == 0) return min == 0;
 
-        uint256 weight = balance.mul(MAX_PERMILLE).div(total);
+        uint256 weight = balance.mul(WEIGHT_PRECISION).div(total);
         return weight >= min;
     }
 
@@ -247,46 +250,51 @@ contract BasketManagerV4 is InitializableOwnable {
      * @return weight        Weight of basset to total of basset in permille
      */
     function getBassetWeight(
-        address _basset,
-        uint256 _additionalAmount
+        address _basset
     ) public view validBasset(_basset) returns (uint256 weight) {
 
-        (uint256 additionalAmountInMasset, ) = convertBassetToMassetQuantity(_basset, _additionalAmount);
-
         uint256 total = getTotalBassetsInMasset();
-        total = total.add(additionalAmountInMasset);
         if(total == 0) {
             return 0;
         }
 
         uint256 bassetBalance = getBassetBalance(_basset);
         (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
-        bassetBalanceInMasset = bassetBalanceInMasset.add(additionalAmountInMasset);
 
-        return bassetBalanceInMasset.mul(MAX_PERMILLE).div(total);
+        return bassetBalanceInMasset.mul(WEIGHT_PRECISION).div(total);
     }
 
     /**
-     * @dev Calculate deviation from target weight
+     * @dev Calculate weight of a basset in basket
      * @param  _basset      Address of basset to check weight for
-     * @param  _additionalAmount       Amount of tokens to deposit/redeem. Set to zero to check current weight.
-     * @return Numbers between -1 and 1 in permille. Represents deviation from target weight.
-     *         deviationBefore: current deviation
-     *         deviationAfter:  deviation after deposit/redeem
+     * @param  _additionalAmount    Amount of tokens to deposit/redeem. Set to zero to check current weight.
+     * @return weight        Weight of basset to total of basset in permille
      */
-    function getBassetWeightDeviation(
+    function getSimulatedBassetWeight(
         address _basset,
-        uint256 _additionalAmount
-    ) public view returns(int256 deviationBefore, int256 deviationAfter) {
+        address _bassetToModify,
+        int256 _amount
+    ) public view validBasset(_basset) returns (uint256 weight) {
 
-        int256 targetWeight = int256(getBassetTargetWeight(_basset));
-        int256 currentWeight = int256(getBassetWeight(_basset, 0));
+        (uint256 _amountInMasset, ) = convertBassetToMassetQuantity(_basset, uint256(_amount));
+        int256 amountInMasset = _amount >= 0 ? int256(_amountInMasset) : 0 - int256(_amountInMasset);
 
-        deviationBefore = currentWeight - targetWeight;
+        int256 total = int256(getTotalBassetsInMasset());
+        total = total.add(amountInMasset);
+        if(total == 0) {
+            return 0;
+        }
 
-        int256 weightAfterModification = int256(getBassetWeight(_basset, _additionalAmount));
+        uint256 bassetBalance = getBassetBalance(_basset);
+        (uint256 _bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
+        int256 bassetBalanceInMasset = int256(_bassetBalanceInMasset);
 
-        deviationAfter = weightAfterModification - targetWeight;
+        if(_basset == _bassetToModify) {
+            require(bassetBalanceInMasset.add(_amount) >= 0, "insufficient balance");
+            bassetBalanceInMasset = bassetBalanceInMasset.add(amountInMasset);
+        }
+
+        return uint256(bassetBalanceInMasset).mul(WEIGHT_PRECISION).div(uint256(total));
     }
 
     // Getters
@@ -312,7 +320,7 @@ contract BasketManagerV4 is InitializableOwnable {
         return IERC20(_basset).balanceOf(masset);
     }
 
-    function getVersion() external view returns(string memory) {
+    function getVersion() public view returns(string memory) {
         return version;
     }
 
@@ -368,7 +376,7 @@ contract BasketManagerV4 is InitializableOwnable {
         setPaused(_basset, _paused);
         // if this is the first basset ever, set its target weight to 1
         if(bassetsArray.length == 1) {
-            _setTargetWeight(_basset, MAX_PERMILLE);
+            _setTargetWeight(_basset, WEIGHT_PRECISION);
         }
 
         emit BassetAdded(_basset);
@@ -401,8 +409,8 @@ contract BasketManagerV4 is InitializableOwnable {
      * @param _max          Maximum weight in basket.
      */
     function setRange(address _basset, uint256 _min, uint256 _max) public validBasset(_basset) onlyOwner {
-        require(_min <= MAX_PERMILLE, "invalid minimum");
-        require(_max <= MAX_PERMILLE, "invalid maximum");
+        require(_min <= WEIGHT_PRECISION, "invalid minimum");
+        require(_max <= WEIGHT_PRECISION, "invalid maximum");
         require(_max >= _min, "invalid range");
         minMap[_basset] = _min;
         maxMap[_basset] = _max;
@@ -411,7 +419,7 @@ contract BasketManagerV4 is InitializableOwnable {
     }
 
     function _setTargetWeight(address _basset, uint256 _weight) internal validBasset(_basset) {
-        require(_weight <= MAX_PERMILLE, "target weight should be equal or less than 1000%%");
+        require(_weight <= WEIGHT_PRECISION, "target weight should be equal or less than 1000%%");
         targetWeightMap[_basset] = _weight;
         emit TargetWeightChanged(_basset, _weight);
     }
@@ -428,12 +436,12 @@ contract BasketManagerV4 is InitializableOwnable {
             address basset = bassetsArray[i];
             _setTargetWeight(basset, _weights[i]);
         }
-        require(total == MAX_PERMILLE, "target weights should add up to 1000%%");
+        require(total == WEIGHT_PRECISION, "target weights should add up to 100%");
     }
 
-    function setFactor(address _basset, int256 _factor) public onlyOwner {
+    function setFactor(address _basset, int256 _factor) public validBasset(_basset) onlyOwner {
         require(_factor != 0, "invalid factor");
-        require(_factor == 1 || isPowerOfTen(_factor), "factor must be power of 10");
+        require(_factor == 1 || isPowerOfTen(_factor), "factor must be a power of 10");
         factorMap[_basset] = _factor;
 
         emit FactorChanged(_basset, _factor);

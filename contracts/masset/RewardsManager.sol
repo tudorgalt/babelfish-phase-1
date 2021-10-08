@@ -2,9 +2,10 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import { SignedSafeMath } from "../helpers/SignedSafeMath.sol";
-import { ABDKMathQuad } from "../helpers/ABDKMathQuad.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
+import "./BasketManagerV4.sol";
 
 /**
  * @title RewardsManager
@@ -12,8 +13,9 @@ import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
  */
 contract RewardsManager is InitializableOwnable {
     using SignedSafeMath for int256;
+    using SafeMath for uint256;
 
-    int256 constant MAX_PERMILLE = 1000;
+    int256 public constant PRECISION = 1000000;
 
     // State
     uint256 private slope;
@@ -22,7 +24,7 @@ contract RewardsManager is InitializableOwnable {
 
     /**
      * @dev Emitted when curve parameters has changed.
-     * @param slope     New slope parameter.
+     * @param slope  New curve parameter.
      */
     event CurveParametersChanged(uint256 slope);
 
@@ -40,42 +42,73 @@ contract RewardsManager is InitializableOwnable {
 
     // Public
 
+    function calculateReward(address _basset, int256 _bassetAmount, BasketManagerV4 _basketManager) public view returns(int256) {
+
+        int256 deviationBefore = 0;
+        int256 deviationAfter = 0;
+        address[] bassets = _basketManager.getBassets();
+
+        for(uint i=0; i<bassets.length; i++) {
+            address currentBasset = bassets[i];
+
+            uint256 weight = _adjustWeightPrecision(_basketManager,
+                _basketManager.getBassetWeight(currentBasset));
+            uint256 simulatedWeight = _adjustWeightPrecision(_basketManager,
+                _basketManager.getSimulatedBassetWeight(currentBasset, _basset, _bassetAmount));
+            uint256 targetWeight = _adjustWeightPrecision(_basketManager,
+                _basketManager.getBassetTargetWeight(currentBasset));
+
+            deviationBefore = deviationBefore.add(_weightDifferenceSquare(weight, targetWeight));
+            deviationAfter = deviationAfter.add(_weightDifferenceSquare(simulatedWeight, targetWeight));
+        }
+        deviationBefore = deviationBefore.div(bassets.length);
+        deviationAfter = deviationAfter.div(bassets.length);
+
+        return _calculateReward(deviationBefore, deviationAfter);
+    }
+
+    function _adjustWeightPrecision(BasketManagerV4 _basketManager, uint256 _v) public view returns(uint256) {
+        return _v.mul(PRECISION).div(_basketManager.WEIGHT_PRECISION);
+    }
+
+    function _weightDifferenceSquare(uint256 _d1, uint256 _d2) internal pure returns(uint256) {
+        int256 d = int256(_d1).sub(int256(_d2));
+        return uint256(d.mul(d).div(PRECISION));
+    }
+
     /**
      * @dev Calculate and return reward amount based on deviation before action and deviation after action.
      * @param _deviationBefore      Deviation before action.
      * @param _deviationAfter       Deviation after action.
      * @return reward               Calculated reward amount.
      */
-    function calculateReward(int256 _deviationBefore, int256 _deviationAfter) public view returns(int256 reward) {
+    function _calculateReward(uint256 _deviationBefore, uint256 _deviationAfter) internal view returns(int256 reward) {
 
-        require(_deviationBefore >= -MAX_PERMILLE && _deviationBefore <= MAX_PERMILLE, "invalud value for _deviationBefore");
-        require(_deviationAfter >= -MAX_PERMILLE && _deviationAfter <= MAX_PERMILLE, "invalud value for _deviationAfter");
+        uint256 vBefore = _calculateV(_deviationBefore);
+        uint256 vAfter = _calculateV(_deviationAfter);
 
-        int256 vBefore = calculateVault(_deviationBefore);
-        int256 vAfter = calculateVault(_deviationAfter);
-
-        reward = vAfter - vBefore;
+        reward = int256(vAfter).sub(int256(vBefore));
     }
 
-    function calculateVault(int256 _d) internal view returns(int256 v) {
+    function _calculateV(uint256 _d) internal view returns(uint256 v) {
 
-        int256 v = int256(slope);
-        v = v.mul(_d).div(MAX_PERMILLE);
-        v = v.mul(MAX_PERMILLE).div(MAX_PERMILLE - _d);
+        uint256 v = slope.mul(_d).div(PRECISION);
+        v = v.mul(PRECISION).div(PRECISION.sub(_d));
     }
 
     // Getters
 
-    function getSlope () public view returns(uint256) {
+    function getSlope() public view returns(uint256) {
         return slope;
     }
 
     // Governance
 
-    function setSlope (uint256 _slope) public onlyOwner {
+    function setSlope(uint256 _slope) public onlyOwner {
         require(_slope > 0, "slope must be greater than 0");
+
         slope = _slope;
 
-        emit CurveParametersChanged(_slope);
+        emit CurveParametersChanged(maxValue, _slope);
     }
 }

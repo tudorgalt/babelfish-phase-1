@@ -105,6 +105,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     FeesVault private feesVault;
     FeesManager private feesManager;
+
     RewardsVault private rewardsVault;
     RewardsManager private rewardsManager;
 
@@ -162,39 +163,43 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
     /**
      * @dev Mint a single mAsset, at a 1:1 ratio with the bAsset. This contract
      *      must have approval to spend the senders bAsset.
-     * @param _bAsset         Address of the bAsset.
-     * @param _bAssetQuantity Quantity in bAsset units.
-     * @return massetMinted   Number of newly minted mAssets.
+     * @param _bAsset               Address of the bAsset.
+     * @param _bAssetQuantity       Quantity in bAsset units.
+     * @param _minExpectedMassets   Expected amount of mAssets to receive.
+     * @return massetMinted         Number of newly minted mAssets.
      */
     function mint(
         address _bAsset,
-        uint256 _bAssetQuantity
+        uint256 _bAssetQuantity,
+        uint256 _minExpectedMassets
     )
     external
     nonReentrant
     returns (uint256 massetMinted)
     {
-        return _mintTo(_bAsset, _bAssetQuantity, msg.sender);
+        return _mintTo(_bAsset, _bAssetQuantity, msg.sender, _minExpectedMassets);
     }
 
     /**
      * @dev Mint a single mAsset to recipient address, at a 1:1 ratio with the bAsset.
      *      This contract must have approval to spend the senders bAsset.
-     * @param _bAsset         Address of the bAsset.
-     * @param _bAssetQuantity Quantity in bAsset units.
-     * @param _recipient      Receipient of the newly minted mAsset tokens.
-     * @return massetMinted   Number of newly minted mAssets.
+     * @param _bAsset               Address of the bAsset.
+     * @param _bAssetQuantity       Quantity in bAsset units.
+     * @param _recipient            Receipient of the newly minted mAsset tokens.
+     * @param _minExpectedMassets   Expected amount of mAssets to receive.
+     * @return massetMinted     Number of newly minted mAssets.
      */
     function mintTo(
         address _bAsset,
         uint256 _bAssetQuantity,
-        address _recipient
+        address _recipient,
+        uint256 _minExpectedMassets
     )
     external
     nonReentrant
     returns (uint256 massetMinted)
     {
-        return _mintTo(_bAsset, _bAssetQuantity, _recipient);
+        return _mintTo(_bAsset, _bAssetQuantity, _recipient, _minExpectedMassets);
     }
 
     /**
@@ -266,15 +271,17 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
     /**
      * @dev Mint a single mAsset to recipient address, at a 1:1 ratio with the bAsset.
      *      This contract must have approval to spend the senders bAsset.
-     * @param _basset         Address of the bAsset.
-     * @param _bassetQuantity Quantity in bAsset units.
-     * @param _recipient      Receipient of the newly minted mAsset tokens.
-     * @return massetMinted   Number of newly minted mAssets.
+     * @param _basset           Address of the bAsset.
+     * @param _bassetQuantity   Quantity in bAsset units.
+     * @param _recipient        Receipient of the newly minted mAsset tokens.
+     * @param _minExpectedMassets   Expected amount of mAssets to receive.
+     * @return massetMinted     Number of newly minted mAssets.
      */
     function _mintTo(
         address _basset,
         uint256 _bassetQuantity,
-        address _recipient
+        address _recipient,
+        uint256 _minExpectedMassets
     )
     internal
     returns (uint256 massetMinted) {
@@ -283,14 +290,14 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(IERC20(_basset).balanceOf(msg.sender) >= _bassetQuantity, "insufficient balance");
 
         (uint256 fee, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) = calculateMint(_basset, _bassetQuantity, false);
+        uint256 transferedReward = reward > 0 ? uint256(reward) : 0;
+        uint256 finalGivenMassets = massetsToMint.add(transferedReward);
+
+        require(finalGivenMassets >= _minExpectedMassets, "Exceeded max allowed slippage");
 
         token.mint(address(feesVault), fee);
 
-        uint256 transferedReward = 0;
-
-        if (reward > 0) {
-            transferedReward = uint256(reward);
-
+        if (transferedReward > 0) {
             rewardsVault.getApproval(transferedReward, address(token));
             require(token.transferFrom(address(rewardsVault), _recipient, transferedReward), "add reward transfer failed");
         } else {
@@ -300,7 +307,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         IERC20(_basset).safeTransferFrom(msg.sender, address(this), bassetsToTake);
         token.mint(_recipient, massetsToMint);
 
-        emit Minted(msg.sender, _recipient, massetsToMint.add(transferedReward), _basset, bassetsToTake);
+        emit Minted(msg.sender, _recipient, finalGivenMassets, _basset, bassetsToTake);
 
         return massetsToMint;
     }
@@ -314,29 +321,33 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
      *      relative mAsset quantity from the sender. Sender also incurs a small mAsset fee, if any.
      * @param _bAsset           Address of the bAsset to redeem.
      * @param _massetQuantity   Units of the masset to redeem.
+     * @param _minExpectedBassets   Expected amount of bAssets to receive.
      * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
      */
     function redeem(
         address _bAsset,
-        uint256 _massetQuantity
+        uint256 _massetQuantity,
+        uint256 _minExpectedBassets
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, msg.sender, false);
+        return _redeemTo(_bAsset, _massetQuantity, msg.sender, false, _minExpectedBassets);
     }
 
     /**
      * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
      *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
-     * @param _bAsset           Address of the bAsset to redeem.
-     * @param _massetQuantity   Units of the masset to redeem.
-     * @param _recipient        Address to credit with withdrawn bAssets.
-     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+     * @param _bAsset               Address of the bAsset to redeem.
+     * @param _massetQuantity       Units of the masset to redeem.
+     * @param _recipient            Address to credit with withdrawn bAssets.
+     * @param _minExpectedBassets   Expected amount of bAssets to receive.
+     * @return massetMinted         Relative number of mAsset units burned to pay for the bAssets.
      */
     function redeemTo(
         address _bAsset,
         uint256 _massetQuantity,
-        address _recipient
+        address _recipient,
+        uint256 _minExpectedBassets
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, _recipient, false);
+        return _redeemTo(_bAsset, _massetQuantity, _recipient, false, _minExpectedBassets);
     }
 
     /**
@@ -380,7 +391,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
             fee = feesManager.calculateRedeemBridgeFee(_massetQuantity);
         } else {
             fee = feesManager.calculateRedeemFee(_massetQuantity);
-            reward = calculateReward(_basset, _massetQuantity);
+            reward = calculateReward(_basset, _massetQuantity, false);
 
             if (reward > 0) {
                 uint256 balance = token.balanceOf(address(rewardsVault));
@@ -393,7 +404,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         uint256 massetsToConvert = reward > 0 ? massetsToTake.add(uint256(reward)) : massetsToTake;
         
-        (uint256 convertedBassetsToTransfer, uint256 massetsAfterConvert) = basketManager.convertMassetToBassetQuantity(_basset, massetsToConvert); // co jesli tutaj zostanie jakis reminder?
+        (uint256 convertedBassetsToTransfer, uint256 massetsAfterConvert) = basketManager.convertMassetToBassetQuantity(_basset, massetsToConvert);
         uint256 reminder = massetsToConvert.sub(massetsAfterConvert);
 
         require(convertedBassetsToTransfer > 0, "amount after reward and fee must be > 0");
@@ -409,23 +420,27 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
     /**
      * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
      *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
-     * @param _basset           Address of the bAsset to redeem.
-     * @param _massetQuantity   Units of the masset to redeem.
-     * @param _recipient        Address to credit with withdrawn bAssets.
-     * @param _bridgeFlag       Flag that indicates if the reedem proces is used with conjunction with bridge.
-     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+     * @param _basset               Address of the bAsset to redeem.
+     * @param _massetQuantity       Units of the masset to redeem.
+     * @param _recipient            Address to credit with withdrawn bAssets.
+     * @param _bridgeFlag           Flag that indicates if the reedem proces is used with conjunction with bridge.
+     * @param _minExpectedBassets   Expected amount of bAssets to receive.
+     * @return massetMinted         Relative number of mAsset units burned to pay for the bAssets.
      */
     function _redeemTo(
         address _basset,
         uint256 _massetQuantity,
         address _recipient,
-        bool _bridgeFlag
+        bool _bridgeFlag,
+        uint256 _minExpectedBassets
     ) internal returns (uint256 massetRedeemed) {
         require(basketManager.isValidBasset(_basset), "invalid basset");
         require(_recipient != address(0), "must be a valid recipient");
         require(token.balanceOf(msg.sender) >= _massetQuantity, "insufficient balance");
 
         (uint256 fee, int256 reward, uint256 bassetsToTransfer, uint256 massetsToTake) = calculateRedeem(_basset, _massetQuantity, _bridgeFlag);
+
+        require(bassetsToTransfer >= _minExpectedBassets, "Exceeded max allowed slippage");
 
         token.safeTransferFrom(msg.sender, address(feesVault), fee);
 
@@ -490,7 +505,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         address _recipient,
         address _bridgeAddress // IGNORED! for backward compatibility
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_basset, _massetQuantity, _recipient, true);
+        return _redeemTo(_basset, _massetQuantity, _recipient, true, 0);
     }
 
     /**
@@ -508,8 +523,47 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 _massetQuantity,
         address _recipient
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_basset, _massetQuantity, _recipient, true);
+        return _redeemTo(_basset, _massetQuantity, _recipient, true, 0);
     }
+
+    // /***************************************
+    //             SWAPING (PUBLIC)
+    // ****************************************/
+
+    // /**
+    //  * @dev Credits the sender with a certain quantity of selected bAsset, in exchange for burning the
+    //  *      relative mAsset quantity from the sender. Sender also incurs a small mAsset fee, if any.
+    //  * @param _bAsset           Address of the bAsset to redeem.
+    //  * @param _massetQuantity   Units of the masset to redeem.
+    //  * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+    //  */
+    // function swap(
+    //     address _bAssetFrom,
+    //     address _bAssetTo,
+    //     uint256 _
+    // ) external nonReentrant returns (uint256 massetRedeemed) {
+    //     return _redeemTo(_bAsset, _massetQuantity, msg.sender, false);
+    // }
+
+    // /**
+    //  * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
+    //  *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
+    //  * @param _bAsset           Address of the bAsset to redeem.
+    //  * @param _massetQuantity   Units of the masset to redeem.
+    //  * @param _recipient        Address to credit with withdrawn bAssets.
+    //  * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+    //  */
+    // function swapTo(
+    //     address _bAsset,
+    //     uint256 _massetQuantity,
+    //     address _recipient
+    // ) external nonReentrant returns (uint256 massetRedeemed) {
+    //     return _redeemTo(_bAsset, _massetQuantity, _recipient, false);
+    // }
+
+    /***************************************
+                SWAPING (INTERNAL)
+    ****************************************/
 
     /**
      * @dev Decode bytes data to address.

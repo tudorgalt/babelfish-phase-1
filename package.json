@@ -1,8 +1,7 @@
 {
-  "name": "@mstable/protocol",
-  "version": "1.5.0",
-  "description": "mStable Contracts",
-  "author": "mStable <info@mstable.org>",
+  "name": "babelfishprotocol",
+  "version": "1.0.0",
+  "description": "babelfish Contracts",
   "license": "AGPL-3.0-or-later",
   "files": [
     "/contracts/**/*.sol",
@@ -32,7 +31,7 @@
     "init": "yarn install && TS_NODE_TRANSPILE_ONLY=1 yarn hardhat compile --force",
     "contract-sizes": "yarn hardhat size-contracts",
     "prettify": "prettier --write test/*.ts test/**/*.ts types/generated/*.ts types/*.ts artifacts/*.ts",
-    "flatten": "sol-merger \"./contracts/**/*.sol\" ./_flat",
+    "flatten": "sol-merger \"./contracts/[^fish]**/*.sol\" ./_flat",
     "prepublishOnly": "yarn run compile",
     "docgen": "yarn hardhat compile --force && yarn run hardhat docgen"
   },
