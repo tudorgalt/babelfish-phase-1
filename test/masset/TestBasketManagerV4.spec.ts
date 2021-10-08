@@ -391,30 +391,116 @@ contract("BasketManagerV4", async (accounts) => {
     });
 
     describe("getPoolDeviation", async () => {
-        context("with 2 bassets in pool", async () => {
+        type ExpectedResults = Record<"deviation" | "deviationAfter" | "total" | "totalAfter", BN>;
+        type CheckGetPoolDeviationResultsConfig = {
+            params: Parameters<BasketManagerV4Instance['getPoolDeviation']>;
+            expected: ExpectedResults;
+        };
+        const checkGetPoolDeviationResults = async ({ params, expected }: CheckGetPoolDeviationResultsConfig) => {
+            const [deviation, deviationAfter, total, totalAfter] = await basketManager.getPoolDeviation(...params);
 
+            expect(deviation).bignumber.to.eq(expected.deviation, "Deviation amount is invalid");
+            expect(deviationAfter).bignumber.to.eq(expected.deviationAfter, "Deviation after is invalid");
+            expect(total).bignumber.to.eq(expected.total, "Total amount is invalid");
+            expect(totalAfter).bignumber.to.eq(expected.totalAfter, "Total after is invalid");
+        };
+
+        const precision = new BN(10 ** 5);
+
+        context("with 2 bassets in pool", async () => {
+            const initialDeviation = new BN(206); // ((-4545)^2 + 4546^2) / 2 / 100000
+            const initialTotalAmount = tokens(110);
+
+            beforeEach("before each", async () => {
+                // make pool unbalanced at start
+                mockToken1 = await MockERC20.new("", "", 18, massetMock, 60, { from: owner });
+                mockToken2 = await MockERC20.new("", "", 18, massetMock, 50, { from: owner });
+
+                basketManager = await initializeBasketManager({ ratioPrecision: precision });
+                await basketManager.addBassets([mockToken1.address, mockToken2.address], factors, bridges, mins, maxs, ratios, pauses);
+            });
+
+            it("zero offset, redeem", async () => {
+                await checkGetPoolDeviationResults({
+                    params: [mockToken1.address, tokens(0), false],
+                    expected: { deviation: initialDeviation, deviationAfter: initialDeviation, total: initialTotalAmount, totalAfter: initialTotalAmount }
+                });
+            });
+            it("small offset, redeem", async () => {
+                /*  ratios:     54128 | 45871
+                    deviations: -4128 | 4129
+                    d = ((-4128)**2 + 4129**2) / 2 / precision = 17044512 / 100000 ~= 170
+                */
+                await checkGetPoolDeviationResults({
+                    params: [mockToken1.address, tokens(1), false],
+                    expected: { deviation: initialDeviation, deviationAfter: new BN(170), total: initialTotalAmount, totalAfter: tokens(109) }
+                });
+            });
+            it("redeem of all funds", async () => {
+                /*  ratios:     0      | 100000
+                    deviations: -50000 | 50000
+                    d = ((-50000)**2 + 50000**2) / 2 / precision = 2500000000 / 100000 = 25000
+                */
+                await checkGetPoolDeviationResults({
+                    params: [mockToken1.address, tokens(60), false],
+                    expected: { deviation: initialDeviation, deviationAfter: new BN(25000), total: initialTotalAmount, totalAfter: tokens(50) }
+                });
+            });
         });
 
         context("with 3 bassets in pool", async () => {
             const targetRatios = [400, 400, 200];
             const initialFactors = [1, 1, 1];
             const initialMins = [10, 10, 10];
-            const initialMaxes = [100, 100];
+            const initialMaxes = [100, 100, 100];
             const initialPauses = [false, false, false];
             const initialBridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
             let initialBassets: string[];
 
             let mockToken3: MockERC20Instance;
-            
+
             beforeEach("before each", async () => {
                 // set perfect initial ratio
-                mockToken1 = await MockERC20.new("", "", 18, massetMock, tokens(40), { from: owner });
-                mockToken2 = await MockERC20.new("", "", 18, massetMock, tokens(40), { from: owner });
-                mockToken3 = await MockERC20.new("", "", 18, massetMock, tokens(20), { from: owner });
+                mockToken1 = await MockERC20.new("", "", 18, massetMock, 40, { from: owner });
+                mockToken2 = await MockERC20.new("", "", 18, massetMock, 40, { from: owner });
+                mockToken3 = await MockERC20.new("", "", 18, massetMock, 20, { from: owner });
                 initialBassets = [mockToken1.address, mockToken2.address, mockToken3.address];
-    
-                basketManager = await initializeBasketManager({});
+
+                basketManager = await initializeBasketManager({ ratioPrecision: precision });
                 await basketManager.addBassets(initialBassets, initialFactors, initialBridges, initialMins, initialMaxes, targetRatios, initialPauses);
+            });
+
+            it("with zero offset, deposit", async () => {
+                await checkGetPoolDeviationResults({
+                    params: [mockToken1.address, tokens(0), true],
+                    expected: { deviation: ZERO, deviationAfter: ZERO, total: tokens(100), totalAfter: tokens(100) }
+                });
+            });
+            it("with zero offset, redeem", async () => {
+                await checkGetPoolDeviationResults({
+                    params: [mockToken1.address, tokens(0), false],
+                    expected: { deviation: ZERO, deviationAfter: ZERO, total: tokens(100), totalAfter: tokens(100) }
+                });
+            });
+            it("small offset, deposit", async () => {
+                /*  ratios:     40594 | 39603 | 19801
+                    deviations: 594   | 397   | 199
+                    d = ((-594)^2 + 397^2 + 199^2) / 3 / precision = 183348 / 100000 ~= 1
+                */
+                await checkGetPoolDeviationResults({
+                    params: [mockToken1.address, tokens(1), true],
+                    expected: { deviation: ZERO, deviationAfter: new BN(1), total: tokens(100), totalAfter: tokens(101) }
+                });
+            });
+            it("big offset, deposit", async () => {
+                /*  ratios:     68253  | 21164 | 10582
+                    deviations: -28253 | 18836 | 9418
+                    d = ((-28253)^2 + 18836^2 + 9418^2) / 3 / precision = 413908543 / 100000 ~= 4139
+                */
+                await checkGetPoolDeviationResults({
+                    params: [mockToken1.address, tokens(89), true],
+                    expected: { deviation: ZERO, deviationAfter: new BN(4139), total: tokens(100), totalAfter: tokens(189) }
+                });
             });
         });
 
@@ -664,13 +750,20 @@ contract("BasketManagerV4", async (accounts) => {
     });
 });
 
-type InitializeArgs = Partial<CreateBasketV3Args>;
+type InitializeArgs = Partial<CreateBasketV3Args> & {
+    ratioPrecision?: BN;
+};
 
-const initializeBasketManager = async ({ admin = sa.governor, massetAddress = sa.other, txDetails = { from: sa.default } }: InitializeArgs) => {
+const initializeBasketManager = async ({
+    admin = sa.governor,
+    massetAddress = sa.other,
+    txDetails = { from: sa.default },
+    ratioPrecision = RATIO_PRECISION
+}: InitializeArgs) => {
     const proxy = await BasketManagerProxy.new();
 
     await createBasketManagerV3(proxy, { admin, massetAddress, txDetails });
-    const basketManagerV4 = await upgradeBasketManagerToV4(proxy, { admin, txDetails });
+    const basketManagerV4 = await upgradeBasketManagerToV4(proxy, { admin, txDetails }, [], ratioPrecision);
 
     return basketManagerV4;
 };

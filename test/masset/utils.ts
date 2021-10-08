@@ -41,7 +41,8 @@ export const createBasketManagerV3 = async (
 export const upgradeBasketManagerToV4 = async (
     proxy: BasketManagerProxyInstance,
     config: UpgradeBasketToV4Args,
-    ratios: Parameters<BasketManagerV4Instance['initialize']>[0] = []
+    ratios: Parameters<BasketManagerV4Instance['initialize']>[0] = [],
+    ratioPrecision = RATIO_PRECISION
 ): Promise<BasketManagerV4Instance> => {
     const { admin, txDetails } = config;
 
@@ -50,7 +51,7 @@ export const upgradeBasketManagerToV4 = async (
     await proxy.upgradeTo(basketManagerV4.address, { from: admin });
 
     const basketManagerV4Mock = await BasketManagerV4.at(proxy.address);
-    await basketManagerV4Mock.initialize(ratios, RATIO_PRECISION);
+    await basketManagerV4Mock.initialize(ratios, ratioPrecision);
 
     return basketManagerV4Mock;
 };
