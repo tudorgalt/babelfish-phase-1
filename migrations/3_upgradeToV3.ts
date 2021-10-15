@@ -86,8 +86,8 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
 
             // set basket balances with perfect ratio
             await basset1.mint(massetFake.address, tokens(30));
-            await basset1.mint(massetFake.address, tokens(40));
-            await basset1.mint(massetFake.address, tokens(40));
+            await basset2.mint(massetFake.address, tokens(40));
+            await basset3.mint(massetFake.address, tokens(40));
 
             // mint some tokens for owner
             await basset1.mint(default_, tokens(1000));

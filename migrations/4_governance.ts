@@ -1,5 +1,4 @@
 import Logs from 'node-logs';
-import { BN } from "@utils/tools";
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import {
     FishContract,
@@ -8,8 +7,14 @@ import {
     GovernorAlphaContract,
     VestingFactoryContract,
     MultiSigWalletContract,
-    VestingRegistry3Contract
+    VestingRegistry3Contract,
+    FeeSharingProxyContract,
+    MockERC20Contract,
+    TestWrbtcContract,
+    PriceFeedsContract,
+    MulticallContract
 } from "types/generated";
+import { ZERO_ADDRESS } from '@utils/constants';
 import {
     setInfo,
     printState,
@@ -32,6 +37,11 @@ const Timelock = artifacts.require("Timelock");
 const TimelockMock = artifacts.require("TimelockMock");
 const GovernorAlpha = artifacts.require("GovernorAlpha");
 const GovernorAlphaMock = artifacts.require("GovernorAlphaMock");
+const FeeSharingProxy = artifacts.require("FeeSharingProxy");
+const PriceFeeds = artifacts.require("PriceFeeds");
+const TestWrbtc = artifacts.require("TestWrbtc");
+const MockERC20 = artifacts.require("MockERC20");
+const Multicall = artifacts.require("Multicall");
 
 const logger = new Logs().showInConsole(true);
 
@@ -42,10 +52,9 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts, web3 }: Ha
     const { deploy } = deployments;
     const [default_] = await getUnnamedAccounts();
 
-    const initialAmount = new BN(1000000000).toString(); // DO SOMETHING WITH BIGNUMBER
+    const initialAmount = "1000000000000000000000"; // DO SOMETHING WITH BIGNUMBER
     const quorumPercentageVotes = 1;
     const majorityPercentageVotes = 20;
-    const feeSharingAddress = "0x0000000000000000000000000000000000000001";
     const multiSigWalletOwners = [default_];
     const multiSigWalletRequiredConfirmations = 1;
 
@@ -90,8 +99,16 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts, web3 }: Ha
 
     const staking = await Staking.at(stakingProxy.address);
 
+    const feeSharingProxyArgs = contractConstructorArgs<FeeSharingProxyContract>(ZERO_ADDRESS, staking.address);
+    const feeSharingProxy = await conditionalDeploy({
+        key: 'FeeSharingProxy',
+        contract: FeeSharingProxy,
+        deployOptions: { from: default_, args: feeSharingProxyArgs },
+        deployfunc: deploy
+    });
+
     await conditionalInitialize("Staking",
-        async () => { await staking.setFeeSharing(feeSharingAddress); }
+        async () => { await staking.setFeeSharing(feeSharingProxy.address); }
     );
 
     const vestingLogic = await conditionalDeploy({
@@ -113,7 +130,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts, web3 }: Ha
         vestingFactory.address,
         fishToken.address,
         staking.address,
-        feeSharingAddress,
+        feeSharingProxy.address,
         multiSigWallet.address
     );
     await conditionalDeploy({
@@ -180,6 +197,52 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts, web3 }: Ha
             logger.warn(`Eta for admin: ${etaTime}`);
         }
     );
+
+    const tokenSupply = "1000000000000000000000000";
+
+    const docTokenArgs = contractConstructorArgs<MockERC20Contract>(
+        "Dollar on Chain", "DOC", 18, default_ , tokenSupply
+    );
+    const docToken = await conditionalDeploy({
+        contract: MockERC20,
+        key: 'DOC',
+        deployfunc: deploy,
+        deployOptions: { from: default_, args: docTokenArgs }
+    });
+
+    const protocolTokenArgs = contractConstructorArgs<MockERC20Contract>(
+        "Protocol Token", "PROTOCOL", 18, default_, tokenSupply
+    );
+    const protocolToken = await conditionalDeploy({
+        contract: MockERC20,
+        key: 'PROTOCOL',
+        deployfunc: deploy,
+        deployOptions: { from: default_, args: protocolTokenArgs }
+    });
+
+    const wrbtcTokenArgs = contractConstructorArgs<TestWrbtcContract>();
+    const wrbtcToken = await conditionalDeploy({
+        contract: TestWrbtc,
+        key: 'WRBTC',
+        deployfunc: deploy,
+        deployOptions: { from: default_, args: wrbtcTokenArgs }
+    });
+
+    const priceFeedsArgs = contractConstructorArgs<PriceFeedsContract>(wrbtcToken.address, protocolToken.address, docToken.address);
+    await conditionalDeploy({
+        contract: PriceFeeds,
+        key: 'PriceFeeds',
+        deployfunc: deploy,
+        deployOptions: { from: default_, args: priceFeedsArgs }
+    });
+
+    const multicallArgs = contractConstructorArgs<MulticallContract>();
+    await conditionalDeploy({
+        contract: Multicall,
+        key: 'Multicall',
+        deployfunc: deploy,
+        deployOptions: { from: default_, args: multicallArgs }
+    });
 
     logger.success("Migration completed");
     printState();

@@ -19,7 +19,7 @@ const main = async () => {
             const massetMock = await getDeployed(MassetV3, `${symbol}_MassetProxy`);
             logger.success(`-- Masset version: ${await massetMock.getVersion()}`);
 
-            const basketManagerMock = await getDeployed(BasketManagerV3, `${symbol}_MassetProxy`);
+            const basketManagerMock = await getDeployed(BasketManagerV3, `${symbol}_BasketManagerProxy`);
             logger.success(`-- Basket Manager version: ${await basketManagerMock.getVersion()}\n`);
         } catch (e) {
             logger.err("error", ["bold"]);

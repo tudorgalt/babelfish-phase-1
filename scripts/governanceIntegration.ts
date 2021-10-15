@@ -13,7 +13,8 @@ const main = async () => {
             contracts: [
                 `${symbol}_MassetProxy`,
                 `${symbol}_BasketManagerProxy`,
-                `${symbol}_RewardsManagerProxy`
+                `${symbol}_RewardsManagerProxy`,
+                `${symbol}_FeesManagerProxy`
             ]
         };
         await run("transferOwnership", contractsList);

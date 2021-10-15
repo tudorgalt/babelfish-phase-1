@@ -235,7 +235,14 @@ contract BasketManagerV4 is InitializableOwnable {
         uint256 _total
     ) internal view returns(uint256 deviation) {
         uint256 target = getBassetTargetRatio(_basset);
-        uint256 ratio = _quantityInMasset.mul(ratioPrecision).div(_total);
+        uint256 ratio;
+
+        if (_total == 0) {
+            ratio = _quantityInMasset > 0 ? ratioPrecision : 0;
+        } else {
+            ratio = _quantityInMasset.mul(ratioPrecision).div(_total);
+        }
+
         int256 deviation = int256(target) - int256(ratio);
 
         return deviation > 0 ? uint256(deviation) : uint256(-deviation);
@@ -257,11 +264,13 @@ contract BasketManagerV4 is InitializableOwnable {
         bool _isDeposit
     ) public view validBasset(_basset) returns (uint256 deviation, uint256 deviationWithOffset, uint256 total, uint256 totalWithOffset) {
         total = getTotalMassetBalance();
-        require(_offsetInMasset <= total, "not enough funds in basket");
 
-        totalWithOffset = _isDeposit
-            ? total.add(_offsetInMasset)
-            : total.sub(_offsetInMasset);
+        if (_isDeposit) {
+            totalWithOffset = total.add(_offsetInMasset);
+        } else {
+            require(_offsetInMasset <= total, "not enough funds in basket");
+            totalWithOffset = total.sub(_offsetInMasset);
+        }
 
         uint256 sum = 0;
         uint256 sumWithOffset = 0;
@@ -270,6 +279,7 @@ contract BasketManagerV4 is InitializableOwnable {
             address basset = bassetsArray[i];
             uint256 balance = IERC20(basset).balanceOf(masset);
             (uint256 massetQuantity, ) = convertBassetToMassetQuantity(basset, balance);
+
             uint256 deviation = getBassetRatioDeviation(basset, massetQuantity, total);
             sum = sum.add(deviation.mul(deviation));
 
