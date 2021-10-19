@@ -123,37 +123,24 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev Contract initializer.
-     * @param _rewardsManagerAddress  Address of the rewards manager.
-     * @param _rewardsVaultAddress    Address of the rewards vault.
     */
-    function initialize(
-        address _rewardsManagerAddress,
-        address _rewardsVaultAddress
-    ) public {
+    function initialize() public {
         require(keccak256(bytes(version)) == keccak256(bytes("3.0")), "wrong version");
-        require(_rewardsManagerAddress != address(0), "invalid rewards manager address");
-        require(_rewardsVaultAddress != address(0), "invalid rewards vault address");
-
-        rewardsVault = RewardsVault(_rewardsVaultAddress);
-        rewardsManager = RewardsManager(_rewardsManagerAddress);
-
         version = "4.0";
     }
 
     /**
      * @dev Calculate and return reward amount.
      * @param _basset           Address of basset to deposit/withdraw.
-     * @param _massetQuantity   Amount of basset to deposit / withdraw.
+     * @param _bassetAmount   Amount of basset to deposit / withdraw.
      * @return rewardAmount     Calculated reward amount.
      *         Positive value means that user will be rewarded, negative that this amount will be taken.
      */
     function calculateReward (
         address _basset,
-        uint256 _bassetQuantity
-    ) internal view returns(int256 rewardAmount) {
-
-        (int256 deviationBefore, int256 deviationAfter) = basketManager.getBassetRatioDeviation(_basset, _bassetQuantity);
-        rewardAmount = rewardsManager.calculateReward(deviationBefore, deviationAfter);
+        uint256 _bassetAmount
+    ) public view returns(int256) {
+        return rewardsManager.calculateReward(_basset, _bassetAmount, basketManager);
     }
 
     /***************************************
@@ -165,19 +152,29 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
      *      must have approval to spend the senders bAsset.
      * @param _bAsset               Address of the bAsset.
      * @param _bAssetQuantity       Quantity in bAsset units.
-     * @param _minExpectedMassets   Expected amount of mAssets to receive.
      * @return massetMinted         Number of newly minted mAssets.
      */
     function mint(
         address _bAsset,
+        uint256 _bAssetQuantity
+    ) external nonReentrant returns (uint256 massetMinted) {
+        return _mintTo(_bAsset, _bAssetQuantity, msg.sender, 0, 0);
+    }
+
+    /**
+     * @dev Mint a single mAsset, at a 1:1 ratio with the bAsset. This contract
+     *      must have approval to spend the senders bAsset.
+     * @param _bAsset               Address of the bAsset.
+     * @param _bAssetQuantity       Quantity in bAsset units.
+     * @param _minExpectedReward   Expected amount of mAssets to receive.
+     * @return massetMinted         Number of newly minted mAssets.
+     */
+    function mintWithReward(
+        address _bAsset,
         uint256 _bAssetQuantity,
-        uint256 _minExpectedMassets
-    )
-    external
-    nonReentrant
-    returns (uint256 massetMinted)
-    {
-        return _mintTo(_bAsset, _bAssetQuantity, msg.sender, _minExpectedMassets);
+        int256 _minExpectedReward
+    ) external nonReentrant returns (uint256 fee, int256 reward, uint256 massetSent) {
+        return _mintTo(_bAsset, _bAssetQuantity, msg.sender, _minExpectedReward);
     }
 
     /**
@@ -186,42 +183,33 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param _bAsset               Address of the bAsset.
      * @param _bAssetQuantity       Quantity in bAsset units.
      * @param _recipient            Receipient of the newly minted mAsset tokens.
-     * @param _minExpectedMassets   Expected amount of mAssets to receive.
      * @return massetMinted     Number of newly minted mAssets.
      */
     function mintTo(
         address _bAsset,
         uint256 _bAssetQuantity,
-        address _recipient,
-        uint256 _minExpectedMassets
-    )
-    external
-    nonReentrant
-    returns (uint256 massetMinted)
-    {
-        return _mintTo(_bAsset, _bAssetQuantity, _recipient, _minExpectedMassets);
+        address _recipient
+    ) external nonReentrant returns (uint256 massetMinted) {
+        return _mintTo(_bAsset, _bAssetQuantity, _recipient, 0, 0);
     }
 
     /**
-     * @dev Calculates how many mAssets will be given to user for deposit.
-     * @notice includes fees and rewards
-     * @param _bAsset          Address of the bAsset.
-     * @param _bAssetQuantity  Quantity in bAsset units.
-     * @return  massetsMinted: total amount of mAssets that will be given for user
-     *          bassetsTaken:  total amount of bAssets that will be taken from user
+     * @dev Mint a single mAsset to recipient address, at a 1:1 ratio with the bAsset.
+     *      This contract must have approval to spend the senders bAsset.
+     * @param _bAsset               Address of the bAsset.
+     * @param _bAssetQuantity       Quantity in bAsset units.
+     * @param _recipient            Receipient of the newly minted mAsset tokens.
+     * @param _minExpectedReward   Expected amount of mAssets to receive.
+     * @param _maxExpectedReward   Expected amount of mAssets to receive.
+     * @return massetMinted     Number of newly minted mAssets.
      */
-    function calculateMintRatio (
+    function mintToWithReward(
         address _bAsset,
-        uint256 _bAssetQuantity
-    ) public view returns(uint256 massetsMinted, uint256 bassetsTaken) {
-        (, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) = calculateMint(_bAsset, _bAssetQuantity, false);
-
-        uint256 transferedReward = 0;
-        if (reward > 0) {
-            transferedReward = uint256(reward);
-        }
-
-        return (massetsToMint.add(transferedReward), bassetsToTake);
+        uint256 _bAssetQuantity,
+        address _recipient,
+        int256 _minExpectedReward
+    ) external nonReentrant returns (uint256 fee, int256 reward, uint256 massetSent) {
+        return _mintTo(_bAsset, _bAssetQuantity, _recipient, _minExpectedReward);
     }
 
     /**
@@ -231,37 +219,40 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param _bridgeFlag     Flag that indicates if the mint proces is used with conjunction with bridge.
      * @return  fee: amount of fee that will be taken
      *          reward: amount to reward/punish user for performing action in specific pool balance.
-     *          massetsToMint: amount of mAsset that will be minted for user. IT DOES NOT INCLUDE FEES AND REWARDS!
-     *          bassetsToTake: amount of bAssets that will be taken from user.
+     *          fee: amount of fee to be paid
+     *          finalMassetAmount: amount of masset that will actually be sent
      */
-    function calculateMint (
+    function simulateMint (
         address _bAsset,
-        uint256 _bAssetQuantity,
+        uint256 _bAssetAmount,
         bool _bridgeFlag
-    ) public view returns (uint256 fee, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) {
-        require(basketManager.isValidBasset(_bAsset), "invalid basset");
-        require(_bAssetQuantity > 0, "quantity must not be 0");
+    ) public view returns (uint256 fee, int256 reward, uint256 finalMassetAmount) {
+        require(_bAssetAmount > 0, "amount must be > 0");
+        require(basketManager.checkBasketBalanceForDeposit(_bAsset, _bAssetAmount), "basket out of balance");
 
-        (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(_bAsset, _bAssetQuantity);
-        require(basketManager.checkBasketBalanceForDeposit(_bAsset, bassetQuantity), "basket out of balance");
+        (uint256 _massetAmount, ) = basketManager.convertBassetToMassetQuantity(_bAsset, _bAssetAmount);
 
-        if (_bridgeFlag) {
-            fee = feesManager.calculateDepositBridgeFee(massetQuantity);
-        } else {
-            fee = feesManager.calculateDepositFee(massetQuantity);
-            reward = calculateReward(_bAsset, massetQuantity);
+        reward = calculateReward(_bAsset, _bAssetAmount);
+
+        int256 tempAmount = int256(_massetAmount).add(reward);
+        if(tempAmount <= 0) {
+            fee = 0;
+            finalMassetAmount = 0;
+            return;
         }
 
-        uint256 massetsAfterReward = reward > 0
-            ? massetQuantity
-            : massetQuantity.sub(uint256(-reward));
-        
-        require(massetsAfterReward > 0, "mint amount after reward must be > 0");
+        if (_bridgeFlag) {
+            fee = feesManager.calculateDepositBridgeFee(uint256(tempAmount));
+        } else {
+            fee = feesManager.calculateDepositFee(uint256(tempAmount));
+        }
 
-        massetsToMint = massetsAfterReward.sub(fee);
-        require(massetsToMint > 0, "mint amount after reward and fee must be > 0");
-
-        return (fee, reward, massetsToMint, bassetQuantity);
+        tempAmount = tempAmount.sub(int256(fee));
+        if (tempAmount < 0) {
+            fee = uint256(tempAmount);
+            tempAmount = 0;
+        }
+        finalMassetAmount =  uint256(tempAmount);
     }
 
     /***************************************
@@ -281,35 +272,33 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         address _basset,
         uint256 _bassetQuantity,
         address _recipient,
-        uint256 _minExpectedMassets
-    )
-    internal
-    returns (uint256 massetMinted) {
+        uint256 _minExpectedReward
+    ) internal returns (uint256 massetMinted) {
         require(basketManager.isValidBasset(_basset), "invalid basset");
         require(_recipient != address(0), "must be a valid recipient");
         require(IERC20(_basset).balanceOf(msg.sender) >= _bassetQuantity, "insufficient balance");
 
-        (uint256 fee, int256 reward, uint256 massetsToMint, uint256 bassetsToTake) = calculateMint(_basset, _bassetQuantity, false);
-        uint256 transferedReward = reward > 0 ? uint256(reward) : 0;
-        uint256 finalGivenMassets = massetsToMint.add(transferedReward);
+        (uint256 fee, int256 reward, uint256 finalMassetAmount) = simulateMint(_basset, _bassetQuantity, false);
 
-        require(finalGivenMassets >= _minExpectedMassets, "Exceeded max allowed slippage");
+        require(reward > _minExpectedReward, "slippage out of range");
 
-        token.mint(address(feesVault), fee);
+        if (fee > 0) {
+            token.mint(address(feesVault), fee);
+        }
 
-        if (transferedReward > 0) {
-            rewardsVault.getApproval(transferedReward, address(token));
-            require(token.transferFrom(address(rewardsVault), _recipient, transferedReward), "add reward transfer failed");
-        } else {
+        if (reward > 0) {
+            rewardsVault.getApproval(uint256(reward), address(token));
+            require(token.transferFrom(address(rewardsVault), _recipient, reward), "reward transfer failed");
+        } else if (reward < 0) {
             token.mint(address(rewardsVault), uint256(-reward));
         }
 
-        IERC20(_basset).safeTransferFrom(msg.sender, address(this), bassetsToTake);
-        token.mint(_recipient, massetsToMint);
+        IERC20(_basset).safeTransferFrom(msg.sender, address(this), _bassetQuantity);
+        token.mint(_recipient, finalMassetAmount);
 
-        emit Minted(msg.sender, _recipient, finalGivenMassets, _basset, bassetsToTake);
+        emit Minted(msg.sender, _recipient, finalMassetAmount, _basset, _bassetQuantity);
 
-        return massetsToMint;
+        return finalMassetAmount;
     }
 
     /***************************************

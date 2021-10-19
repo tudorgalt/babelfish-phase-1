@@ -51,11 +51,11 @@ contract RewardsManager is InitializableOwnable {
         for(uint i=0; i<bassets.length; i++) {
             address currentBasset = bassets[i];
 
-            uint256 weight = _adjustWeightPrecision(_basketManager,
+            uint256 weight = _adjustWeightPrecision(_basketManager.WEIGHT_PRECISION,
                 _basketManager.getBassetWeight(currentBasset));
-            uint256 simulatedWeight = _adjustWeightPrecision(_basketManager,
+            uint256 simulatedWeight = _adjustWeightPrecision(_basketManager.WEIGHT_PRECISION,
                 _basketManager.getSimulatedBassetWeight(currentBasset, _basset, _bassetAmount));
-            uint256 targetWeight = _adjustWeightPrecision(_basketManager,
+            uint256 targetWeight = _adjustWeightPrecision(_basketManager.WEIGHT_PRECISION,
                 _basketManager.getBassetTargetWeight(currentBasset));
 
             deviationBefore = deviationBefore.add(_weightDifferenceSquare(weight, targetWeight));
@@ -67,8 +67,8 @@ contract RewardsManager is InitializableOwnable {
         return _calculateReward(deviationBefore, deviationAfter);
     }
 
-    function _adjustWeightPrecision(BasketManagerV4 _basketManager, uint256 _v) public view returns(uint256) {
-        return _v.mul(PRECISION).div(_basketManager.WEIGHT_PRECISION);
+    function _adjustWeightPrecision(uint256 _fromPrecision, uint256 _v) public view returns(uint256) {
+        return _v.mul(PRECISION).div(_fromPrecision);
     }
 
     function _weightDifferenceSquare(uint256 _d1, uint256 _d2) internal pure returns(uint256) {
@@ -84,10 +84,12 @@ contract RewardsManager is InitializableOwnable {
      */
     function _calculateReward(uint256 _deviationBefore, uint256 _deviationAfter) internal view returns(int256 reward) {
 
+        if(slope == 0) return 0;
+
         uint256 vBefore = _calculateV(_deviationBefore);
         uint256 vAfter = _calculateV(_deviationAfter);
 
-        reward = int256(vAfter).sub(int256(vBefore));
+        reward = int256(vBefore).sub(int256(vAfter));
     }
 
     function _calculateV(uint256 _d) internal view returns(uint256 v) {
@@ -105,10 +107,7 @@ contract RewardsManager is InitializableOwnable {
     // Governance
 
     function setSlope(uint256 _slope) public onlyOwner {
-        require(_slope > 0, "slope must be greater than 0");
-
         slope = _slope;
-
         emit CurveParametersChanged(maxValue, _slope);
     }
 }

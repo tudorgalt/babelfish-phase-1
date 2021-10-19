@@ -15,9 +15,9 @@ contract FeesManager is InitializableOwnable {
 
     /**
      * @dev Factor of fees.
-     * @notice 1000 means that fees are in per mille.
+     * @notice a value of 10000 means that 223 equals 2.23% and 10000 equals 100%
      */
-    uint256 constant public PRECISION = 1000;
+    uint256 constant public PRECISION = 10000;
 
     uint256 private depositFee;
     uint256 private depositBridgeFee;

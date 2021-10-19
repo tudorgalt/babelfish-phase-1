@@ -18,7 +18,7 @@ contract BasketManagerV4 is InitializableOwnable {
     using SignedSafeMath for int256;
     using SafeMath for uint256;
 
-    uint256 public constant WEIGHT_PRECISION = 1000;
+    uint256 public constant WEIGHT_PRECISION = 10000;
 
     // Events
 
@@ -51,10 +51,10 @@ contract BasketManagerV4 is InitializableOwnable {
     /**
      * @dev Event emitted when range changes.
      * @param basset    Address of the bAsset contract.
-     * @param min       Minimal value of range.
-     * @param max       Maximal value of range.
+     * @param minWeight Minimal weight.
+     * @param maxWeight Maximal weight.
      */
-    event RangeChanged (address basset, uint256 min, uint256 max);
+    event RangeChanged (address basset, uint256 minWeight, uint256 maxWeight);
 
     /**
      * @dev Event emitted when target weight changes.
@@ -140,15 +140,10 @@ contract BasketManagerV4 is InitializableOwnable {
      * @return      Is the number power of ten.
      */
     function isPowerOfTen(int256 x) public pure returns (bool result) {
-        uint256 number;
-
-        if (x < 0) number = uint256(-x);
-        else number = uint256(x);
-
+        uint256 number = x >= 0 ? uint256(x) : uint256(-x);
         while (number >= 10 && number % 10 == 0) {
             number /= 10;
         }
-
         result = number == 1;
     }
 
@@ -169,6 +164,7 @@ contract BasketManagerV4 is InitializableOwnable {
         uint256 balance = bassetBalanceInMasset.add(massetQuantity);
         uint256 total = getTotalBassetsInMasset().add(massetQuantity);
         uint256 weight = balance.mul(WEIGHT_PRECISION).div(total);
+
         uint256 max = maxMap[_basset];
         return weight <= max;
     }
@@ -277,7 +273,7 @@ contract BasketManagerV4 is InitializableOwnable {
     ) public view validBasset(_basset) returns (uint256 weight) {
 
         (uint256 _amountInMasset, ) = convertBassetToMassetQuantity(_basset, uint256(_amount));
-        int256 amountInMasset = _amount >= 0 ? int256(_amountInMasset) : 0 - int256(_amountInMasset);
+        int256 amountInMasset = _amount >= 0 ? int256(_amountInMasset) : -1 * int256(_amountInMasset);
 
         int256 total = int256(getTotalBassetsInMasset());
         total = total.add(amountInMasset);
@@ -374,10 +370,6 @@ contract BasketManagerV4 is InitializableOwnable {
         setRange(_basset, _min, _max);
         setBridge(_basset, _bridge);
         setPaused(_basset, _paused);
-        // if this is the first basset ever, set its target weight to 1
-        if(bassetsArray.length == 1) {
-            _setTargetWeight(_basset, WEIGHT_PRECISION);
-        }
 
         emit BassetAdded(_basset);
     }
@@ -405,23 +397,23 @@ contract BasketManagerV4 is InitializableOwnable {
 
     /**
      * @dev Sets the max and min values for a bAssets.
-     * @param _min          Minimum weight in basket.
-     * @param _max          Maximum weight in basket.
+     * @param _minWeight          Minimum weight in basket.
+     * @param _maxWeight          Maximum weight in basket.
      */
-    function setRange(address _basset, uint256 _min, uint256 _max) public validBasset(_basset) onlyOwner {
-        require(_min <= WEIGHT_PRECISION, "invalid minimum");
-        require(_max <= WEIGHT_PRECISION, "invalid maximum");
-        require(_max >= _min, "invalid range");
-        minMap[_basset] = _min;
-        maxMap[_basset] = _max;
+    function setRange(address _basset, uint256 _minWeight, uint256 _maxWeight) public validBasset(_basset) onlyOwner {
+        require(_minWeight <= WEIGHT_PRECISION, "invalid minimum");
+        require(_maxWeight <= WEIGHT_PRECISION, "invalid maximum");
+        require(_maxWeight >= _minWeight, "invalid range");
+        minMap[_basset] = _minWeight;
+        maxMap[_basset] = _maxWeight;
 
-        emit RangeChanged(_basset, _min, _max);
+        emit RangeChanged(_basset, _minWeight, _maxWeight);
     }
 
-    function _setTargetWeight(address _basset, uint256 _weight) internal validBasset(_basset) {
-        require(_weight <= WEIGHT_PRECISION, "target weight should be equal or less than 1000%%");
-        targetWeightMap[_basset] = _weight;
-        emit TargetWeightChanged(_basset, _weight);
+    function _setTargetWeight(address _basset, uint256 _targetWeight) internal validBasset(_basset) {
+        require(_targetWeight <= WEIGHT_PRECISION, "target weight should be <= 100%");
+        targetWeightMap[_basset] = _targetWeight;
+        emit TargetWeightChanged(_basset, _targetWeight);
     }
 
     /**
