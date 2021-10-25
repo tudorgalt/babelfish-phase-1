@@ -87,7 +87,7 @@ const addresses: Addresses = {
                 withdrawal: new BN(0),
                 withdrawalBridge: new BN(0)
             },
-            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ratios: [125, 125, 125, 125, 125, 125, 125, 125]
         },
         ETHs: {
             bassets: [

@@ -110,7 +110,7 @@ contract Staking is IStaking, WeightedStaking, ApprovalReceiver {
 				delegates[stakeFor][until] = delegatee;
 
 				/// @dev Decrease stake on previous balance for previous delegatee.
-				_decreaseDelegateStake(previousDelegatee, until, previousBalance);
+				_decreaseDelegateStake(DelegateStake(previousDelegatee, until, previousBalance);
 
 				/// @dev Add previousBalance to amount.
 				amount = add96(previousBalance, amount, "Staking::stake: balance overflow");
@@ -150,7 +150,9 @@ contract Staking is IStaking, WeightedStaking, ApprovalReceiver {
 			delegateTo = delegateFrom;
 			delegates[msg.sender][until] = delegateFrom;
 		}
-		delegates[msg.sender][previousLock] = address(0);
+		if (previousLock != until) {
+			delegates[msg.sender][previousLock] = address(0);
+		}
 		_decreaseDelegateStake(delegateFrom, previousLock, amount);
 		_increaseDelegateStake(delegateTo, until, amount);
 
