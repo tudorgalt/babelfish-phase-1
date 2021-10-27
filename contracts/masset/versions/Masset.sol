@@ -81,7 +81,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
             registerAsERC777Recipient();
         }
 
-        version = "1.0";
+        version = "2.3";
     }
 
     /***************************************

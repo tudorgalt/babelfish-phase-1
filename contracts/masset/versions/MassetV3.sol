@@ -141,7 +141,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
             registerAsERC777Recipient();
         }
 
-        version = "1.0";
+        version = "2.3";
     }
 
     /***************************************
@@ -472,6 +472,14 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // Getters
 
+    function getFeesVault() external view returns (address) {
+        return address(feesVault);
+    }
+
+    function getFeesManager() external view returns (address) {
+        return address(feesManager);
+    }
+
     function getVersion() external view returns (string memory) {
         return version;
     }
@@ -484,27 +492,184 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return address(basketManager);
     }
 
+    address[] private bassets;
+    int256[] private factors;
+    address[] private bridges;
+    uint256[] private mins;
+    uint256[] private maxs;
+    bool[] private pausedFlags;
+
     // Temporary migration
     /**
      * @dev Temporary migration to V3 version.
+     * @notice this contract should be an owner of basket manager
      */
     function upgradeToV3(
         address _basketManagerAddress,
-        address _tokenAddress,
         address _feesVaultAddress,
         address _feesManagerAddress
     ) external {
-        require(
-            keccak256(bytes(version)) == keccak256(bytes("1.0")) ||
-            keccak256(bytes(version)) == keccak256(bytes("2.0")), "wrong version (1)");
+        require(keccak256(bytes(version)) == keccak256(bytes("2.3")), "wrong version (1)");
         require(keccak256(bytes(BasketManagerV3(_basketManagerAddress).getVersion())) == keccak256(bytes("3.0")), "wrong version (2)");
-        require(_feesVaultAddress != address(0), "invalid vault address");
-        require(_feesManagerAddress != address(0), "invalid fees manager address");
 
-        feesVault = FeesVault(_feesVaultAddress);
         feesManager = FeesManager(_feesManagerAddress);
+        feesVault = FeesVault(_feesVaultAddress);
         basketManager = BasketManagerV3(_basketManagerAddress);
-        token = Token(_tokenAddress);
+
+        // add bassets from old basket manager
+
+        uint256 chainId;
+        assembly {
+            chainId := chainid()
+        }
+
+        // testnet
+        if (chainId == 31) {
+            // ----- ETH->RSK -----
+            bassets.push(0xcB92c8d49Ec01b92f2a766C7c3C9C501C45271e0); // DAIes
+            bridges.push(0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156);
+            factors.push(1);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0xCc8EEc21aE75f1A2DE4aC7b32a7de888A45cF859); // USDCes
+            bridges.push(0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156);
+            factors.push(1);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0x10C5A7930fc417E728574e334b1488b7895C4b81); // USDTes
+            bridges.push(0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156);
+            factors.push(1);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            // ----- BSC->RSK -----
+            bassets.push(0x407Ff7D4760d3a81b4740D268eb04490C7dFE7f2); // bsDAI
+            bridges.push(0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8);
+            factors.push(1);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0x3e2cf87e7fF4048A57F9Cdde9368C9f4bfb43aDf); // bsUSDC
+            bridges.push(0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8);
+            factors.push(1);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0x43bC3f0FfFf6c9BBf3C2EAfe464C314d43f561De); // bsUSDT
+            bridges.push(0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8);
+            factors.push(1);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0x8c9abb6c9D8D15ddB7ada2e50086e1050aB32688); // bsBUSD
+            bridges.push(0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8);
+            factors.push(1);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            // ----- non bridge -----
+            bassets.push(0xC3De9F38581f83e281f260d0DdbaAc0e102ff9F8); // rDOC
+            bridges.push(0x0000000000000000000000000000000000000000);
+            factors.push(1);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0xCB46c0ddc60D18eFEB0E586C17Af6ea36452Dae0);// DOC
+            bridges.push(0x0000000000000000000000000000000000000000);
+            factors.push(1);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+        }
+
+        // mainnet
+        if (chainId == 30) {
+            // ----- ETH->RSK -----
+            bassets.push(0x1a37c482465e78E6dabE1eC77b9A24d4236D2A11); // DAIes
+            factors.push(int256(1));
+            bridges.push(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0x8D1F7cBC6391d95E2774380E80a666fEBf655d6B); // USDCes
+            factors.push(int256(1));
+            bridges.push(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0xD9665Ea8F5Ff70CF97e1b1CD1B4Cd0317B0976e8); // USDTes
+            factors.push(int256(1));
+            bridges.push(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            // ----- BSC->RSK -----
+            bassets.push(0x6A42FF12215a90F50866a5CE43a9c9c870116E76); // DAIbs
+            factors.push(int256(1));
+            bridges.push(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0x91eDceE9567cD5612C9DeDeAAe24D5e574820Af1); // USDCbs
+            factors.push(int256(1));
+            bridges.push(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0xFf4299bcA0313c20A61dC5Ed597739743bEf3f6D); // USDTbs
+            factors.push(int256(1));
+            bridges.push(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0x61e9604E31a736129D7f5c58964C75935b2D80d6); // BUSDbs
+            factors.push(int256(1));
+            bridges.push(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            // ----- non bridge -----
+            bassets.push(0xef213441A85dF4d7ACbDaE0Cf78004e1E486bB96); // RUSDT
+            factors.push(int256(1));
+            bridges.push(0x0000000000000000000000000000000000000000);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0x2d919F19D4892381D58edeBeca66D5642Cef1a1f); // rDOC
+            factors.push(int256(1));
+            bridges.push(0x0000000000000000000000000000000000000000);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+
+            bassets.push(0xe700691dA7b9851F2F35f8b8182c69c53CcaD9Db); // DOC
+            factors.push(int256(1));
+            bridges.push(0x0000000000000000000000000000000000000000);
+            mins.push(0);
+            maxs.push(1000);
+            pausedFlags.push(false);
+        }
+
+        basketManager.addBassets(bassets, factors, bridges, mins, maxs, pausedFlags);
+        basketManager.transferOwnership(msg.sender);
         version = "3.0";
         InitializableReentrancyGuard._initialize();
     }

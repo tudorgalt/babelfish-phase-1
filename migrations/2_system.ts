@@ -5,7 +5,7 @@ import { BasketManagerContract, TokenContract } from "types/generated";
 import addresses, { BassetInstanceDetails, isDevelopmentNetwork } from './utils/addresses';
 import { DeploymentTags } from "./utils/DeploymentTags";
 
-import { conditionalDeploy, conditionalInitialize, contractConstructorArgs, printState } from "./utils/state";
+import { conditionalDeploy, conditionalInitialize, contractConstructorArgs, printState, setNetwork } from "./utils/state";
 
 const cToken = artifacts.require("Token");
 const cBasketManager = artifacts.require("BasketManager");
@@ -20,6 +20,7 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
     const [default_, _admin] = await getUnnamedAccounts();
     const { deploy } = deployments;
 
+    setNetwork(network.name);
     const addressesForNetwork = addresses[network.name];
 
     async function deployInstance(symbol: string, addressesForInstance: BassetInstanceDetails) {
@@ -83,9 +84,9 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
         });
     }
 
-    await deployInstance('ETHs', addressesForNetwork.ETHs);
+    // await deployInstance('ETHs', addressesForNetwork.ETHs);
     await deployInstance('XUSD', addressesForNetwork.XUSD);
-    await deployInstance('BNBs', addressesForNetwork.BNBs);
+    // await deployInstance('BNBs', addressesForNetwork.BNBs);
 
     logger.success("Migration completed");
     printState();

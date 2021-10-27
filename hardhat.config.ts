@@ -84,7 +84,7 @@ const config: HardhatUserConfig = {
                 initialIndex: 0,
                 count: 30
             },
-            url: 'wss://mainnet.sovryn.app/ws',
+            url: 'https://mainnet.sovryn.app/rpc',
             chainId: 30,
             gasPrice: 71680400, // 71GWei,
             timeout: 1e9

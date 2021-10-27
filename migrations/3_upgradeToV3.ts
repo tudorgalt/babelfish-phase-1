@@ -4,7 +4,7 @@ import { ZERO_ADDRESS } from "@utils/constants";
 import { tokens, BN } from "@utils/tools";
 import { MassetV3Instance } from "types/generated";
 import addresses, { BassetInstanceDetails, hasMultisigAddress, isDevelopmentNetwork } from './utils/addresses';
-import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "./utils/state";
+import { conditionalDeploy, conditionalInitialize, getDeployed, printState, setNetwork } from "./utils/state";
 import { DeploymentTags } from "./utils/DeploymentTags";
 
 const ERC20Mintable = artifacts.require("ERC20Mintable");
@@ -27,6 +27,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
     const { deploy } = deployments;
     const [default_, _admin] = await getUnnamedAccounts();
 
+    setNetwork(network.name);
     const addressesForNetwork = addresses[network.name];
 
     const feesVault = await conditionalDeploy({
@@ -57,8 +58,6 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             return;
         }
 
-        const tokenAddress = await massetFake.getToken();
-
         const basketManager = await conditionalDeploy({
             contract: BasketManagerV3,
             key: `${symbol}_BasketManagerV3`,
@@ -79,65 +78,6 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
 
         const basketManagerFake = await BasketManagerV3.at(basketManagerProxy.address);
 
-        if (isDevelopmentNetwork(network.name)) {
-            const basset1 = await ERC20Mintable.new();
-            const basset2 = await ERC20Mintable.new();
-            const basset3 = await ERC20Mintable.new();
-
-            // set basket balances with perfect ratio
-            await basset1.mint(massetFake.address, tokens(30));
-            await basset1.mint(massetFake.address, tokens(40));
-            await basset1.mint(massetFake.address, tokens(40));
-
-            // mint some tokens for owner
-            await basset1.mint(default_, tokens(1000));
-
-            addressesForInstance.bassets = [basset1.address, basset2.address, basset3.address];
-            addressesForInstance.factors = [-10, 1, 1];
-            addressesForInstance.bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
-            addressesForInstance.ratios = [300, 300, 400];
-            addressesForInstance.fees = {
-                deposit: new BN(5),
-                depositBridge: new BN(6),
-                withdrawal: new BN(7),
-                withdrawalBridge:  new BN(8)
-            };
-        }
-
-        if (await basketManagerProxy.admin() === _admin) {
-            const existingAssets = await basketManagerFake.getBassets();
-            const addAsset = async (index: number) => {
-                console.log('adding asset: ',
-                    addressesForInstance.bassets[index],
-                    addressesForInstance.factors[index],
-                    addressesForInstance.bridges[index]
-                );
-
-                await basketManagerFake.addBasset(
-                    addressesForInstance.bassets[index],
-                    addressesForInstance.factors[index],
-                    addressesForInstance.bridges[index],
-                    0,
-                    MAX_VALUE,
-                    false
-                );
-            };
-
-            for (let i = 0; i < addressesForInstance.bassets.length; i++) {
-                if (!existingAssets.find(ta => ta === addressesForInstance.bassets[i])) {
-                    // eslint-disable-next-line no-await-in-loop
-                    await addAsset(i);
-                }
-            }
-
-            if (hasMultisigAddress(addressesForInstance)) {
-                if (await basketManagerFake.owner() === default_) {
-                    await basketManagerFake.transferOwnership(addressesForInstance.multisig);
-                }
-                await basketManagerProxy.changeAdmin(addressesForInstance.multisig, { from: _admin });
-            }
-        }
-
         const feesManager = await conditionalDeploy({
             contract: FeesManager,
             key: `${symbol}_FeesManager`,
@@ -156,6 +96,15 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
         );
 
         const feesManagerFake = await FeesManager.at(feesManagerProxy.address);
+
+        if (isDevelopmentNetwork(network.name)) {
+            addressesForInstance.fees = {
+                deposit: new BN(5),
+                depositBridge: new BN(6),
+                withdrawal: new BN(7),
+                withdrawalBridge: new BN(8)
+            };
+        }
 
         await conditionalInitialize(`${symbol}_FeesManager`, async () => {
             await feesManagerFake.initialize(
@@ -176,17 +125,44 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
         const massetProxy = await MassetProxy.at(massetFake.address);
 
         await massetProxy.upgradeTo(masset.address, { from: _admin });
-        await massetFake.upgradeToV3(
-            basketManagerFake.address,
-            tokenAddress,
-            vaultFake.address,
-            feesManagerFake.address
-        );
+        await basketManagerFake.transferOwnership(massetFake.address);
+
+        await massetFake.upgradeToV3(basketManagerFake.address, vaultFake.address, feesManagerFake.address);
+
+        if (hasMultisigAddress(addressesForInstance)) {
+            if (await basketManagerFake.owner() === default_) {
+                await basketManagerFake.transferOwnership(addressesForInstance.multisig);
+            }
+            await basketManagerProxy.changeAdmin(addressesForInstance.multisig, { from: _admin });
+        }
+
+        if (isDevelopmentNetwork(network.name)) {
+            const basset1 = await ERC20Mintable.new();
+            const basset2 = await ERC20Mintable.new();
+            const basset3 = await ERC20Mintable.new();
+
+            // set basket balances with perfect ratio
+            await basset1.mint(massetFake.address, tokens(30));
+            await basset2.mint(massetFake.address, tokens(40));
+            await basset3.mint(massetFake.address, tokens(40));
+
+            // mint some tokens for owner
+            await basset1.mint(default_, tokens(1000));
+
+            const bassets = [basset1.address, basset2.address, basset3.address];
+            const factors = [-10, 1, 1];
+            const bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
+            const mins = [0, 0, 0];
+            const maxs = [MAX_VALUE, MAX_VALUE, MAX_VALUE];
+            const pausedFlags = [false, false, false];
+
+            await basketManagerFake.addBassets(bassets, factors, bridges, mins, maxs, pausedFlags);
+        }
     }
 
-    await upgradeInstance('ETHs', addressesForNetwork.ETHs);
+    // await upgradeInstance('ETHs', addressesForNetwork.ETHs);
     await upgradeInstance('XUSD', addressesForNetwork.XUSD);
-    await upgradeInstance('BNBs', addressesForNetwork.BNBs);
+    // await upgradeInstance('BNBs', addressesForNetwork.BNBs);
 
     logger.success("Migration completed");
     printState();

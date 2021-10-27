@@ -29,7 +29,7 @@ contract("Governance", async (accounts) => {
         if (isDevelopmentNetwork(network.name)) {
             // run migrations
             await clearState();
-            await deployments.fixture(DeploymentTags.Migration);
+            await deployments.fixture([DeploymentTags.V2, DeploymentTags.V3]);
             await deployments.fixture(DeploymentTags.Governance);
 
             // set proper admin
@@ -85,11 +85,10 @@ contract("Governance", async (accounts) => {
         const targets = [basketManagerAddress];
         const values = [0];
         const newBasset = await Token.new("TEST", "TST", 18);
-
-        const signatures = ["addBasset(address,int256,address,uint256,uint256,uint256,bool)"];
+        const signatures = ["addBasset(address,int256,address,uint256,uint256,bool)"];
         const calldatas = [web3.eth.abi.encodeParameters(
-            ["address", "int256", "address", "uint256", "uint256", "uint256", "bool"],
-            [newBasset.address, 1, ZERO_ADDRESS, 0, 1000, 100, false]
+            ["address", "int256", "address", "uint256", "uint256", "bool"],
+            [newBasset.address, 1, ZERO_ADDRESS, 0, 1000, false]
         )];
 
         await governorAlpha.propose(targets, values, signatures, calldatas, "test propsal");
