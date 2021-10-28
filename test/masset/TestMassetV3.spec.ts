@@ -21,10 +21,10 @@ const FeesManager = artifacts.require("FeesManager");
 let standardAccounts: StandardAccounts;
 
 const standardFees: Fees = {
-    deposit: new BN(10),
-    depositBridge: new BN(20),
-    withdrawal: new BN(30),
-    withdrawalBridge: new BN(40)
+    deposit: new BN(100),
+    depositBridge: new BN(200),
+    withdrawal: new BN(300),
+    withdrawalBridge: new BN(400)
 };
 
 contract("MassetV3", async (accounts) => {

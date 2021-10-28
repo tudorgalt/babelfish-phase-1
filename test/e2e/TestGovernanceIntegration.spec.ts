@@ -10,7 +10,7 @@ import { isDevelopmentNetwork } from 'migrations/utils/addresses';
 import { setNetwork, getDeployed, clearState, getInfo } from "migrations/utils/state";
 
 const Token = artifacts.require("Token");
-const BasketManagerV4 = artifacts.require("BasketManagerV4");
+const BasketManagerV3 = artifacts.require("BasketManagerV3");
 const GovernorAlpha = artifacts.require("GovernorAlpha");
 const Staking = artifacts.require("Staking");
 const Fish = artifacts.require("Fish");
@@ -29,7 +29,7 @@ contract("Governance", async (accounts) => {
         if (isDevelopmentNetwork(network.name)) {
             // run migrations
             await clearState();
-            await deployments.fixture(DeploymentTags.Migration);
+            await deployments.fixture([DeploymentTags.V2, DeploymentTags.V3]);
             await deployments.fixture(DeploymentTags.Governance);
 
             // set proper admin
@@ -55,7 +55,7 @@ contract("Governance", async (accounts) => {
         const [owner, voter1, voter2] = accounts;
 
         const governorAlpha = await getDeployed(GovernorAlpha, `GovernorAlpha`);
-        const basketManager = await getDeployed(BasketManagerV4, `XUSD_BasketManagerProxy`);
+        const basketManager = await getDeployed(BasketManagerV3, `XUSD_BasketManagerProxy`);
         const staking = await getDeployed(Staking, `StakingProxy`);
         const fish = await getDeployed(Fish, `FishToken`);
         const timelock = await getDeployed(Timelock, 'Timelock');
@@ -85,11 +85,10 @@ contract("Governance", async (accounts) => {
         const targets = [basketManagerAddress];
         const values = [0];
         const newBasset = await Token.new("TEST", "TST", 18);
-
-        const signatures = ["addBasset(address,int256,address,uint256,uint256,uint256,bool)"];
+        const signatures = ["addBasset(address,int256,address,uint256,uint256,bool)"];
         const calldatas = [web3.eth.abi.encodeParameters(
-            ["address", "int256", "address", "uint256", "uint256", "uint256", "bool"],
-            [newBasset.address, 1, ZERO_ADDRESS, 0, 1000, 100, false]
+            ["address", "int256", "address", "uint256", "uint256", "bool"],
+            [newBasset.address, 1, ZERO_ADDRESS, 0, 1000, false]
         )];
 
         await governorAlpha.propose(targets, values, signatures, calldatas, "test propsal");

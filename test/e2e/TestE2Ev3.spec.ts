@@ -6,26 +6,24 @@ import { FEE_PRECISION } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
 import { isDevelopmentNetwork } from 'migrations/utils/addresses';
 import { setNetwork, getDeployed, clearState } from "migrations/utils/state";
-import { BasketManagerV4Instance, FeesManagerInstance, MassetV4Instance, RewardsManagerInstance } from "types/generated";
+import { FeesManagerInstance, MassetV3Instance, BasketManagerV3Instance } from "types/generated";
 import { DeploymentTags } from "migrations/utils/DeploymentTags";
 
 const ERC20 = artifacts.require("ERC20");
-const MassetV4 = artifacts.require("MassetV4");
+const MassetV3 = artifacts.require("MassetV3");
 const Token = artifacts.require("Token");
-const RewardsManager = artifacts.require("RewardsManager");
-const BasketManagerV4 = artifacts.require("BasketManagerV4");
+const BasketManagerV3 = artifacts.require("BasketManagerV3");
 const FeesManager = artifacts.require("FeesManager");
 
 const { expect } = envSetup.configure();
 
 const instance = "XUSD";
 
-contract("E2E test", async (accounts) => {
+contract("version 3 E2E test", async (accounts) => {
     const sa = new StandardAccounts(accounts);
 
-    let massetMock: MassetV4Instance;
-    let basketManagerMock: BasketManagerV4Instance;
-    let rewardsManagerMock: RewardsManagerInstance;
+    let massetMock: MassetV3Instance;
+    let basketManagerMock: BasketManagerV3Instance;
     let feesmanagerMock: FeesManagerInstance;
 
     before("before all", async () => {
@@ -34,12 +32,11 @@ contract("E2E test", async (accounts) => {
         if (isDevelopmentNetwork(network.name)) {
             // run migrations
             await clearState();
-            await deployments.fixture(DeploymentTags.Migration);
+            await deployments.fixture([DeploymentTags.V2, DeploymentTags.V3]);
         }
 
-        massetMock = await getDeployed(MassetV4, `${instance}_MassetProxy`);
-        basketManagerMock = await getDeployed(BasketManagerV4, `${instance}_BasketManagerProxy`);
-        rewardsManagerMock = await getDeployed(RewardsManager, `${instance}_RewardsManagerProxy`);
+        massetMock = await getDeployed(MassetV3, `${instance}_MassetProxy`);
+        basketManagerMock = await getDeployed(BasketManagerV3, `${instance}_BasketManagerProxy`);
         feesmanagerMock = await getDeployed(FeesManager, `${instance}_FeesManagerProxy`);
     });
 
@@ -48,10 +45,9 @@ contract("E2E test", async (accounts) => {
         const token = await Token.at(tokenAddress);
 
         const feesVaultAddress = await massetMock.getFeesVault();
-        const rewardsVaultAddress = await massetMock.getRewardsVault();
 
-        expect(await massetMock.getVersion()).to.eq("4.0", "should be upgraded to proper version");
-        expect(await basketManagerMock.getVersion()).to.eq("4.0", "should be upgraded to proper version");
+        expect(await massetMock.getVersion()).to.eq("3.0", "should be upgraded to proper version");
+        expect(await basketManagerMock.getVersion()).to.eq("3.0", "should be upgraded to proper version");
 
         const [basset1] = await basketManagerMock.getBassets();
         const basset1Token = await ERC20.at(basset1);
@@ -60,7 +56,6 @@ contract("E2E test", async (accounts) => {
         const initialUserMassetBalance = await token.balanceOf(sa.default);
         const initialUserBasset1Balance = await basset1Token.balanceOf(sa.default);
         const initialFeesVaultBalance = await token.balanceOf(feesVaultAddress);
-        const initialRewardsVaultBalance = await token.balanceOf(rewardsVaultAddress);
         const depositFeePromil = await feesmanagerMock.getDepositFee();
         const redeemFeePromil = await feesmanagerMock.getWithdrawalFee();
 
@@ -69,9 +64,6 @@ contract("E2E test", async (accounts) => {
         const depositAmount = tokens(10);
         const [depositAmountInMasset] = await basketManagerMock.convertBassetToMassetQuantity(basset1, depositAmount);
         const depositFee = depositAmountInMasset.mul(depositFeePromil).div(FEE_PRECISION);
-
-        const [deviationBeforeDeposit, deviationAfterDeposit] = await basketManagerMock.getBassetRatioDeviation(basset1, depositAmount, true);
-        const depositReward = await rewardsManagerMock.calculateReward(deviationBeforeDeposit, deviationAfterDeposit, true);
 
         const hasEnoughFunds = initialUserBasset1Balance.gte(depositAmount);
         expect(hasEnoughFunds).to.eq(true, "basset balance is not sufficient");
@@ -92,12 +84,8 @@ contract("E2E test", async (accounts) => {
             initialFeesVaultBalance.add(depositFee),
             "deposit fee should be charged"
         );
-        expect(await token.balanceOf(rewardsVaultAddress)).bignumber.to.eq(
-            initialRewardsVaultBalance.add(depositReward.neg()),
-            "proper rewards distribution "
-        );
         expect(massetBalanceAfterDeposit).bignumber.to.eq(
-            initialUserMassetBalance.add(depositAmountInMasset).sub(depositFee).add(depositReward),
+            initialUserMassetBalance.add(depositAmountInMasset).sub(depositFee),
             "user should get proper amount of masset"
         );
 
@@ -105,9 +93,7 @@ contract("E2E test", async (accounts) => {
 
         const redeemAmount = tokens(5);
         const redeemFee = redeemAmount.mul(redeemFeePromil).div(FEE_PRECISION);
-        const [deviationBeforeRedeem, deviationAfterRedeem] = await basketManagerMock.getBassetRatioDeviation(basset1, depositAmount, false);
-        const redeemReward = await rewardsManagerMock.calculateReward(deviationBeforeRedeem, deviationAfterRedeem, false);
-        const massetsToTake = redeemAmount.sub(redeemFee).add(redeemReward);
+        const massetsToTake = redeemAmount.sub(redeemFee);
         const [redeemedBassets, takenMassets] = await basketManagerMock.convertMassetToBassetQuantity(basset1, massetsToTake);
 
         await token.approve(massetMock.address, redeemAmount);
@@ -128,19 +114,14 @@ contract("E2E test", async (accounts) => {
             initialFeesVaultBalance.add(depositFee).add(redeemFee),
             "withdrawal fee should be charged"
         );
-        expect(await token.balanceOf(rewardsVaultAddress)).bignumber.to.eq(
-            initialRewardsVaultBalance.add(depositReward.neg()).add(redeemReward.neg()),
-            "proper rewards distribution"
-        );
+
         expect(massetBalanceAfterRedeem).bignumber.to.eq(
             massetBalanceAfterDeposit.sub(redeemAmount).add(reminder),
             "masset balance is invalid"
         );
 
         const sumOfVaults = depositFee
-            .add(depositReward.neg())
-            .add(redeemFee)
-            .add(redeemReward.neg());
+            .add(redeemFee);
 
         const initialSumOfFunds = (await basketManagerMock.convertBassetToMassetQuantity(basset1, initialUserBasset1Balance))[0]
             .add(initialUserMassetBalance);

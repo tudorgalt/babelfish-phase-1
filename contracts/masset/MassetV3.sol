@@ -6,13 +6,13 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IERC777Recipient } from "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import { IERC1820Registry } from "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
-import { InitializableOwnable } from "../../helpers/InitializableOwnable.sol";
-import { InitializableReentrancyGuard } from "../../helpers/InitializableReentrancyGuard.sol";
-import { IBridge } from "../IBridge.sol";
+import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
+import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancyGuard.sol";
+import { IBridge } from "./IBridge.sol";
 import { BasketManagerV3 } from "./BasketManagerV3.sol";
-import { FeesVault } from "../../vault/FeesVault.sol";
-import { FeesManager } from "../FeesManager.sol";
-import "../Token.sol";
+import { FeesVault } from "../vault/FeesVault.sol";
+import { FeesManager } from "./FeesManager.sol";
+import "./Token.sol";
 
 /**
  * @title MassetV3
@@ -471,6 +471,14 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     }
 
     // Getters
+
+    function getFeesVault() external view returns (address) {
+        return address(feesVault);
+    }
+
+    function getFeesManager() external view returns (address) {
+        return address(feesManager);
+    }
 
     function getVersion() external view returns (string memory) {
         return version;

@@ -15,13 +15,13 @@ const FeesManager = artifacts.require("FeesManager");
 let standardAccounts: StandardAccounts;
 
 const standardFees: Fees = {
-    deposit: new BN(10),
-    depositBridge: new BN(20),
-    withdrawal: new BN(30),
-    withdrawalBridge: new BN(40)
+    deposit: new BN(100),
+    depositBridge: new BN(200),
+    withdrawal: new BN(300),
+    withdrawalBridge: new BN(400)
 };
 
-contract("MassetV3", async (accounts) => {
+contract("FeesManager", async (accounts) => {
     let feesManager: FeesManagerInstance;
 
     standardAccounts = new StandardAccounts(accounts);
@@ -124,7 +124,7 @@ contract("MassetV3", async (accounts) => {
             );
         });
 
-        it ("calculates fee corretly for deposit", async () => {
+        it("calculates fee corretly for deposit", async () => {
             let amount = 1000000;
 
             expect(await feesManager.calculateDepositFee(amount)).bignumber.to.eq("10000");

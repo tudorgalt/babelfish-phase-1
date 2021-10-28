@@ -1,7 +1,7 @@
 pragma solidity ^0.5.17;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { MassetV4 } from "../../masset/MassetV4.sol";
+import { MassetV3 } from "../../masset/MassetV3.sol";
 
 contract MockBridge {
     function receiveTokensAt(
@@ -22,6 +22,6 @@ contract MockBridge {
         address _tokenAddress,
         address _userData
     ) external {
-        MassetV4(masset).onTokensMinted(_orderAmount, _tokenAddress, abi.encode(_userData));
+        MassetV3(masset).onTokensMinted(_orderAmount, _tokenAddress, abi.encode(_userData));
     }
 }
