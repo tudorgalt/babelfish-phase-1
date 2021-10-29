@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
  * @dev Contract is used to store fees.
  */
 contract FeesVault is InitializableOwnable {
-	using SafeERC20 for IERC20;
+    using SafeERC20 for IERC20;
 
     function initialize() public {
         _initialize();
