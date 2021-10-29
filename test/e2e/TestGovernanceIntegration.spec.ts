@@ -42,7 +42,7 @@ contract("Governance", async (accounts) => {
             // transfer ownership of selected contracts
             const contractsList: TransferOwnershipParams = {
                 contracts: [
-                    `${instance}_BasketManagerProxy`
+                    `${instance}_BasketManagerV3`
                 ]
             };
             await run("transferOwnership", contractsList);
@@ -55,7 +55,7 @@ contract("Governance", async (accounts) => {
         const [owner, voter1, voter2] = accounts;
 
         const governorAlpha = await getDeployed(GovernorAlpha, `GovernorAlpha`);
-        const basketManager = await getDeployed(BasketManagerV3, `XUSD_BasketManagerProxy`);
+        const basketManager = await getDeployed(BasketManagerV3, `XUSD_BasketManagerV3`);
         const staking = await getDeployed(Staking, `StakingProxy`);
         const fish = await getDeployed(Fish, `FishToken`);
         const timelock = await getDeployed(Timelock, 'Timelock');
@@ -65,7 +65,7 @@ contract("Governance", async (accounts) => {
         const timelockDelay = await timelock.delay();
 
         const stakeAddress: string = await getInfo("StakingProxy", "address");
-        const basketManagerAddress: string = await getInfo("XUSD_BasketManagerProxy", "address");
+        const basketManagerAddress: string = await getInfo("XUSD_BasketManagerV3", "address");
 
         const stakeAmount = 1000000;
         const stakeUntilDate = Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7 * 3);

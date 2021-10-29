@@ -23,8 +23,8 @@ contract("version 3 E2E test", async (accounts) => {
     const sa = new StandardAccounts(accounts);
 
     let massetMock: MassetV3Instance;
-    let basketManagerMock: BasketManagerV3Instance;
-    let feesmanagerMock: FeesManagerInstance;
+    let basketManager: BasketManagerV3Instance;
+    let feesManager: FeesManagerInstance;
 
     before("before all", async () => {
         setNetwork(network.name);
@@ -36,8 +36,8 @@ contract("version 3 E2E test", async (accounts) => {
         }
 
         massetMock = await getDeployed(MassetV3, `${instance}_MassetProxy`);
-        basketManagerMock = await getDeployed(BasketManagerV3, `${instance}_BasketManagerProxy`);
-        feesmanagerMock = await getDeployed(FeesManager, `${instance}_FeesManagerProxy`);
+        basketManager = await getDeployed(BasketManagerV3, `${instance}_BasketManagerV3`);
+        feesManager = await getDeployed(FeesManager, `${instance}_FeesManager`);
     });
 
     it("full flow", async () => {
@@ -47,22 +47,22 @@ contract("version 3 E2E test", async (accounts) => {
         const feesVaultAddress = await massetMock.getFeesVault();
 
         expect(await massetMock.getVersion()).to.eq("3.0", "should be upgraded to proper version");
-        expect(await basketManagerMock.getVersion()).to.eq("3.0", "should be upgraded to proper version");
+        expect(await basketManager.getVersion()).to.eq("3.0", "should be upgraded to proper version");
 
-        const [basset1] = await basketManagerMock.getBassets();
+        const [basset1] = await basketManager.getBassets();
         const basset1Token = await ERC20.at(basset1);
 
         // initial balances
         const initialUserMassetBalance = await token.balanceOf(sa.default);
         const initialUserBasset1Balance = await basset1Token.balanceOf(sa.default);
         const initialFeesVaultBalance = await token.balanceOf(feesVaultAddress);
-        const depositFeePromil = await feesmanagerMock.getDepositFee();
-        const redeemFeePromil = await feesmanagerMock.getWithdrawalFee();
+        const depositFeePromil = await feesManager.getDepositFee();
+        const redeemFeePromil = await feesManager.getWithdrawalFee();
 
         // -------------------------------- DEPOSIT -------------------------------- //
 
         const depositAmount = tokens(10);
-        const [depositAmountInMasset] = await basketManagerMock.convertBassetToMassetQuantity(basset1, depositAmount);
+        const [depositAmountInMasset] = await basketManager.convertBassetToMassetQuantity(basset1, depositAmount);
         const depositFee = depositAmountInMasset.mul(depositFeePromil).div(FEE_PRECISION);
 
         const hasEnoughFunds = initialUserBasset1Balance.gte(depositAmount);
@@ -94,7 +94,7 @@ contract("version 3 E2E test", async (accounts) => {
         const redeemAmount = tokens(5);
         const redeemFee = redeemAmount.mul(redeemFeePromil).div(FEE_PRECISION);
         const massetsToTake = redeemAmount.sub(redeemFee);
-        const [redeemedBassets, takenMassets] = await basketManagerMock.convertMassetToBassetQuantity(basset1, massetsToTake);
+        const [redeemedBassets, takenMassets] = await basketManager.convertMassetToBassetQuantity(basset1, massetsToTake);
 
         await token.approve(massetMock.address, redeemAmount);
         await massetMock.redeem(basset1, redeemAmount);
@@ -123,10 +123,10 @@ contract("version 3 E2E test", async (accounts) => {
         const sumOfVaults = depositFee
             .add(redeemFee);
 
-        const initialSumOfFunds = (await basketManagerMock.convertBassetToMassetQuantity(basset1, initialUserBasset1Balance))[0]
+        const initialSumOfFunds = (await basketManager.convertBassetToMassetQuantity(basset1, initialUserBasset1Balance))[0]
             .add(initialUserMassetBalance);
 
-        const sumOfUserFundsAfterRedeem = (await basketManagerMock.convertBassetToMassetQuantity(basset1, basset1BalanceAfterRedeem))[0]
+        const sumOfUserFundsAfterRedeem = (await basketManager.convertBassetToMassetQuantity(basset1, basset1BalanceAfterRedeem))[0]
             .add(massetBalanceAfterRedeem);
 
         expect(initialSumOfFunds).bignumber.to.eq(

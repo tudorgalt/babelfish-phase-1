@@ -4,18 +4,16 @@ import { ZERO_ADDRESS } from "@utils/constants";
 import { tokens, BN } from "@utils/tools";
 import { MassetV3Instance } from "types/generated";
 import addresses, { BassetInstanceDetails, hasMultisigAddress, isDevelopmentNetwork } from './utils/addresses';
-import { conditionalDeploy, conditionalInitialize, getDeployed, printState } from "./utils/state";
+import { conditionalDeploy, conditionalInitialize, getDeployed, printState, setNetwork } from "./utils/state";
 import { DeploymentTags } from "./utils/DeploymentTags";
 
 const ERC20Mintable = artifacts.require("ERC20Mintable");
 const BasketManagerV3 = artifacts.require("BasketManagerV3");
-const BasketManagerProxy = artifacts.require("BasketManagerProxy");
 const MassetV3 = artifacts.require("MassetV3");
 const MassetProxy = artifacts.require("MassetProxy");
 const FeesVault = artifacts.require("FeesVault");
 const FeesVaultProxy = artifacts.require("FeesVaultProxy");
 const FeesManager = artifacts.require("FeesManager");
-const FeesManagerProxy = artifacts.require("FeesManagerProxy");
 
 const logger = new Logs().showInConsole(true);
 
@@ -28,6 +26,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
     const [default_, _admin] = await getUnnamedAccounts();
 
     const addressesForNetwork = addresses[network.name];
+    setNetwork(network.name);
 
     const feesVault = await conditionalDeploy({
         contract: FeesVault,
@@ -65,19 +64,10 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             deployfunc: deploy,
             deployOptions: { from: default_ }
         });
-        const basketManagerProxy = await conditionalDeploy({
-            contract: BasketManagerProxy,
-            key: `${symbol}_BasketManagerProxy`,
-            deployfunc: deploy,
-            deployOptions: { from: default_ }
-        });
 
-        const initAbi = basketManager.contract.methods['initialize(address)'](massetFake.address).encodeABI();
-        await conditionalInitialize(`${symbol}_BasketManagerProxy`,
-            async () => { await basketManagerProxy.methods["initialize(address,address,bytes)"](basketManager.address, _admin, initAbi); }
+        await conditionalInitialize(`${symbol}_BasketManagerV3`,
+            async () => { await basketManager.initialize(massetFake.address); }
         );
-
-        const basketManagerFake = await BasketManagerV3.at(basketManagerProxy.address);
 
         if (isDevelopmentNetwork(network.name)) {
             const basset1 = await ERC20Mintable.new();
@@ -100,41 +90,38 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
                 deposit: new BN(5),
                 depositBridge: new BN(6),
                 withdrawal: new BN(7),
-                withdrawalBridge:  new BN(8)
+                withdrawalBridge: new BN(8)
             };
         }
 
-        if (await basketManagerProxy.admin() === _admin) {
-            const existingAssets = await basketManagerFake.getBassets();
-            const addAsset = async (index: number) => {
-                console.log('adding asset: ',
-                    addressesForInstance.bassets[index],
-                    addressesForInstance.factors[index],
-                    addressesForInstance.bridges[index]
-                );
+        const existingAssets = await basketManager.getBassets();
+        const addAsset = async (index: number) => {
+            console.log('adding asset: ',
+                addressesForInstance.bassets[index],
+                addressesForInstance.factors[index],
+                addressesForInstance.bridges[index]
+            );
 
-                await basketManagerFake.addBasset(
-                    addressesForInstance.bassets[index],
-                    addressesForInstance.factors[index],
-                    addressesForInstance.bridges[index],
-                    0,
-                    MAX_VALUE,
-                    false
-                );
-            };
+            await basketManager.addBasset(
+                addressesForInstance.bassets[index],
+                addressesForInstance.factors[index],
+                addressesForInstance.bridges[index],
+                0,
+                MAX_VALUE,
+                false
+            );
+        };
 
-            for (let i = 0; i < addressesForInstance.bassets.length; i++) {
-                if (!existingAssets.find(ta => ta === addressesForInstance.bassets[i])) {
-                    // eslint-disable-next-line no-await-in-loop
-                    await addAsset(i);
-                }
+        for (let i = 0; i < addressesForInstance.bassets.length; i++) {
+            if (!existingAssets.find(ta => ta === addressesForInstance.bassets[i])) {
+                // eslint-disable-next-line no-await-in-loop
+                await addAsset(i);
             }
+        }
 
-            if (hasMultisigAddress(addressesForInstance)) {
-                if (await basketManagerFake.owner() === default_) {
-                    await basketManagerFake.transferOwnership(addressesForInstance.multisig);
-                }
-                await basketManagerProxy.changeAdmin(addressesForInstance.multisig, { from: _admin });
+        if (hasMultisigAddress(addressesForInstance)) {
+            if (await basketManager.owner() === default_) {
+                await basketManager.transferOwnership(addressesForInstance.multisig);
             }
         }
 
@@ -144,21 +131,9 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             deployfunc: deploy,
             deployOptions: { from: default_ }
         });
-        const feesManagerProxy = await conditionalDeploy({
-            contract: FeesManagerProxy,
-            key: `${symbol}_FeesManagerProxy`,
-            deployfunc: deploy,
-            deployOptions: { from: default_ }
-        });
-
-        await conditionalInitialize(`${symbol}_FeesManagerProxy`,
-            async () => { await feesManagerProxy.methods["initialize(address,address,bytes)"](feesManager.address, _admin, "0x"); }
-        );
-
-        const feesManagerFake = await FeesManager.at(feesManagerProxy.address);
 
         await conditionalInitialize(`${symbol}_FeesManager`, async () => {
-            await feesManagerFake.initialize(
+            await feesManager.initialize(
                 addressesForInstance.fees.deposit,
                 addressesForInstance.fees.depositBridge,
                 addressesForInstance.fees.withdrawal,
@@ -177,10 +152,10 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
 
         await massetProxy.upgradeTo(masset.address, { from: _admin });
         await massetFake.upgradeToV3(
-            basketManagerFake.address,
+            basketManager.address,
             tokenAddress,
             vaultFake.address,
-            feesManagerFake.address
+            feesManager.address
         );
     }
 

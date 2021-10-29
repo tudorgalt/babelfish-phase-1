@@ -8,12 +8,17 @@ const logger = new Logs().showInConsole(true);
 const main = async () => {
     const { run } = hre;
 
+    const list: TransferOwnershipParams = {
+        contracts: ["FeesVaultProxy"]
+    };
+    await run("transferOwnership", list);
+
     const transferForSymbol = async (symbol: string) => {
         const contractsList: TransferOwnershipParams = {
             contracts: [
                 `${symbol}_MassetProxy`,
-                `${symbol}_BasketManagerProxy`,
-                `${symbol}_RewardsManagerProxy`
+                `${symbol}_BasketManagerV3`,
+                `${symbol}_RewardsManager`,
             ]
         };
         await run("transferOwnership", contractsList);
