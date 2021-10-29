@@ -150,7 +150,9 @@ contract Staking is IStaking, WeightedStaking, ApprovalReceiver {
 			delegateTo = delegateFrom;
 			delegates[msg.sender][until] = delegateFrom;
 		}
-		delegates[msg.sender][previousLock] = address(0);
+		if (previousLock != until) {
+			delegates[msg.sender][previousLock] = address(0);
+		}
 		_decreaseDelegateStake(delegateFrom, previousLock, amount);
 		_increaseDelegateStake(delegateTo, until, amount);
 
