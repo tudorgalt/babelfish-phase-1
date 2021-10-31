@@ -65,6 +65,19 @@ module.exports = {
       skipDryRun: true,
       networkCheckTimeout: 1e9
     },
+    //Binance
+    btestnet: {
+      //provider: () => new HDWalletProvider(MNEMONIC, "https://data-seed-prebsc-1-s1.binance.org:8545/"),
+      provider() {
+        return new HDWalletProvider('sadness moon truth plug champion throw future sell cupboard occur material scrub',
+       "https://data-seed-prebsc-2-s3.binance.org:8545/", 0, 97)
+      },
+      network_id: 97,
+      gas: 6300000,
+      confirmations: 3,
+      timeoutBlocks: 200,
+      skipDryRun: true
+    },
     rsk: {
       provider() {
         return new HDWalletProvider('receive nasty...',
