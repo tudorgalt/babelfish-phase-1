@@ -5,7 +5,7 @@ import { BasketManagerContract, TokenContract } from "types/generated";
 import addresses, { BassetInstanceDetails, isDevelopmentNetwork } from './utils/addresses';
 import { DeploymentTags } from "./utils/DeploymentTags";
 
-import { conditionalDeploy, conditionalInitialize, contractConstructorArgs, printState } from "./utils/state";
+import { conditionalDeploy, conditionalInitialize, contractConstructorArgs, printState, setNetwork } from "./utils/state";
 
 const cToken = artifacts.require("Token");
 const cBasketManager = artifacts.require("BasketManager");
@@ -21,6 +21,7 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
     const { deploy } = deployments;
 
     const addressesForNetwork = addresses[network.name];
+    setNetwork(network.name);
 
     async function deployInstance(symbol: string, addressesForInstance: BassetInstanceDetails) {
         const dTokenArgs = contractConstructorArgs<TokenContract>(symbol, symbol, 18);

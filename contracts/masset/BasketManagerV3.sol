@@ -7,8 +7,8 @@ import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 
 /**
  * @title BasketManagerV3
- * @dev Contract is responsible for mAsset and bAsset exchange process and 
- * managing basket with bAsset tokens. 
+ * @dev Contract is responsible for mAsset and bAsset exchange process and
+ * managing basket with bAsset tokens.
  * Allows to add and/or remove bAsset, calculate balances, converts tokens quantity
  * to adjust precisions or set/get parameters: bridge, factor, range and paused.
  */
