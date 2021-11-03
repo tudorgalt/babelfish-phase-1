@@ -59,7 +59,7 @@ contract("MassetV3", async (accounts) => {
                 );
 
                 let version = await masset.getVersion();
-                expect(version).to.eq("1.0");
+                expect(version).to.eq("2.3");
 
                 const setToken = await masset.getToken();
                 expect(setToken).to.eq(token.address);
@@ -68,9 +68,9 @@ contract("MassetV3", async (accounts) => {
                 expect(setBasketManager).to.eq(basketManagerObj.basketManager.address);
 
                 // migrate to V3
+                basketManagerObj.basketManager.transferOwnership(masset.address);
                 await masset.upgradeToV3(
                     basketManagerObj.basketManager.address,
-                    token.address,
                     vault.address,
                     feesManager.address
                 );
@@ -122,7 +122,7 @@ contract("MassetV3", async (accounts) => {
             basketManagerObj = await createBasketManager(masset, [18, 18], [100, 1]);
             await initMassetV3(
                 masset,
-                basketManagerObj.basketManager.address,
+                basketManagerObj.basketManager,
                 token.address,
                 vault.address,
                 standardFees
@@ -226,7 +226,7 @@ contract("MassetV3", async (accounts) => {
 
             await initMassetV3(
                 masset,
-                basketManagerObj.basketManager.address,
+                basketManagerObj.basketManager,
                 token.address,
                 vault.address,
                 standardFees
@@ -272,7 +272,7 @@ contract("MassetV3", async (accounts) => {
 
             await initMassetV3(
                 masset,
-                basketManagerObj.basketManager.address,
+                basketManagerObj.basketManager,
                 token.address,
                 vault.address,
                 standardFees
@@ -451,7 +451,7 @@ contract("MassetV3", async (accounts) => {
             masset = await MassetV3.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
-            await initMassetV3(masset, basketManagerObj.basketManager.address, token.address, vault.address, standardFees);
+            await initMassetV3(masset, basketManagerObj.basketManager, token.address, vault.address, standardFees);
         });
 
         context("should fail", () => {
@@ -508,7 +508,7 @@ contract("MassetV3", async (accounts) => {
                 [mockBridge.address, mockBridge.address]
             );
 
-            await initMassetV3(masset, basketManagerObj.basketManager.address, token.address, vault.address, standardFees, { from: standardAccounts.default });
+            await initMassetV3(masset, basketManagerObj.basketManager, token.address, vault.address, standardFees, { from: standardAccounts.default });
 
             await basketManagerObj.mockToken1.approve(masset.address, mintAmount, { from: standardAccounts.dummy1 });
             await masset.mint(basketManagerObj.mockToken1.address, mintAmount, { from: standardAccounts.dummy1 });
@@ -571,7 +571,7 @@ contract("MassetV3", async (accounts) => {
 
             await initMassetV3(
                 masset,
-                basketManagerObj.basketManager.address,
+                basketManagerObj.basketManager,
                 token.address,
                 vault.address,
                 standardFees
@@ -692,7 +692,7 @@ contract("MassetV3", async (accounts) => {
 
             await initMassetV3(
                 masset,
-                basketManagerObj.basketManager.address,
+                basketManagerObj.basketManager,
                 token.address,
                 vault.address,
                 standardFees
@@ -750,13 +750,15 @@ const zeroBridges = [ZERO_ADDRESS, ZERO_ADDRESS];
 
 async function initMassetV3(
     masset: MassetV3Instance,
-    basketManagerAddress: string,
+    basketManager: BasketManagerV3Instance,
     tokenAddress: string,
     vaultAddress: string,
     fees: Fees,
     txDetails: Truffle.TransactionDetails = { from: standardAccounts.default }
 ): Promise<void> {
     const feesManager = await FeesManager.new();
+
+    await basketManager.transferOwnership(masset.address);
 
     await feesManager.initialize(
         fees.deposit,
@@ -766,15 +768,14 @@ async function initMassetV3(
     );
 
     await masset.initialize(
-        basketManagerAddress,
+        basketManager.address,
         tokenAddress,
         false,
         txDetails
     );
 
     await masset.upgradeToV3(
-        basketManagerAddress,
-        tokenAddress,
+        basketManager.address,
         vaultAddress,
         feesManager.address,
         txDetails

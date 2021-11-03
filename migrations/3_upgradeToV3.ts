@@ -17,8 +17,6 @@ const FeesManager = artifacts.require("FeesManager");
 
 const logger = new Logs().showInConsole(true);
 
-const MAX_VALUE = 1000;
-
 const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatRuntimeEnvironment) => {
     logger.info("Starting upgrade to v3 migration");
 
@@ -38,8 +36,6 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             return;
         }
 
-        const tokenAddress = await massetFake.getToken();
-
         const basketManager = await conditionalDeploy({
             contract: BasketManagerV3,
             key: `${symbol}_BasketManagerV3`,
@@ -50,55 +46,6 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
         await conditionalInitialize(`${symbol}_BasketManagerV3`,
             async () => { await basketManager.initialize(massetFake.address); }
         );
-
-        if (isDevelopmentNetwork(network.name)) {
-            const basset1 = await ERC20Mintable.new();
-            const basset2 = await ERC20Mintable.new();
-            const basset3 = await ERC20Mintable.new();
-
-            // set basket balances with perfect ratio
-            await basset1.mint(massetFake.address, tokens(30));
-            await basset2.mint(massetFake.address, tokens(40));
-            await basset3.mint(massetFake.address, tokens(40));
-
-            // mint some tokens for owner
-            await basset1.mint(default_, tokens(1000));
-
-            addressesForInstance.bassets = [basset1.address, basset2.address, basset3.address];
-            addressesForInstance.factors = [-10, 1, 1];
-            addressesForInstance.bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
-            addressesForInstance.fees = {
-                deposit: new BN(5),
-                depositBridge: new BN(6),
-                withdrawal: new BN(7),
-                withdrawalBridge: new BN(8)
-            };
-        }
-
-        const existingAssets = await basketManager.getBassets();
-        const addAsset = async (index: number) => {
-            console.log('adding asset: ',
-                addressesForInstance.bassets[index],
-                addressesForInstance.factors[index],
-                addressesForInstance.bridges[index]
-            );
-
-            await basketManager.addBasset(
-                addressesForInstance.bassets[index],
-                addressesForInstance.factors[index],
-                addressesForInstance.bridges[index],
-                0,
-                MAX_VALUE,
-                false
-            );
-        };
-
-        for (let i = 0; i < addressesForInstance.bassets.length; i++) {
-            if (!existingAssets.find(ta => ta === addressesForInstance.bassets[i])) {
-                // eslint-disable-next-line no-await-in-loop
-                await addAsset(i);
-            }
-        }
 
         const feesManager = await conditionalDeploy({
             contract: FeesManager,
@@ -142,15 +89,38 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             deployOptions: { from: default_ }
         });
 
+        await basketManager.transferOwnership(massetFake.address);
+
         const massetProxy = await MassetProxy.at(massetFake.address);
 
         await massetProxy.upgradeTo(masset.address, { from: _admin });
         await massetFake.upgradeToV3(
             basketManager.address,
-            tokenAddress,
             vaultFake.address,
             feesManager.address
         );
+
+        if (isDevelopmentNetwork(network.name)) {
+            const basset1 = await ERC20Mintable.new();
+            const basset2 = await ERC20Mintable.new();
+
+            // set basket balances with perfect ratio
+            await basset1.mint(massetFake.address, tokens(30));
+            await basset2.mint(massetFake.address, tokens(40));
+
+            // mint some tokens for owner
+            await basset1.mint(default_, tokens(1000));
+
+            addressesForInstance.bassets = [basset1.address, basset2.address];
+            addressesForInstance.factors = [1, 1];
+            addressesForInstance.bridges = [ZERO_ADDRESS, ZERO_ADDRESS];
+            addressesForInstance.fees = {
+                deposit: new BN(0),
+                depositBridge: new BN(0),
+                withdrawal: new BN(0),
+                withdrawalBridge: new BN(0)
+            };
+        }
     }
 
     await upgradeInstance('MYNT', addressesForNetwork.MYNT);
