@@ -70,5 +70,8 @@
   },
   "BNBs_MassetV3": {
     "address": "0x35d1ea0518d26c291567ee5882F898dBFc250540"
+  },
+  "MyntToken": {
+    "address": "0xB591855dE8BFAe7adc2Fd1Cf889D18AE24852500"
   }
 }
