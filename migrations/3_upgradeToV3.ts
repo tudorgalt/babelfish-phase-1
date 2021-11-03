@@ -17,6 +17,8 @@ const FeesManager = artifacts.require("FeesManager");
 
 const logger = new Logs().showInConsole(true);
 
+const MAX_VALUE = 1000;
+
 const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatRuntimeEnvironment) => {
     logger.info("Starting upgrade to v3 migration");
 
@@ -46,6 +48,15 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
         await conditionalInitialize(`${symbol}_BasketManagerV3`,
             async () => { await basketManager.initialize(massetFake.address); }
         );
+
+        if (isDevelopmentNetwork(network.name)) {
+            addressesForInstance.fees = {
+                deposit: new BN(5),
+                depositBridge: new BN(6),
+                withdrawal: new BN(7),
+                withdrawalBridge: new BN(8)
+            };
+        }
 
         const feesManager = await conditionalDeploy({
             contract: FeesManager,
@@ -103,23 +114,24 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
         if (isDevelopmentNetwork(network.name)) {
             const basset1 = await ERC20Mintable.new();
             const basset2 = await ERC20Mintable.new();
+            const basset3 = await ERC20Mintable.new();
 
             // set basket balances with perfect ratio
             await basset1.mint(massetFake.address, tokens(30));
             await basset2.mint(massetFake.address, tokens(40));
+            await basset3.mint(massetFake.address, tokens(40));
 
             // mint some tokens for owner
             await basset1.mint(default_, tokens(1000));
 
-            addressesForInstance.bassets = [basset1.address, basset2.address];
-            addressesForInstance.factors = [1, 1];
-            addressesForInstance.bridges = [ZERO_ADDRESS, ZERO_ADDRESS];
-            addressesForInstance.fees = {
-                deposit: new BN(0),
-                depositBridge: new BN(0),
-                withdrawal: new BN(0),
-                withdrawalBridge: new BN(0)
-            };
+            const bassets = [basset1.address, basset2.address, basset3.address];
+            const factors = [-10, 1, 1];
+            const bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
+            const mins = [0, 0, 0];
+            const maxs = [MAX_VALUE, MAX_VALUE, MAX_VALUE];
+            const pausedFlags = [false, false, false];
+
+            await basketManager.addBassets(bassets, factors, bridges, mins, maxs, pausedFlags);
         }
     }
 
