@@ -1,8 +1,9 @@
-pragma solidity 0.5.16;
+pragma solidity ^0.5.17;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
+import "./IApproveAndCall.sol";
 
 /**
  * @title Token
@@ -65,5 +66,23 @@ contract MyntToken is ERC20, ERC20Detailed, Ownable {
         // ...and the user is allowed to burn his own tokens
         require(msg.sender == marketMaker || msg.sender == _account, "not allowed");
         _burn(_account, _amount);
+    }
+
+    /**
+     * @notice Approves and then calls the receiving contract.
+     * Useful to encapsulate sending tokens to a contract in one call.
+     * Solidity has no native way to send tokens to contracts.
+     * ERC-20 tokens require approval to be spent by third parties, such as a contract in this case.
+     * @param _spender The contract address to spend the tokens.
+     * @param _amount The amount of tokens to be sent.
+     * @param _data Parameters for the contract call, such as endpoint signature.
+     * */
+    function approveAndCall(
+        address _spender,
+        uint256 _amount,
+        bytes memory _data
+    ) public {
+        approve(_spender, _amount);
+        IApproveAndCall(_spender).receiveApproval(msg.sender, _amount, address(this), _data);
     }
 }
