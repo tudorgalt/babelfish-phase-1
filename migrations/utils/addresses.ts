@@ -8,20 +8,22 @@ export type BassetInstanceDetails = {
     bassets: Array<string>;
     factors: Array<number>;
     bridges: Array<string>;
-    ratios: Array<number>;
     fees: Fees;
     multisig?: string;
 };
 
+const instances = ["XUSD", "ETHs", "BNBs", "MYNT"] as const;
 const developmentNetworks = ["development", "hardhat"] as const;
 const productionNetworks = ["rskTestnet", "rsk"] as const;
 
+export type Instances = UnionType<typeof instances>;
 export type DevelopmentNetworks = UnionType<typeof developmentNetworks>;
 export type ProducitionNetworks = UnionType<typeof productionNetworks>;
+export type Networks = DevelopmentNetworks | ProducitionNetworks;
 
 export type Addresses =
-    { [k in DevelopmentNetworks]: { [k: string]: Partial<BassetInstanceDetails> } } &
-    { [k in ProducitionNetworks]: { [k: string]: BassetInstanceDetails } };
+    { [k in DevelopmentNetworks]: { [k in Instances]: Partial<BassetInstanceDetails> } } &
+    { [k in ProducitionNetworks]: { [k in Instances]: BassetInstanceDetails } };
 
 export const isDevelopmentNetwork = (networkName: string): networkName is DevelopmentNetworks => {
     return developmentNetworks.includes(networkName as DevelopmentNetworks);
@@ -38,6 +40,9 @@ const addresses: Addresses = {
         ETHs: {
         },
         BNBs: {
+        },
+        MYNT: {
+
         }
     },
     development: {
@@ -46,6 +51,9 @@ const addresses: Addresses = {
         ETHs: {
         },
         BNBs: {
+        },
+        MYNT: {
+            
         }
     },
     rskTestnet: {
@@ -86,8 +94,7 @@ const addresses: Addresses = {
                 depositBridge: new BN(0),
                 withdrawal: new BN(0),
                 withdrawalBridge: new BN(0)
-            },
-            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            }
         },
         ETHs: {
             bassets: [
@@ -110,8 +117,7 @@ const addresses: Addresses = {
                 depositBridge: new BN(0),
                 withdrawal: new BN(0),
                 withdrawalBridge: new BN(0)
-            },
-            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            }
         },
         BNBs: {
             bassets: [
@@ -128,8 +134,26 @@ const addresses: Addresses = {
                 depositBridge: new BN(0),
                 withdrawal: new BN(0),
                 withdrawalBridge: new BN(0)
-            },
-            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            }
+        },
+        MYNT: {
+            bassets: [
+                "0xCB46c0ddc60D18eFEB0E586C17Af6ea36452Dae0" // DOC
+            ], // ZUSD DOC
+            bridges: [
+                "0x0000000000000000000000000000000000000000",
+                "0x0000000000000000000000000000000000000000"
+            ],
+            factors: [
+                1
+            ],
+            // multisig: ?????
+            fees: {
+                deposit: new BN(0),
+                depositBridge: new BN(0),
+                withdrawal: new BN(0),
+                withdrawalBridge: new BN(0)
+            } 
         }
     },
     rsk: {
@@ -171,8 +195,7 @@ const addresses: Addresses = {
                 depositBridge: new BN(0),
                 withdrawal: new BN(0),
                 withdrawalBridge: new BN(0)
-            },
-            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            }
         },
         ETHs: {
             bassets: [
@@ -196,8 +219,7 @@ const addresses: Addresses = {
                 depositBridge: new BN(0),
                 withdrawal: new BN(0),
                 withdrawalBridge: new BN(0)
-            },
-            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            }
         },
         BNBs: {
             bassets: [
@@ -215,8 +237,26 @@ const addresses: Addresses = {
                 depositBridge: new BN(0),
                 withdrawal: new BN(0),
                 withdrawalBridge: new BN(0)
-            },
-            ratios: [] // ADD PROPER RATIOS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            }
+        },
+        MYNT: {
+            bassets: [
+                "0xe700691dA7b9851F2F35f8b8182c69c53CcaD9Db", // DOC 
+            ], // ZUSD DOC
+            bridges: [
+                "0x0000000000000000000000000000000000000000",
+                "0x0000000000000000000000000000000000000000"
+            ],
+            factors: [
+                1
+            ],
+            // multisig: ?????
+            fees: {
+                deposit: new BN(0),
+                depositBridge: new BN(0),
+                withdrawal: new BN(0),
+                withdrawalBridge: new BN(0)
+            } 
         }
     }
 };

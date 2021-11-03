@@ -6,7 +6,7 @@ import { ZERO_ADDRESS } from "@utils/constants";
 import { TransferOwnershipParams } from "scripts/tasks/transferOwnership";
 import { blockTimestampSimple, mineBlock, wait, waitOrMineBlocks } from "scripts/utils/time";
 import { DeploymentTags } from "migrations/utils/DeploymentTags";
-import { isDevelopmentNetwork } from 'migrations/utils/addresses';
+import { Instances, isDevelopmentNetwork } from 'migrations/utils/addresses';
 import { setNetwork, getDeployed, clearState, getInfo } from "migrations/utils/state";
 
 const Token = artifacts.require("Token");
@@ -20,7 +20,7 @@ const { expect } = envSetup.configure();
 const logger = new Logs().showInConsole(true);
 
 enum ProposalState { Pending, Active, Canceled, Defeated, Succeeded, Queued, Expired, Executed };
-const instance = "XUSD";
+const instance: Instances = "MYNT";
 
 contract("Governance", async (accounts) => {
     before("before all", async () => {
@@ -55,7 +55,7 @@ contract("Governance", async (accounts) => {
         const [owner, voter1, voter2] = accounts;
 
         const governorAlpha = await getDeployed(GovernorAlpha, `GovernorAlpha`);
-        const basketManager = await getDeployed(BasketManagerV3, `XUSD_BasketManagerV3`);
+        const basketManager = await getDeployed(BasketManagerV3, `${instance}_BasketManagerV3`);
         const staking = await getDeployed(Staking, `StakingProxy`);
         const fish = await getDeployed(Fish, `FishToken`);
         const timelock = await getDeployed(Timelock, 'Timelock');
@@ -65,7 +65,7 @@ contract("Governance", async (accounts) => {
         const timelockDelay = await timelock.delay();
 
         const stakeAddress: string = await getInfo("StakingProxy", "address");
-        const basketManagerAddress: string = await getInfo("XUSD_BasketManagerV3", "address");
+        const basketManagerAddress: string = await getInfo(`${instance}_BasketManagerV3`, "address");
 
         const stakeAmount = 1000000;
         const stakeUntilDate = Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7 * 3);
