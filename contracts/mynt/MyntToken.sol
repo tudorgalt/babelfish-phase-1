@@ -26,8 +26,8 @@ contract MyntToken is ERC20, ERC20Detailed, Ownable {
     constructor() public ERC20Detailed("Sovryn Mynt", "MYNT", 18) {}
 
     /**
-     * @notice setConttroller sets the token's conttroller
-     * @param _address The address of the controller contract
+     * @notice setMarketMaker sets the token's market maker address
+     * @param _address The address of the market maker contract
      * */
     function setMarketMaker(address _address) public onlyOwner {
         require(_address != address(0), "invalid address");
@@ -36,8 +36,8 @@ contract MyntToken is ERC20, ERC20Detailed, Ownable {
     }
 
     /**
-     * @notice setConttroller sets the token's conttroller
-     * @param _address The address of the controller contract
+     * @notice setPresale sets the token's presale contract
+     * @param _address The address of the presale contract
      * */
     function setPresale(address _address) public onlyOwner {
         require(_address != address(0), "invalid address");
@@ -51,7 +51,7 @@ contract MyntToken is ERC20, ERC20Detailed, Ownable {
      * @param _amount The amount of tokens to be minted.
      * */
     function mint(address _account, uint256 _amount) public {
-        // only the presale and the marketmaker are allowed to mint
+        // only the presale contract and the market maker are allowed to mint
         require(msg.sender == presale || msg.sender == marketMaker, "not allowed");
         _mint(_account, _amount);
     }
@@ -62,7 +62,7 @@ contract MyntToken is ERC20, ERC20Detailed, Ownable {
      * @param _amount The amount of tokens to be minted.
      * */
     function burn(address _account, uint256 _amount) public {
-        // only the marketmake is alloed to burn tokens,
+        // only the market maker is allowed to burn tokens,
         // ...and the user is allowed to burn his own tokens
         require(msg.sender == marketMaker || msg.sender == _account, "not allowed");
         _burn(_account, _amount);

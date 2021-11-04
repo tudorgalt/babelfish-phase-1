@@ -34,7 +34,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mstable/mstable-contracts.git"
+    "url": ""
   },
   "devDependencies": {
     "@nomiclabs/hardhat-web3": "^2.0.0",
@@ -63,6 +63,7 @@
     "eslint-plugin-jsx-a11y": "^6.2.3",
     "eslint-plugin-react": "^7.18.3",
     "ethlint": "^1.2.5",
+    "hardhat": "^2.6.7",
     "hardhat-docgen": "^1.1.1",
     "humanize-duration": "^3.21.0",
     "mocha": "^7.0.1",
@@ -81,7 +82,6 @@
   "dependencies": {
     "@nomiclabs/hardhat-truffle5": "^2.0.0",
     "@tenderly/hardhat-tenderly": "^1.0.3",
-    "hardhat": "^2.0.3",
     "hardhat-gas-reporter": "^1.0.1",
     "hardhat-typechain": "^0.3.3",
     "sol-merger": "^3.0.1",
