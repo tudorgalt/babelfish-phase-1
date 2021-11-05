@@ -74,6 +74,18 @@ contract("FeesManager", async (accounts) => {
                 await expectRevert(feesManager.setWithdrawalFee(2, { from: standardAccounts.other }), revertMessage);
                 await expectRevert(feesManager.setWithdrawalBridgeFee(2, { from: standardAccounts.other }), revertMessage);
             });
+
+            it("when amount is bigger than precision", async () => {
+                const revertMessage = "VM Exception while processing transaction: reverted with reason string 'invalid fee amount'";
+
+                const precision = await feesManager.PRECISION();
+                const invalidAmount = precision.add(new BN(1));
+
+                await expectRevert(feesManager.setDepositFee(invalidAmount, { from: admin }), revertMessage);
+                await expectRevert(feesManager.setDepositBridgeFee(invalidAmount, { from: admin }), revertMessage);
+                await expectRevert(feesManager.setWithdrawalFee(invalidAmount, { from: admin }), revertMessage);
+                await expectRevert(feesManager.setWithdrawalBridgeFee(invalidAmount, { from: admin }), revertMessage);
+            });
         });
 
         context("should succeed", async () => {
