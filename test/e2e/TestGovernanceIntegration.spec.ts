@@ -20,7 +20,7 @@ const { expect } = envSetup.configure();
 const logger = new Logs().showInConsole(true);
 
 enum ProposalState { Pending, Active, Canceled, Defeated, Succeeded, Queued, Expired, Executed };
-const instance: Instances = "MYNT";
+const instance: Instances = "XUSD";
 
 contract("Governance", async (accounts) => {
     before("before all", async () => {

@@ -84,9 +84,9 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
             );
         });
     }
-    await deployInstance('MYNT', 'Nuestro', 'NUE', addressesForNetwork.MYNT);
+    // await deployInstance('MYNT', 'Nuestro', 'NUE', addressesForNetwork.MYNT);
     // await deployInstance('ETHs', 'ETHs', 'ETHs', addressesForNetwork.ETHs);
-    // await deployInstance('XUSD', 'XUSD', 'XUSD', addressesForNetwork.XUSD);
+    await deployInstance('XUSD', 'XUSD', 'XUSD', addressesForNetwork.XUSD);
     // await deployInstance('BNBs', 'BNBs', 'BNBs', addressesForNetwork.BNBs);
 
     logger.success("Migration completed");
