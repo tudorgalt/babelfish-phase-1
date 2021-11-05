@@ -64,7 +64,7 @@ contract FeesManager is InitializableOwnable {
         uint256 _depositBridgeFee,
         uint256 _withdrawalFee,
         uint256 _withdrawalBridgeFee
-    ) public {
+    ) external {
         InitializableOwnable._initialize();
 
         setDepositFee(_depositFee);
@@ -89,7 +89,7 @@ contract FeesManager is InitializableOwnable {
      * @param _massetAmount  Amount of masset to deposit.
      * @return fee           Calculated fee amount.
      */
-    function calculateDepositFee(uint256 _massetAmount) public view returns(uint256) {
+    function calculateDepositFee(uint256 _massetAmount) external view returns(uint256) {
         return _calculateFee(_massetAmount, depositFee);
     }
 
@@ -98,7 +98,7 @@ contract FeesManager is InitializableOwnable {
      * @param _massetAmount  Amount of masset to deposit.
      * @return fee           Calculated fee amount.
      */
-    function calculateDepositBridgeFee(uint256 _massetAmount) public view returns(uint256) {
+    function calculateDepositBridgeFee(uint256 _massetAmount) external view returns(uint256) {
         return _calculateFee(_massetAmount, depositBridgeFee);
     }
 
@@ -107,7 +107,7 @@ contract FeesManager is InitializableOwnable {
      * @param _massetAmount  Amount of masset.
      * @return fee           Calculated fee amount.
      */
-    function calculateRedeemFee(uint256 _massetAmount) public view returns(uint256) {
+    function calculateRedeemFee(uint256 _massetAmount) external view returns(uint256) {
         return _calculateFee(_massetAmount, withdrawalFee);
     }
 
@@ -116,7 +116,7 @@ contract FeesManager is InitializableOwnable {
      * @param _massetAmount  Amount of masset.
      * @return fee           Calculated fee amount.
      */
-    function calculateRedeemBridgeFee(uint256 _massetAmount) public view returns(uint256) {
+    function calculateRedeemBridgeFee(uint256 _massetAmount) external view returns(uint256) {
         return _calculateFee(_massetAmount, withdrawalBridgeFee);
     }
 
@@ -141,26 +141,30 @@ contract FeesManager is InitializableOwnable {
     // Governance methods
 
     function setDepositFee (uint256 _amount) public onlyOwner {
-        depositFee = _amount;
+        require(_amount <= PRECISION, "invalid fee amount");
 
+        depositFee = _amount;
         emit DepositFeeChanged(_amount);
     }
 
     function setDepositBridgeFee (uint256 _amount) public onlyOwner {
-        depositBridgeFee = _amount;
+        require(_amount <= PRECISION, "invalid fee amount");
 
+        depositBridgeFee = _amount;
         emit DepositBridgeFeeChanged(_amount);
     }
 
     function setWithdrawalFee (uint256 _amount) public onlyOwner {
-        withdrawalFee = _amount;
+        require(_amount <= PRECISION, "invalid fee amount");
 
+        withdrawalFee = _amount;
         emit WithdrawalFeeChanged(_amount);
     }
 
     function setWithdrawalBridgeFee (uint256 _amount) public onlyOwner {
-        withdrawalBridgeFee = _amount;
+        require(_amount <= PRECISION, "invalid fee amount");
 
+        withdrawalBridgeFee = _amount;
         emit WithdrawalBridgeFeeChanged(_amount);
     }
 }
