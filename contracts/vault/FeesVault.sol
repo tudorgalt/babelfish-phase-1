@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 contract FeesVault is InitializableOwnable {
     using SafeERC20 for IERC20;
 
-    function initialize() public {
+    function initialize() external {
         _initialize();
     }
 
