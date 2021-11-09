@@ -4,7 +4,7 @@
 trap "exit" INT
 
 # Run sol-merger on all contracts. The command needs all contracts
-../node_modules/sol-merger/dist/bin/sol-merger.js "../contracts/**/*.sol" ../_flat
+yarn run flatten
 
 MOCK='Mock'
 

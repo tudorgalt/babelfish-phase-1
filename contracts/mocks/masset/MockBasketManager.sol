@@ -1,7 +1,7 @@
-pragma solidity 0.5.16;
+pragma solidity ^0.5.17;
 pragma experimental ABIEncoderV2;
 
-import { BasketManager } from "../../masset/BasketManager.sol";
+import { BasketManagerV3 } from "../../masset/BasketManagerV3.sol";
 
-contract MockBasketManager is BasketManager {
+contract MockBasketManager is BasketManagerV3 {
 }
