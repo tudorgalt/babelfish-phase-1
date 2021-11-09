@@ -1,8 +1,9 @@
 import Logs from "node-logs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { FishContract, MultiSigWalletContract } from "types/generated";
-import { conditionalDeploy, conditionalInitialize, contractConstructorArgs, printState, setNetwork } from "./utils/state";
+import { conditionalDeploy, conditionalInitialize, contractConstructorArgs, setNetwork } from "./utils/state";
 import { DeploymentTags } from "./utils/DeploymentTags";
+import { isDevelopmentNetwork } from "./utils/addresses";
 
 const FishToken = artifacts.require("Fish");
 const MultiSigWallet = artifacts.require("MultiSigWallet");
@@ -37,7 +38,11 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
     });
 
     await conditionalInitialize("FishTokenMultiSigWallet",
-        async () => { await fishToken.transferOwnership(multiSigWallet.address); }
+        async () => {
+            if (!isDevelopmentNetwork(network.name)) {
+                await fishToken.transferOwnership(multiSigWallet.address);
+            }
+        }
     );
 };
 
