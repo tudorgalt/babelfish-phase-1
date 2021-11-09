@@ -5,11 +5,13 @@ import { ArgumentType } from "hardhat/types";
 import Logs from "node-logs";
 import { getDeployed, getInfo, setNetwork } from "migrations/utils/state";
 import { OwnableContract } from "types/generated";
+import { Instances } from "migrations/utils/addresses";
 
 const logger = new Logs().showInConsole(true);
 
 export type TransferOwnershipParams = {
     contracts: string[];
+    instance: Instances;
 };
 
 const stringArrayArgument: ArgumentType<string[]> = {
@@ -34,7 +36,7 @@ subtask("transferOwnership", "transfers ownership of selected contracts to Timel
         setNetwork(network.name);
 
         const Ownable: OwnableContract = artifacts.require("Ownable");
-        const timelockAddress: string = await getInfo("Timelock", "address");
+        const timelockAddress: string = await getInfo(`${taskArgs.instance}_Timelock`, "address");
 
         for (const contractKey of taskArgs.contracts) {
             const contract = await getDeployed(Ownable, contractKey);

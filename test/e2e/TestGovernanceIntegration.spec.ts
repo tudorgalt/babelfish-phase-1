@@ -8,12 +8,13 @@ import { blockTimestampSimple, mineBlock, wait, waitOrMineBlocks } from "scripts
 import { DeploymentTags } from "migrations/utils/DeploymentTags";
 import { Instances, isDevelopmentNetwork } from 'migrations/utils/addresses';
 import { setNetwork, getDeployed, clearState, getInfo } from "migrations/utils/state";
+import { ERC20MintableInstance, StakingInstance } from "types/generated";
 
 const Token = artifacts.require("Token");
 const BasketManagerV3 = artifacts.require("BasketManagerV3");
 const GovernorAlpha = artifacts.require("GovernorAlpha");
 const Staking = artifacts.require("Staking");
-const Fish = artifacts.require("Fish");
+const ERC20Mintable = artifacts.require("ERC20Mintable");
 const Timelock = artifacts.require("Timelock");
 
 const { expect } = envSetup.configure();
@@ -23,17 +24,22 @@ enum ProposalState { Pending, Active, Canceled, Defeated, Succeeded, Queued, Exp
 const instance: Instances = "MYNT";
 
 contract("Governance", async (accounts) => {
+    const [owner, voter1, voter2] = accounts;
+
+    let token: ERC20MintableInstance;
+    let staking: StakingInstance;
+
     before("before all", async () => {
         setNetwork(network.name);
 
         if (isDevelopmentNetwork(network.name)) {
             // run migrations
             await clearState();
-            await deployments.fixture([DeploymentTags.V2, DeploymentTags.V3]);
+            await deployments.fixture(DeploymentTags.Migration);
             await deployments.fixture(DeploymentTags.Governance);
 
             // set proper admin
-            const setAdminEta = await getInfo("Timelock", "setAdminEta");
+            const setAdminEta = await getInfo(`${instance}_Timelock`, "setAdminEta");
             logger.info("Time travel to surpass delay");
             await mineBlock(network.provider, setAdminEta);
 
@@ -43,40 +49,44 @@ contract("Governance", async (accounts) => {
             const contractsList: TransferOwnershipParams = {
                 contracts: [
                     `${instance}_BasketManagerV3`
-                ]
+                ],
+                instance
             };
             await run("transferOwnership", contractsList);
+            // mint tokens for owner
+            staking = await getDeployed(Staking, `${instance}_StakingProxy`);
+
+            const tokenAddress = await staking.SOVToken();
+            token = await ERC20Mintable.at(tokenAddress);
+
+            await token.mint(owner, '10000000000000000', { from: owner });
         }
     });
 
     it("add new basset by voting", async () => {
         network.provider.send("evm_mine");
 
-        const [owner, voter1, voter2] = accounts;
-
-        const governorAlpha = await getDeployed(GovernorAlpha, `GovernorAlpha`);
+        const governorAlpha = await getDeployed(GovernorAlpha, `${instance}_GovernorAlpha`);
         const basketManager = await getDeployed(BasketManagerV3, `${instance}_BasketManagerV3`);
-        const staking = await getDeployed(Staking, `StakingProxy`);
-        const fish = await getDeployed(Fish, `FishToken`);
-        const timelock = await getDeployed(Timelock, 'Timelock');
+        const timelock = await getDeployed(Timelock, `${instance}_Timelock`);
 
         const votingDelay = await governorAlpha.votingDelay();
         const votingPeriod = await governorAlpha.votingPeriod();
         const timelockDelay = await timelock.delay();
 
-        const stakeAddress: string = await getInfo("StakingProxy", "address");
+        const stakeAddress: string = await getInfo(`${instance}_StakingProxy`, "address");
         const basketManagerAddress: string = await getInfo(`${instance}_BasketManagerV3`, "address");
 
         const stakeAmount = 1000000;
         const stakeUntilDate = Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7 * 3);
 
         const stake = async (address: string, amount: number): Promise<void> => {
-            await fish.transfer(address, amount, { from: owner });
-            await fish.approve(stakeAddress, amount, { from: address });
+            await token.transfer(address, amount, { from: owner });
+            await token.approve(stakeAddress, amount, { from: address });
             await staking.stake(amount, stakeUntilDate, ZERO_ADDRESS, ZERO_ADDRESS, { from: address });
         };
 
-        await fish.approve(stakeAddress, stakeAmount);
+        await token.approve(stakeAddress, stakeAmount);
         await staking.stake(stakeAmount, stakeUntilDate, ZERO_ADDRESS, ZERO_ADDRESS);
 
         await stake(voter1, stakeAmount / 500);

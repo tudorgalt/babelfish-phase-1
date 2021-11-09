@@ -16,7 +16,8 @@ const main = async () => {
                 `${symbol}_MassetProxy`,
                 `${symbol}_BasketManagerV3`,
                 `${symbol}_RewardsManager`,
-            ]
+            ],
+            instance: symbol
         };
         await run("transferOwnership", contractsList);
     };
