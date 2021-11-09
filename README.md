@@ -39,7 +39,7 @@ Here is the list of available scripts:
 -   To set the proper admin you need to execute the "transferAdmin" task after sufficient time delay. `yarn hardhat transferAdmin`
 -   Integrate governance system by changing owner of selected contracts by executing `yarn hardhat run scripts/governanceIntegration.ts`
 
-## **4. How does fees and rewards work**
+## **4. How does fees work**
 
 ##### **`- mint`**( take bAssets, mint mAssets in exchange )
 &NewLine;
@@ -47,27 +47,12 @@ Here is the list of available scripts:
 -   substract fee from calculated mAsset mint amount
 -   fees does not impact the amount of bAssets, all of them are transfered to pool 
 
-##### **- rewards**
--   when `reward > 0`
-    - transfer calculated reward from vault to user
--   when `reward < 0`
-    - substract calculated reward amount from mAssets amount to mint
-    - mint reward amount to vault
-
 
 ##### **`- redeem`**( burn mAssets, transfer bAssets from pool in exchange  )
 &NewLine;
 ##### **- fees**
 -   transfer calculated amount before all conversions
 -   substract from massets to burn and bassets to transfer
-
-##### **- rewards**
--   when `reward > 0`
-    - transfer more bassets to user
-    - burn massets from vault
--   when `reward < 0`
-    - transfer calculated mAssets amount from user to vault
-    - substract from massets to burn and bassets to transfer
 
 ## **5. Graph**
 
