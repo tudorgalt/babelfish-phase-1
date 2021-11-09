@@ -8,6 +8,7 @@ The letest version is published here: https://babelfishprotocol.github.io/babelf
 
 Project scripts are defined in _pachage.json_ file. To execute the script run the following command: _yarn command_, for example _'yarn migrate'_. 
 Here is the list of available scripts:
+-    "v3-upgrade:rskTestnet": upgrade system to version 3, rsk testnet network
 -    "deploy" - run migrations, development network
 -    "deploy:ropsten" - run migrations, ropsten network
 -    "deploy:kovan" - run migrations, kowan network
