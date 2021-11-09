@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import Logs from "node-logs";
 import hre from "hardhat";
+import { Instances } from "migrations/utils/addresses";
 import { TransferOwnershipParams } from "./tasks/transferOwnership";
 
 const logger = new Logs().showInConsole(true);
@@ -8,14 +9,10 @@ const logger = new Logs().showInConsole(true);
 const main = async () => {
     const { run } = hre;
 
-    const list: TransferOwnershipParams = {
-        contracts: ["FeesVaultProxy"]
-    };
-    await run("transferOwnership", list);
-
-    const transferForSymbol = async (symbol: string) => {
+    const transferForSymbol = async (symbol: Instances) => {
         const contractsList: TransferOwnershipParams = {
             contracts: [
+                `${symbol}_FeesVaultProxy`,
                 `${symbol}_MassetProxy`,
                 `${symbol}_BasketManagerV3`,
                 `${symbol}_RewardsManager`,
@@ -24,9 +21,10 @@ const main = async () => {
         await run("transferOwnership", contractsList);
     };
 
-    await transferForSymbol('XUSD');
-    await transferForSymbol('ETHs');
-    await transferForSymbol('BNBs');
+    // await transferForSymbol('XUSD');
+    // await transferForSymbol('ETHs');
+    // await transferForSymbol('BNBs');
+    await transferForSymbol('MYNT');
 
     logger.success("Finish");
 };

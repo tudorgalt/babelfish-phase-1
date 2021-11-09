@@ -1,4 +1,4 @@
-pragma solidity 0.5.17;
+pragma solidity ^0.5.17;
 
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 contract FeesVault is InitializableOwnable {
     using SafeERC20 for IERC20;
 
-    function initialize() public {
+    function initialize() external {
         _initialize();
     }
 

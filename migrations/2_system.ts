@@ -2,7 +2,7 @@ import Logs from "node-logs";
 import { DeployFunction } from "hardhat-deploy/dist/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { BasketManagerContract, TokenContract } from "types/generated";
-import addresses, { BassetInstanceDetails, isDevelopmentNetwork } from './utils/addresses';
+import addresses, { BassetInstanceDetails, Instances, isDevelopmentNetwork, Networks } from './utils/addresses';
 import { DeploymentTags } from "./utils/DeploymentTags";
 
 import { conditionalDeploy, conditionalInitialize, contractConstructorArgs, printState, setNetwork } from "./utils/state";
@@ -20,11 +20,12 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
     const [default_, _admin] = await getUnnamedAccounts();
     const { deploy } = deployments;
 
-    const addressesForNetwork = addresses[network.name];
+    const addressesForNetwork = addresses[network.name as Networks];
     setNetwork(network.name);
 
-    async function deployInstance(symbol: string, addressesForInstance: BassetInstanceDetails) {
-        const dTokenArgs = contractConstructorArgs<TokenContract>(symbol, symbol, 18);
+    async function deployInstance(symbol: Instances, massetName: string, tokenSymbol: string, addressesForInstance: Partial<BassetInstanceDetails>) {
+        const dTokenArgs = contractConstructorArgs<TokenContract>(massetName, tokenSymbol, 18);
+
         const dToken = await conditionalDeploy({
             contract: cToken,
             key: `${symbol}_Token`,
@@ -83,10 +84,10 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
             );
         });
     }
-
-    await deployInstance('ETHs', addressesForNetwork.ETHs);
-    await deployInstance('XUSD', addressesForNetwork.XUSD);
-    await deployInstance('BNBs', addressesForNetwork.BNBs);
+    await deployInstance('MYNT', 'Nuestro', 'NUE', addressesForNetwork.MYNT);
+    // await deployInstance('ETHs', 'ETHs', 'ETHs', addressesForNetwork.ETHs);
+    // await deployInstance('XUSD', 'XUSD', 'XUSD', addressesForNetwork.XUSD);
+    // await deployInstance('BNBs', 'BNBs', 'BNBs', addressesForNetwork.BNBs);
 
     logger.success("Migration completed");
     printState();

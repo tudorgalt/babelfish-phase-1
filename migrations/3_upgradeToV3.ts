@@ -3,7 +3,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { ZERO_ADDRESS } from "@utils/constants";
 import { tokens, BN } from "@utils/tools";
 import { MassetV3Instance } from "types/generated";
-import addresses, { BassetInstanceDetails, hasMultisigAddress, isDevelopmentNetwork } from './utils/addresses';
+import addresses, { BassetInstanceDetails, Instances, isDevelopmentNetwork, Networks } from './utils/addresses';
 import { conditionalDeploy, conditionalInitialize, getDeployed, printState, setNetwork } from "./utils/state";
 import { DeploymentTags } from "./utils/DeploymentTags";
 
@@ -25,28 +25,10 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
     const { deploy } = deployments;
     const [default_, _admin] = await getUnnamedAccounts();
 
-    const addressesForNetwork = addresses[network.name];
+    const addressesForNetwork = addresses[network.name as Networks];
     setNetwork(network.name);
 
-    const feesVault = await conditionalDeploy({
-        contract: FeesVault,
-        key: "FeesVault",
-        deployfunc: deploy,
-        deployOptions: { from: default_ }
-    });
-    const feesVaultProxy = await conditionalDeploy({
-        contract: FeesVaultProxy,
-        key: "FeesVaultProxy",
-        deployfunc: deploy,
-        deployOptions: { from: default_ }
-    });
-
-    await conditionalInitialize("FeesVaultProxy",
-        async () => { await feesVaultProxy.methods["initialize(address,address,bytes)"](feesVault.address, _admin, "0x"); }
-    );
-    const vaultFake = await FeesVault.at(feesVaultProxy.address);
-
-    async function upgradeInstance(symbol: string, addressesForInstance: BassetInstanceDetails): Promise<void> {
+    async function upgradeInstance(symbol: Instances, addressesForInstance: Partial<BassetInstanceDetails>) {
         const massetFake: MassetV3Instance = await getDeployed(MassetV3, `${symbol}_MassetProxy`);
         const massetVersion = await massetFake.getVersion();
 
@@ -85,7 +67,6 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             addressesForInstance.bassets = [basset1.address, basset2.address, basset3.address];
             addressesForInstance.factors = [-10, 1, 1];
             addressesForInstance.bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
-            addressesForInstance.ratios = [300, 300, 400];
             addressesForInstance.fees = {
                 deposit: new BN(5),
                 depositBridge: new BN(6),
@@ -119,12 +100,6 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             }
         }
 
-        if (hasMultisigAddress(addressesForInstance)) {
-            if (await basketManager.owner() === default_) {
-                await basketManager.transferOwnership(addressesForInstance.multisig);
-            }
-        }
-
         const feesManager = await conditionalDeploy({
             contract: FeesManager,
             key: `${symbol}_FeesManager`,
@@ -140,6 +115,25 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
                 addressesForInstance.fees.withdrawalBridge
             );
         });
+
+        const feesVault = await conditionalDeploy({
+            contract: FeesVault,
+            key: `${symbol}_FeesVault`,
+            deployfunc: deploy,
+            deployOptions: { from: default_ }
+        });
+        const feesVaultProxy = await conditionalDeploy({
+            contract: FeesVaultProxy,
+            key: `${symbol}_FeesVaultProxy`,
+            deployfunc: deploy,
+            deployOptions: { from: default_ }
+        });
+    
+        await conditionalInitialize(`${symbol}_FeesVaultProxy`,
+            async () => { await feesVaultProxy.methods["initialize(address,address,bytes)"](feesVault.address, _admin, "0x"); }
+        );
+
+        const vaultFake = await FeesVault.at(feesVaultProxy.address);
 
         const masset = await conditionalDeploy({
             contract: MassetV3,
@@ -159,9 +153,10 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
         );
     }
 
-    await upgradeInstance('ETHs', addressesForNetwork.ETHs);
-    await upgradeInstance('XUSD', addressesForNetwork.XUSD);
-    await upgradeInstance('BNBs', addressesForNetwork.BNBs);
+    await upgradeInstance('MYNT', addressesForNetwork.MYNT);
+    // await upgradeInstance('ETHs', addressesForNetwork.ETHs);
+    // await upgradeInstance('XUSD', addressesForNetwork.XUSD);
+    // await upgradeInstance('BNBs', addressesForNetwork.BNBs);
 
     logger.success("Migration completed");
     printState();

@@ -4,7 +4,7 @@ import envSetup from "@utils/env_setup";
 import { tokens } from "@utils/tools";
 import { FEE_PRECISION } from "@utils/constants";
 import { StandardAccounts } from "@utils/standardAccounts";
-import { isDevelopmentNetwork } from 'migrations/utils/addresses';
+import { Instances, isDevelopmentNetwork } from 'migrations/utils/addresses';
 import { setNetwork, getDeployed, clearState } from "migrations/utils/state";
 import { FeesManagerInstance, MassetV3Instance, BasketManagerV3Instance } from "types/generated";
 import { DeploymentTags } from "migrations/utils/DeploymentTags";
@@ -17,7 +17,7 @@ const FeesManager = artifacts.require("FeesManager");
 
 const { expect } = envSetup.configure();
 
-const instance = "XUSD";
+const instance: Instances = "MYNT";
 
 contract("version 3 E2E test", async (accounts) => {
     const sa = new StandardAccounts(accounts);

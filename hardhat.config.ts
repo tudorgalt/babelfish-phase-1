@@ -21,7 +21,8 @@ const config: HardhatUserConfig = {
             saveDeployments: false
         },
         hardhat: {
-            live: false
+            live: false,
+            blockGasLimit: 6800000
         },
         fork: {
             url: "http://127.0.0.1:7545",
