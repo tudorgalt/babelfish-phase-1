@@ -354,11 +354,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
-     *      relative Masset quantity from the sender. Sender also incurs a small fee, if any.
+     *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
      *      This function is designed to also call the bridge in order to have the basset tokens sent to
      *      another blockchain.
      * @param _basset           Address of the bAsset to redeem.
-     * @param _massetQuantity   Units of the masset to redeem.
+     * @param _massetQuantity   Units of the mAsset to redeem.
      * @param _recipient        Address to credit with withdrawn bAssets.
      * @param _bridgeAddress    This is ignored and is left here for backward compatibility with the FE.
      * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
@@ -374,11 +374,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
-     *      relative Masset quantity from the sender. Sender also incurs a small fee, if any.
+     *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
      *      This function is designed to also call the bridge in order to have the basset tokens sent to
      *      another blockchain.
      * @param _basset           Address of the bAsset to redeem.
-     * @param _massetQuantity   Units of the masset to redeem.
+     * @param _massetQuantity   Units of the mAsset to redeem.
      * @param _recipient        Address to credit with withdrawn bAssets.
      * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
      */
@@ -440,8 +440,8 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     /**
      * @dev This is called by the bridge to let us know the user has sent tokens through it and
-     *      into the masset.
-     * @param _orderAmount      Units of the masset to redeem.
+     *      into the mAsset.
+     * @param _orderAmount      Units of the mAsset to redeem.
      * @param _tokenAddress     Address of the bAsset to redeem.
      * @param _userData         Address of the final recipient as ABI encoded bytes.
      */
@@ -492,9 +492,13 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return address(basketManager);
     }
 
-    // Temporary migration
+    // v3 migration
     /**
-     * @dev Temporary migration to V3 version.
+     * @dev Migration to V3 version.
+     * @param _basketManagerAddress     Address of new BasketManagerV3.
+     * @param _tokenAddress             Address of mAsset token.
+     * @param _feesVaultAddress         Address of FeesVault contract.
+     * @param _feesManagerAddress       Adress of FeesManager contract.
      */
     function upgradeToV3(
         address _basketManagerAddress,
