@@ -310,5 +310,8 @@
   },
   "AirdropVester": {
     "address": "0x0e0a643881a11d5fBeD121E7bF6b9ef14f04cdD5"
+  },
+  "RbtcSender": {
+    "address": "0xA6490359EE0ce897481a82b9ae1735c4AbDa8956"
   }
 }

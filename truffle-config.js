@@ -55,7 +55,7 @@ module.exports = {
     },
     rskTestnet: {
       provider() {
-        return new HDWalletProvider('chimney toss kit now firm true scan laundry hazard buffalo tiny west',
+        return new HDWalletProvider('seek danger physical menu pen arrest clutch blade weird detect digital frog',
             'https://testnet.sovryn.app/rpc', 0, 31)
       },
       network_id: 31,
@@ -65,7 +65,7 @@ module.exports = {
     },
     rsk: {
       provider() {
-        return new HDWalletProvider('receive nasty', // totally bogus
+        return new HDWalletProvider('', // totally bogus
             'wss://mainnet.sovryn.app/ws', 0, 30)
       },
       network_id: 30,

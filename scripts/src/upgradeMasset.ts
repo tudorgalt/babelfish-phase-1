@@ -1,5 +1,6 @@
 import HDWalletProvider from '@truffle/hdwallet-provider';
 import Truffle from 'truffle';
+import Web3 from "web3";
 
 const massetProxyAddress = '0x04D92DaA8f3Ef7bD222195e8D1DbE8D89A8CebD3';
 // const thresholdProxyAdminAddress = '0x1300F936e46bd4d318feE9fF45AF8d5DFE7220d5';
@@ -12,6 +13,10 @@ const admin3 = '0xfa82e8Bb8517BE31f64fe517E1E63B87183414Ad';
 export default async function mint(truffle): Promise<any> {
     const wallet: HDWalletProvider = truffle.provider;
     const artifacts: Truffle.Artifacts = truffle.artifacts;
+    const web3: Web3 = truffle.web3;
+    const address0 = web3.currentProvider['addresses'][0];
+    console.log('0: ', address0);
+    return;
 
     const Masset = artifacts.require("Masset");
     const MassetProxy = artifacts.require("MassetProxy");

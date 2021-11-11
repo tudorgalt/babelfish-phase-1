@@ -58,9 +58,9 @@ async function vest(vestingRegistry: IVestingRegistry3Instance, address, amount,
 }
 
 const addresses = [
-    //[ "0x21e1aacb6aadf9c6f28896329ef9423ae5c67416", new BN("21000000"), 3, 23 ],
-    //[ "0x41df960e40bc58a6150376522d39735eac9c8928", new BN("10500000"), 3, 23 ],
-    //[ "0xe078bdbfd0d53ae5918231442e009fe48af39442", new BN("2571534"), 1, 10 ],
+    [ "0x21e1aacb6aadf9c6f28896329ef9423ae5c67416", new BN("21000000"), 3, 23 ],
+    [ "0x41df960e40bc58a6150376522d39735eac9c8928", new BN("10500000"), 3, 23 ],
+    [ "0xe078bdbfd0d53ae5918231442e009fe48af39442", new BN("2571534"), 1, 10 ],
     [ "0x15d63b784f4029983b142bf04b0fd2dadcf616ce", new BN("4239270"), 1, 10 ],
     [ "0x28d1f1d46fd6d0460b2d96ec083f8faf71ca80cc", new BN("790776"), 1, 10 ],
 ];
