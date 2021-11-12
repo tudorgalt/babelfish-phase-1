@@ -20,33 +20,33 @@ contract BasketManagerV3 is InitializableOwnable {
     // Events
 
     /**
-     * @dev Event emitted when basset added.
+     * @dev Event emitted when basset is added.
      * @param basset Address of the bAsset contract.
      */
     event BassetAdded (address basset);
 
     /**
-     * @dev Event emitted when basset removed.
+     * @dev Event emitted when basset is removed.
      * @param basset Address of the bAsset contract.
      */
     event BassetRemoved (address basset);
 
     /**
-     * @dev Event emitted when factor changes.
+     * @dev Event emitted when factor is changed.
      * @param basset Address of the bAsset contract.
      * @param factor Factor of fees.
      */
     event FactorChanged (address basset, int256 factor);
 
     /**
-     * @dev Event emitted when bridge changes.
+     * @dev Event emitted when bridge is changed.
      * @param basset Address of the bAsset contract.
      * @param bridge Address of bridge.
      */
     event BridgeChanged (address basset, address bridge);
 
     /**
-     * @dev Event emitted when range changes.
+     * @dev Event emitted when range is changed.
      * @param basset    Address of the bAsset contract.
      * @param min       Minimal value of range.
      * @param max       Maximal value of range.
@@ -54,7 +54,7 @@ contract BasketManagerV3 is InitializableOwnable {
     event RangeChanged (address basset, uint256 min, uint256 max);
 
     /**
-     * @dev Event emitted when paused changes.
+     * @dev Event emitted when paused is changed.
      * @param basset    Address of the bAsset contract.
      * @param paused    Determine if paused or not.
      */
@@ -75,7 +75,7 @@ contract BasketManagerV3 is InitializableOwnable {
     // Modifiers
 
     /**
-    * @dev Prevents a contract from making actions on paused bassets.
+    * @dev Prevents a contract from making actions on paused bAssets.
     */
     modifier notPaused(address _basset) {
         _notPaused(_basset);
@@ -83,7 +83,7 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     /**
-    * @dev Prevents a contract from making actions on invalid bassets.
+    * @dev Prevents a contract from making actions on invalid bAssets.
     */
     modifier validBasset(address _basset) {
         _validBasset(_basset);
@@ -91,7 +91,7 @@ contract BasketManagerV3 is InitializableOwnable {
     }
 
     /**
-    * @dev Prevents a contract from making actions on paused bassets.
+    * @dev Prevents a contract from making actions on paused bAssets.
     * This method is called and separated from modifier to optimize bytecode and save gas.
     */
     function _notPaused(address _basset) internal view {
@@ -100,7 +100,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
 
     /**
-    * @dev Prevents a contract from making actions on invalid bassets.
+    * @dev Prevents a contract from making actions on invalid bAssets.
     * This method is called and separated from modifier to optimize bytecode and save gas.
     */
     function _validBasset(address _basset) internal view {
@@ -111,7 +111,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     /**
    * @dev Contract initializer.
-   * @param _masset     Address of the mAsset
+   * @param _masset     Address of the mAsset contract.
    */
     function initialize(address _masset) external {
         require(masset == address(0), "already initialized");
@@ -123,7 +123,7 @@ contract BasketManagerV3 is InitializableOwnable {
     // Methods for Masset logic
 
     /**
-     * @dev Checks if bAasset is valid by checking its presence in the bassets list.
+     * @dev Checks if bAasset is valid by checking its presence in the bAssets factors list.
      */
     function isValidBasset(address _basset) public view returns(bool) {
         return (factorMap[_basset] != 0);
@@ -293,7 +293,7 @@ contract BasketManagerV3 is InitializableOwnable {
 
     /**
      * @dev Adds multiple bAssets.
-     * @notice All parameters must be arrays with proper order.
+     * @notice All parameters must be arrays with proper order and equal length.
      */
     function addBassets(
         address[] memory _bassets, int256[] memory _factors, address[] memory _bridges,

@@ -5,7 +5,7 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 
 /**
- * @title RewaFeesManagerrdsManager
+ * @title FeesManager
  * @dev Contract is responsible for fees calculations.
  */
 contract FeesManager is InitializableOwnable {
