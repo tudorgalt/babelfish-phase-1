@@ -42,6 +42,7 @@
     "address": "0xcCd36ce503e1e47B7D11601719dD977742e0FAf0"
   },
   "MyntToken": {
-    "address": "0x686BC22575F56F99a8A266A55660b125B216b228"
+    "address": "0x686BC22575F56F99a8A266A55660b125B216b228",
+    "initialized": true
   }
 }
