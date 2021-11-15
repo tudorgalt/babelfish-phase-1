@@ -50,8 +50,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
 };
 
 deployFunc.tags = [
-    DeploymentTags.MyntToken,
-    DeploymentTags.Governance
+    DeploymentTags.MyntToken
 ];
 
 export default deployFunc;

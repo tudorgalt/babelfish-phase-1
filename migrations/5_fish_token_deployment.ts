@@ -47,8 +47,7 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
 };
 
 deployFunc.tags = [
-    DeploymentTags.FishToken,
-    DeploymentTags.Governance
+    DeploymentTags.FishToken
 ];
 
 export default deployFunc;

@@ -36,6 +36,8 @@ contract("Governance", async (accounts) => {
             // run migrations
             await clearState();
             await deployments.fixture(DeploymentTags.Migration);
+            await deployments.fixture(DeploymentTags.MyntToken);
+            await deployments.fixture(DeploymentTags.FishToken);
             await deployments.fixture(DeploymentTags.Governance);
 
             // set proper admin
