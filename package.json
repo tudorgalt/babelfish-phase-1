@@ -15,6 +15,7 @@
     "deploy:rinkeby": "yarn hardhat deploy --network rinkeby --reset --tags migration",
     "deploy:ropsten": "yarn hardhat deploy --network ropsten --reset -tags migration",
     "deploy:kovan": "yarn hardhat deploy --network kovan --reset -tags migration",
+    "deploy:rskDev": "yarn hardhat deploy --network rskDev --reset --tags migration",
     "deploy:rskTestnet": "yarn hardhat deploy --network rskTestnet --reset -tags migration",
     "deploy-governance": "yarn hardhat deploy --network development --reset --tags governance",
     "deploy-governance:ropsten": "yarn hardhat deploy --network ropsten --reset --tags governance",

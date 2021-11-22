@@ -14,7 +14,7 @@ export type BassetInstanceDetails = {
 
 const instances = ["XUSD", "ETHs", "BNBs", "MYNT"] as const;
 const developmentNetworks = ["development", "hardhat"] as const;
-const productionNetworks = ["rskTestnet", "rsk"] as const;
+const productionNetworks = ["rskTestnet", "rsk", "rskDev"] as const;
 
 export type Instances = UnionType<typeof instances>;
 export type DevelopmentNetworks = UnionType<typeof developmentNetworks>;
@@ -141,7 +141,6 @@ const addresses: Addresses = {
                 "0xCB46c0ddc60D18eFEB0E586C17Af6ea36452Dae0" // DOC
             ], // ZUSD DOC
             bridges: [
-                "0x0000000000000000000000000000000000000000",
                 "0x0000000000000000000000000000000000000000"
             ],
             factors: [
@@ -154,6 +153,32 @@ const addresses: Addresses = {
                 withdrawal: new BN(0),
                 withdrawalBridge: new BN(0)
             } 
+        }
+    },
+    rskDev: {
+        XUSD: {
+        } as BassetInstanceDetails,
+        ETHs: {
+        } as BassetInstanceDetails,
+        BNBs: {
+        } as BassetInstanceDetails,
+        MYNT: {
+            bassets: [
+                "0x24307fAF57D235783582F1912Ef6A384ab456568" // ZUSD
+            ],
+            bridges: [
+                "0x1eD614cd3443EFd9c70F04b6d777aed947A4b0c4",
+            ],
+            factors: [
+                1
+            ],
+            // multisig: ?????
+            fees: {
+                deposit: new BN(0),
+                depositBridge: new BN(0),
+                withdrawal: new BN(0),
+                withdrawalBridge: new BN(0)
+            }
         }
     },
     rsk: {
@@ -242,9 +267,9 @@ const addresses: Addresses = {
         MYNT: {
             bassets: [
                 "0xe700691dA7b9851F2F35f8b8182c69c53CcaD9Db", // DOC 
+                "0x24307fAF57D235783582F1912Ef6A384ab456568"
             ], // ZUSD DOC
             bridges: [
-                "0x0000000000000000000000000000000000000000",
                 "0x0000000000000000000000000000000000000000"
             ],
             factors: [

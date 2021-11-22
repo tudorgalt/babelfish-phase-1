@@ -260,7 +260,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         address _bAsset,
         uint256 _massetQuantity
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, msg.sender, false);
+        return _redeemTo(_bAsset, _massetQuantity, msg.sender, false, false);
     }
 
     /**
@@ -276,7 +276,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 _massetQuantity,
         address _recipient
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, _recipient, false);
+        return _redeemTo(_bAsset, _massetQuantity, _recipient, false, false);
     }
 
     /***************************************
@@ -289,14 +289,16 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param _basset           Address of the bAsset to redeem.
      * @param _massetQuantity   Units of the masset to redeem.
      * @param _recipient        Address to credit with withdrawn bAssets.
-     * @param bridgeFlag        Flag that indicates if the reedem proces is used with conjunction with bridge.
+     * @param _bridgeFlag       Flag that indicates if the reedem proces is used with conjunction with bridge.
+     * @param _useCallback      Flag that indicates if this method should call onTokensMinted in case of usage of bridge.
      * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
      */
     function _redeemTo(
         address _basset,
         uint256 _massetQuantity,
         address _recipient,
-        bool bridgeFlag
+        bool _bridgeFlag,
+        bool _useCallback
     ) internal returns (uint256 massetRedeemed) {
         require(_recipient != address(0), "must be a valid recipient");
         require(_massetQuantity > 0, "masset quantity must be greater than 0");
@@ -304,16 +306,17 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         // massetsToBurn is the amount of massets that is left to burn after the fee was taken.
         // It is used to calculate amount of bassets that are transfered to user.
-        uint256 massetsAfterFee = _transferAndCalulateFee(_massetQuantity, msg.sender, bridgeFlag);
+        uint256 massetsAfterFee = _transferAndCalulateFee(_massetQuantity, msg.sender, _bridgeFlag);
         (uint256 bassetQuantity, uint256 massetsToBurn) = basketManager.convertMassetToBassetQuantity(_basset, massetsAfterFee);
 
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
 
         token.burn(msg.sender, massetsToBurn);
         // In case of withdrawal to bridge the receiveTokensAt is called instead of transfer.
-        if(bridgeFlag) {
+        if(_bridgeFlag && _useCallback) {
             address bridgeAddress = basketManager.getBridge(_basset);
             require(bridgeAddress != address(0), "invalid bridge");
+
             IERC20(_basset).approve(bridgeAddress, bassetQuantity);
             require(
                 IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
@@ -369,7 +372,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         address _recipient,
         address _bridgeAddress // IGNORED! for backward compatibility
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_basset, _massetQuantity, _recipient, true);
+        return _redeemTo(_basset, _massetQuantity, _recipient, true, true);
     }
 
     /**
@@ -387,7 +390,28 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 _massetQuantity,
         address _recipient
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_basset, _massetQuantity, _recipient, true);
+        return _redeemTo(_basset, _massetQuantity, _recipient, true, true);
+    }
+
+    /**
+     * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
+     *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
+     *      This function is designed to be called by the bridge in order to have diffrent fees.
+     * @param _basset           Address of the bAsset to redeem.
+     * @param _massetQuantity   Units of the mAsset to redeem.
+     * @param _recipient        Address to credit with withdrawn bAssets.
+     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+     */
+    function redeemByBridge(
+        address _basset,
+        uint256 _massetQuantity,
+        address _recipient
+    ) external nonReentrant returns (uint256 massetRedeemed) {
+        address bridgeAddress = basketManager.getBridge(_basset);
+        require(bridgeAddress != address(0), "invalid bridge");
+        require(bridgeAddress == msg.sender, "Must be called by bridge");
+
+        return _redeemTo(_basset, _massetQuantity, _recipient, true, false);
     }
 
     /**
