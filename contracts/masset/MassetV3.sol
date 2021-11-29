@@ -304,14 +304,16 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(_massetQuantity > 0, "masset quantity must be greater than 0");
         require(basketManager.isValidBasset(_basset), "invalid basset");
 
+        address massetSource = (_bridgeFlag && !_useCallback) ? _recipient : msg.sender;
+
         // massetsToBurn is the amount of massets that is left to burn after the fee was taken.
         // It is used to calculate amount of bassets that are transfered to user.
-        uint256 massetsAfterFee = _transferAndCalulateFee(_massetQuantity, msg.sender, _bridgeFlag);
+        uint256 massetsAfterFee = _transferAndCalulateFee(_massetQuantity, massetSource, _bridgeFlag);
         (uint256 bassetQuantity, uint256 massetsToBurn) = basketManager.convertMassetToBassetQuantity(_basset, massetsAfterFee);
 
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
 
-        token.burn(msg.sender, massetsToBurn);
+        token.burn(massetSource, massetsToBurn);
         // In case of withdrawal to bridge the receiveTokensAt is called instead of transfer.
         if(_bridgeFlag && _useCallback) {
             address bridgeAddress = basketManager.getBridge(_basset);
@@ -325,7 +327,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
             IERC20(_basset).safeTransfer(_recipient, bassetQuantity);
         }
 
-        emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity);
+        emit Redeemed(massetSource, _recipient, _massetQuantity, _basset, bassetQuantity);
 
         return massetsToBurn;
     }
