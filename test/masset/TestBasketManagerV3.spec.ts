@@ -496,12 +496,20 @@ contract("BasketManagerV3", async (accounts) => {
 
         context("should succeed", async () => {
             it("with all valid params", async () => {
-                const { receipt } = await basketManager.removeBasset(mockToken1.address, { from: owner });
+                const bassetToRemove = mockToken1.address;
 
-                const isValid = await basketManager.isValidBasset(mockToken1.address);
+                const bassetsListBefore = await basketManager.getBassets();
+                expect(bassetsListBefore).to.contain(bassetToRemove);
+
+                const { receipt } = await basketManager.removeBasset(bassetToRemove, { from: owner });
+
+                const isValid = await basketManager.isValidBasset(bassetToRemove);
                 expect(isValid).to.equal(false);
 
-                await expectEvent(receipt, "BassetRemoved", { basset: mockToken1.address });
+                const bassetsListAfter = await basketManager.getBassets();
+                expect(bassetsListAfter).not.to.contain(bassetToRemove);
+
+                await expectEvent(receipt, "BassetRemoved", { basset: bassetToRemove });
             });
         });
     });

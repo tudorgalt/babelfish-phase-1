@@ -367,14 +367,17 @@ contract BasketManagerV3 is InitializableOwnable {
     function removeBasset(address _basset) public validBasset(_basset) onlyOwner {
         require(getBassetBalance(_basset) == 0, "balance not zero");
         factorMap[_basset] = 0;
-        bool flag;
+
+        uint256 index;
         for(uint i = 0; i < bassetsArray.length - 1; i++) {
-            flag = flag || bassetsArray[i] == _basset;
-            if (flag) {
-                bassetsArray[i] = bassetsArray[i + 1];
+            if (bassetsArray[i] == _basset) {
+                index = i;
+                break;
             }
         }
-        bassetsArray.length--;
+
+        bassetsArray[index] = bassetsArray[bassetsArray.length - 1];
+        bassetsArray.pop();
 
         emit BassetRemoved(_basset);
     }

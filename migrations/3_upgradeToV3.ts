@@ -128,12 +128,16 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
             deployfunc: deploy,
             deployOptions: { from: default_ }
         });
-    
+
         await conditionalInitialize(`${symbol}_FeesVaultProxy`,
             async () => { await feesVaultProxy.methods["initialize(address,address,bytes)"](feesVault.address, _admin, "0x"); }
         );
 
         const vaultFake = await FeesVault.at(feesVaultProxy.address);
+
+        await conditionalInitialize(`${symbol}_FeesVault`,
+            async () => { await vaultFake.initialize(); }
+        );
 
         const masset = await conditionalDeploy({
             contract: MassetV3,
