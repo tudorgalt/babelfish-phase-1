@@ -27,6 +27,7 @@ typings/
 # saved addresses on development networks
 state_development.json
 state_hardhat.json
+state_rskDev.json
 
 # dotenv environment variables file
 .env

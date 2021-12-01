@@ -1,0 +1,36 @@
+{
+  "Migrations": {
+    "address": "0xbD5b00D0497B71D03F8fe1e32B6b1710A048C60a"
+  },
+  "MYNT_Token": {
+    "address": "0x7c8A2881B341EF0d938b410A38c7b0dD51f0a8A8"
+  },
+  "MYNT_Masset": {
+    "address": "0x812759b33661C0131621E5A1D892362Bc6e364ad"
+  },
+  "MYNT_MassetProxy": {
+    "address": "0x67Da7F80A6842E9E6Cf0378227bCE5693156f659",
+    "initialized": true
+  },
+  "MYNT_BasketManager": {
+    "address": "0x31FFE871195610699E3b31b3A51001F71932763A"
+  },
+  "MYNT_BasketManagerV3": {
+    "address": "0x911F77160b2d4f929CD22De8EAa586b8761F1859",
+    "initialized": true
+  },
+  "MYNT_FeesManager": {
+    "address": "0xA8eE9964B79f1D88E8DDC5A2821e6be0d31D0eb0",
+    "initialized": true
+  },
+  "MYNT_FeesVault": {
+    "address": "0x4b24E9773778252d53109eA91387b7eA9E9596D6"
+  },
+  "MYNT_FeesVaultProxy": {
+    "address": "0xd8B57e141b7194fB857874ab185BC99675A2332F",
+    "initialized": true
+  },
+  "MYNT_MassetV3": {
+    "address": "0x6782Deb2308b7c7444E4aC0dE04f2bf677264663"
+  }
+}
