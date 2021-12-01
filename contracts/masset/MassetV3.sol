@@ -254,7 +254,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      *      relative mAsset quantity from the sender. Sender also incurs a small mAsset fee, if any.
      * @param _bAsset           Address of the bAsset to redeem.
      * @param _massetQuantity   Units of the masset to redeem.
-     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+     * @return massetRedeemed   Relative number of mAsset units burned to pay for the bAssets.
      */
     function redeem(
         address _bAsset,
@@ -269,7 +269,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param _bAsset           Address of the bAsset to redeem.
      * @param _massetQuantity   Units of the masset to redeem.
      * @param _recipient        Address to credit with withdrawn bAssets.
-     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+     * @return massetRedeemed   Relative number of mAsset units burned to pay for the bAssets.
      */
     function redeemTo(
         address _bAsset,
@@ -290,7 +290,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param _massetQuantity   Units of the masset to redeem.
      * @param _recipient        Address to credit with withdrawn bAssets.
      * @param bridgeFlag        Flag that indicates if the reedem proces is used with conjunction with bridge.
-     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+     * @return massetRedeemed   Relative number of mAsset units burned to pay for the bAssets.
      */
     function _redeemTo(
         address _basset,
@@ -361,7 +361,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param _massetQuantity   Units of the mAsset to redeem.
      * @param _recipient        Address to credit with withdrawn bAssets.
      * @param _bridgeAddress    This is ignored and is left here for backward compatibility with the FE.
-     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+     * @return massetRedeemed   Relative number of mAsset units burned to pay for the bAssets.
      */
     function redeemToBridge(
         address _basset,
@@ -380,7 +380,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param _basset           Address of the bAsset to redeem.
      * @param _massetQuantity   Units of the mAsset to redeem.
      * @param _recipient        Address to credit with withdrawn bAssets.
-     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+     * @return massetRedeemed   Relative number of mAsset units burned to pay for the bAssets.
      */
     function redeemToBridge(
         address _basset,
