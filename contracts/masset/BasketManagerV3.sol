@@ -375,7 +375,7 @@ contract BasketManagerV3 is InitializableOwnable {
                 break;
             }
         }
-    
+
         bassetsArray[index] = bassetsArray[bassetsArray.length - 1];
         bassetsArray.pop();
 
