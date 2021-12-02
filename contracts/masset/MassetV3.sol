@@ -411,7 +411,7 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
     ) external nonReentrant returns (uint256 massetRedeemed) {
         address bridgeAddress = basketManager.getBridge(_basset);
         require(bridgeAddress != address(0), "invalid bridge");
-        require(bridgeAddress == msg.sender, "Must be called by bridge");
+        require(bridgeAddress == msg.sender, "must be called by bridge");
 
         return _redeemTo(_basset, _massetQuantity, _recipient, true, false);
     }

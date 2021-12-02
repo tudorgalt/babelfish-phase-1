@@ -21,9 +21,14 @@ export type DevelopmentNetworks = UnionType<typeof developmentNetworks>;
 export type ProducitionNetworks = UnionType<typeof productionNetworks>;
 export type Networks = DevelopmentNetworks | ProducitionNetworks;
 
+type NetworkConfig = { registerAsERC777Recipient: boolean; };
+
 export type Addresses =
-    { [k in DevelopmentNetworks]: { [k in Instances]: Partial<BassetInstanceDetails> } } &
-    { [k in ProducitionNetworks]: { [k in Instances]: BassetInstanceDetails } };
+    {
+        [k in DevelopmentNetworks]: NetworkConfig & { [k in Instances]: Partial<BassetInstanceDetails> }
+    } & {
+        [k in ProducitionNetworks]: NetworkConfig & { [k in Instances]: BassetInstanceDetails }
+    };
 
 export const isDevelopmentNetwork = (networkName: string): networkName is DevelopmentNetworks => {
     return developmentNetworks.includes(networkName as DevelopmentNetworks);
@@ -35,6 +40,7 @@ export const hasMultisigAddress = (bassetDetails: BassetInstanceDetails): basset
 
 const addresses: Addresses = {
     hardhat: {
+        registerAsERC777Recipient: false,
         XUSD: {
         },
         ETHs: {
@@ -46,6 +52,7 @@ const addresses: Addresses = {
         }
     },
     development: {
+        registerAsERC777Recipient: false,
         XUSD: {
         },
         ETHs: {
@@ -53,10 +60,11 @@ const addresses: Addresses = {
         BNBs: {
         },
         MYNT: {
-            
+
         }
     },
     rskTestnet: {
+        registerAsERC777Recipient: true,
         XUSD: {
             bassets: [
                 // ETH->RSK
@@ -152,10 +160,11 @@ const addresses: Addresses = {
                 depositBridge: new BN(0),
                 withdrawal: new BN(0),
                 withdrawalBridge: new BN(0)
-            } 
+            }
         }
     },
     rskDev: {
+        registerAsERC777Recipient: false,
         XUSD: {
         } as BassetInstanceDetails,
         ETHs: {
@@ -182,6 +191,7 @@ const addresses: Addresses = {
         }
     },
     rsk: {
+        registerAsERC777Recipient: true,
         XUSD: {
             bassets: [
                 // ETH->RSK
@@ -281,7 +291,7 @@ const addresses: Addresses = {
                 depositBridge: new BN(0),
                 withdrawal: new BN(0),
                 withdrawalBridge: new BN(0)
-            } 
+            }
         }
     }
 };
