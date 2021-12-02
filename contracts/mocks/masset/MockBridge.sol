@@ -24,4 +24,14 @@ contract MockBridge {
     ) external {
         MassetV3(masset).onTokensMinted(_orderAmount, _tokenAddress, abi.encode(_userData));
     }
+
+    // It is used to test the case, when bridge is calling the redeemByBridge method on Masset
+    function callRedeemByBridge(
+        address masset,
+        address _basset,
+        uint256 _massetQuantity,
+        address _recipient
+    ) external returns (uint256 massetRedeemed) {
+        return MassetV3(masset).redeemByBridge(_basset, _massetQuantity, _recipient);
+    }
 }
