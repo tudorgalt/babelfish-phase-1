@@ -73,7 +73,7 @@ const deployFunc: DeployFunction = async ({ network, deployments, getUnnamedAcco
             .initialize(
                 dBasketManager.address,
                 dToken.address,
-                false // !isDevelopmentNetwork(network.name)
+                addressesForNetwork.registerAsERC777Recipient
             ).encodeABI();
 
         await conditionalInitialize(`${symbol}_MassetProxy`, async () => {
