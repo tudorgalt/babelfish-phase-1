@@ -44,5 +44,37 @@
   "MyntToken": {
     "address": "0x686BC22575F56F99a8A266A55660b125B216b228",
     "initialized": true
+  },
+  "MYNT_Token": {
+    "address": "0xbae0e3c499BB2c01A431Be40e9DF7c99FE5aEC3E"
+  },
+  "MYNT_Masset": {
+    "address": "0xbe4566396ef50b0A6877297976dDD09df864D693"
+  },
+  "MYNT_MassetProxy": {
+    "address": "0x4DC8251Ed6dd185B9FB93ccf34ADa9b6d918aF8C",
+    "initialized": true
+  },
+  "MYNT_BasketManager": {
+    "address": "0xF6eA9D53cE8d418ade341E8E07509Ef59E97fa41"
+  },
+  "MYNT_BasketManagerV3": {
+    "address": "0x2A916d72C9d0bC504F6456d9305258D46140DF81",
+    "initialized": true
+  },
+  "MYNT_FeesManager": {
+    "address": "0x0899bcfe2AC5Aa4606596039944DDb5a32C43476",
+    "initialized": true
+  },
+  "MYNT_FeesVault": {
+    "address": "0x5c406ed1dA9a2Dab5eEf8187C195Fe90566a41af",
+    "initialized": true
+  },
+  "MYNT_FeesVaultProxy": {
+    "address": "0xAfE94A691adF39e86BC443f89559f624cD6524D0",
+    "initialized": true
+  },
+  "MYNT_MassetV3": {
+    "address": "0xcD150Bf98870Dbe5BD261680507f96e436994456"
   }
 }
