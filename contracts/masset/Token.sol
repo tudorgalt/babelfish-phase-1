@@ -3,6 +3,8 @@ pragma solidity ^0.5.17;
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
+import "./BaseRelayRecipient.sol";
+import "./IApproveAndCall.sol";
 
 /**
  * @title Token
@@ -11,7 +13,7 @@ import "@openzeppelin/contracts/ownership/Ownable.sol";
  * mint and burn functions.
  */
 
-contract Token is ERC20, ERC20Detailed, Ownable {
+contract Token is ERC20, ERC20Detailed, Ownable, BaseRelayRecipient {
 
     /**
      * @notice Constructor called on deployment, initiates the contract.
@@ -21,6 +23,10 @@ contract Token is ERC20, ERC20Detailed, Ownable {
      * */
     constructor(string memory _name, string memory _symbol, uint8 _decimals) public
     ERC20Detailed(_name, _symbol, _decimals) {}
+
+    function setTrustedForwarder(address _forwarder) external onlyOwner {
+        _trustedForwarder = _forwarder;
+    }
 
     /**
      * @notice Creates new tokens and sends them to the recipient.
@@ -38,5 +44,27 @@ contract Token is ERC20, ERC20Detailed, Ownable {
      * */
     function burn(address _account, uint256 _amount) public onlyOwner {
         _burn(_account, _amount);
+    }
+
+    /**
+	 * @notice Approves and then calls the receiving contract.
+	 * Useful to encapsulate sending tokens to a contract in one call.
+	 * Solidity has no native way to send tokens to contracts.
+	 * ERC-20 tokens require approval to be spent by third parties, such as a contract in this case.
+	 * @param _spender The contract address to spend the tokens.
+	 * @param _amount The amount of tokens to be sent.
+	 * @param _data Parameters for the contract call, such as endpoint signature.
+	 * */
+	function approveAndCall(
+		address _spender,
+		uint256 _amount,
+		bytes memory _data
+	) public {
+		approve(_spender, _amount);
+		IApproveAndCall(_spender).receiveApproval(msg.sender, _amount, address(this), _data);
+	}
+
+    function _msgSender() internal view returns (address payable ret) {
+        return BaseRelayRecipient._msgSender();
     }
 }
