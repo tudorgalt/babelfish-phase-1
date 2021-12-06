@@ -1,4 +1,4 @@
-import { expectRevert } from "@openzeppelin/test-helpers";
+import { expectRevert, expectEvent, time } from "@openzeppelin/test-helpers";
 import { toWei } from "web3-utils";
 import { TokenInstance } from "types/generated";
 
@@ -6,12 +6,13 @@ const Token = artifacts.require("Token");
 const MockCallReceiver = artifacts.require("MockCallReceiver");
 
 contract("Token", async (accounts) => {
-    const [owner, user, receiver, forwarder, paymaster] = accounts;
+    const [owner, user, user2, receiver, forwarder, paymaster] = accounts;
 
     let token: TokenInstance;
 
-    before("before all", async () => {
+    beforeEach("before all", async () => {
         token = await Token.new("Test Token", "TT", 18, forwarder, paymaster);
+        await token.mint(user, toWei("100"));
     });
 
     describe("mint", async () => {
@@ -56,15 +57,90 @@ contract("Token", async (accounts) => {
         });
     });
 
+    describe("launchPaymasterUpdate", async () => {
+        // We need a contract address
+        let mockCallReceiver;
+
+        before(async () => {
+            mockCallReceiver = await MockCallReceiver.new();
+        });
+
+        context("should succeed", async () => {
+            it("when called by owner", async () => {
+                const timestamp = new Date().getTime() / 1000;
+
+                const receipt = await token.launchPaymasterUpdate(mockCallReceiver.address);
+                const update = await token.paymasterUpdate();
+
+                assert(update[0] === mockCallReceiver.address);
+                // Substrate 100 to the timestamp to take local chain timestamp discrapency with real timestamp into account
+                assert(update[1].toNumber() >= timestamp - 100 + time.duration.weeks(1).toNumber());
+                assert(update[2] === true);
+                expectEvent(receipt, "PaymasterUpdateLaunched", {
+                    newPaymaster: mockCallReceiver.address
+                });
+            });
+        });
+
+        context("should fail", async () => {
+            it("when not owner", async () => {
+                await expectRevert(token.launchPaymasterUpdate(user), "address provided is not a contract");
+            });
+
+            it("when address is not a contract", async () => {
+                await expectRevert(token.launchPaymasterUpdate(user), "address provided is not a contract");
+            });
+
+            it("when last update not executed", async () => {
+                await token.launchPaymasterUpdate(mockCallReceiver.address);
+                await expectRevert(token.launchPaymasterUpdate(mockCallReceiver.address), "current update has to be executed");
+            });
+        });
+    });
+
+    describe("executePaymasterUpdate", async () => {
+        // We need a contract address
+        let contract;
+
+        before(async () => {
+            contract = await MockCallReceiver.new();
+        });
+
+        beforeEach(async () => {
+            await token.launchPaymasterUpdate(contract.address);
+        });
+
+        context("should succeed", async () => {
+            it("should when called by owner and grace period ended", async () => {
+                await time.increase(time.duration.weeks(1));
+                const receipt = await token.executePaymasterUpdate();
+                const paymasterAddress = await token.paymaster();
+                assert(paymasterAddress === contract.address);
+                expectEvent(receipt, "PaymasterUpdateExecuted", {
+                    newPaymaster: contract.address
+                });
+            });
+        });
+        context("should fail", async () => {});
+    });
+
     describe("revokePaymaster", async () => {
         context("should succeed", async () => {
             it("when called", async () => {
-                await token.revokePaymaster(true, { from: user });
+                let receipt = await token.revokePaymaster(true, { from: user });
                 let revoked = await token.paymasterRevoked(user);
                 assert(revoked === true);
-                await token.revokePaymaster(false, { from: user });
+                expectEvent(receipt, "PaymasterRevoked", {
+                    account: user,
+                    revoked: true
+                });
+                receipt = await token.revokePaymaster(false, { from: user });
                 revoked = await token.paymasterRevoked(user);
                 assert(revoked === false);
+                expectEvent(receipt, "PaymasterRevoked", {
+                    account: user,
+                    revoked: false
+                });
             });
         });
     });
@@ -72,9 +148,6 @@ contract("Token", async (accounts) => {
     describe("transferFrom", async () => {
         const amount = "1000000";
 
-        beforeEach(async () => {
-            await token.mint(user, amount);
-        });
         context("should succeed", async () => {
             it("when from paymaster and not revoked", async () => {
                 const initialBalance = await token.balanceOf(paymaster);
@@ -115,7 +188,6 @@ contract("Token", async (accounts) => {
         let data: string;
 
         beforeEach(async () => {
-            await token.mint(user, amount);
             // Call data for a transfer transaction for `amount` to `receiver`
             data = web3.eth.abi.encodeFunctionCall(
                 {
@@ -178,18 +250,12 @@ contract("Token", async (accounts) => {
 
                 // Transaction object with `receiver` as sender
                 const rawTransaction = {
-                    from: receiver,
+                    from: user2,
                     to: token.address,
                     data: dataWithAddress
                 };
 
-                const initialBalance = await token.balanceOf(receiver);
-                // Won't make the test fail
-                await web3.eth.sendTransaction(rawTransaction);
-                const finalBalance = await token.balanceOf(receiver);
-
-                // The transaction is supposed to be reverted so no change for the balance
-                assert(finalBalance.sub(initialBalance).toNumber() === 0);
+                await expectRevert(web3.eth.sendTransaction(rawTransaction), "ERC20: transfer amount exceeds balance");
             });
         });
     });

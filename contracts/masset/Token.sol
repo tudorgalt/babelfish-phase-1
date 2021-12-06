@@ -27,9 +27,9 @@ contract Token is ERC20, ERC20Detailed, Ownable, BaseRelayRecipient {
     PaymasterUpdate public paymasterUpdate;
     mapping(address => bool) public paymasterRevoked;
 
-    event PaymasterUpdateLaunched(address indexed newBridge, uint256 endGracePeriod);
-    event PaymasterUpdateExecuted(address indexed newBridge);
-    event PaymasterRevoked(address account, bool revoked);
+    event PaymasterUpdateLaunched(address indexed newPaymaster, uint256 endGracePeriod);
+    event PaymasterUpdateExecuted(address indexed newPaymaster);
+    event PaymasterRevoked(address indexed account, bool revoked);
 
     /**
      * @notice Constructor called on deployment, initiates the contract.
