@@ -6,12 +6,12 @@ const Token = artifacts.require("Token");
 const MockCallReceiver = artifacts.require("MockCallReceiver");
 
 contract("Token", async (accounts) => {
-    const [owner, user, receiver, trustedForwarder] = accounts;
+    const [owner, user, receiver, forwarder, paymaster] = accounts;
 
     let token: TokenInstance;
 
     before("before all", async () => {
-        token = await Token.new("Test Token", "TT", 18);
+        token = await Token.new("Test Token", "TT", 18, forwarder, paymaster);
     });
 
     describe("mint", async () => {
@@ -56,13 +56,66 @@ contract("Token", async (accounts) => {
         });
     });
 
+    describe("revokePaymaster", async () => {
+        context("should succeed", async () => {
+            it("when called", async () => {
+                await token.revokePaymaster(true, { from: user });
+                let revoked = await token.paymasterRevoked(user);
+                assert(revoked === true);
+                await token.revokePaymaster(false, { from: user });
+                revoked = await token.paymasterRevoked(user);
+                assert(revoked === false);
+            });
+        });
+    });
+
+    describe("transferFrom", async () => {
+        const amount = "1000000";
+
+        beforeEach(async () => {
+            await token.mint(user, amount);
+        });
+        context("should succeed", async () => {
+            it("when from paymaster and not revoked", async () => {
+                const initialBalance = await token.balanceOf(paymaster);
+                await token.transferFrom(user, paymaster, amount, { from: paymaster });
+                const finalBalance = await token.balanceOf(paymaster);
+                assert(finalBalance.sub(initialBalance).toNumber() === parseInt(amount, 10));
+            });
+
+            it("when not from paymaster and allowance", async () => {
+                await token.approve(receiver, amount, { from: user });
+                const initialBalance = await token.balanceOf(paymaster);
+                await token.transferFrom(user, paymaster, amount, { from: receiver });
+                const finalBalance = await token.balanceOf(paymaster);
+                assert(finalBalance.sub(initialBalance).toNumber() === parseInt(amount, 10));
+            });
+        });
+
+        context("should fail", async () => {
+            it("when not from paymaster and no allowance", async () => {
+                await expectRevert(
+                    token.transferFrom(user, paymaster, amount, { from: receiver }),
+                    "ERC20: transfer amount exceeds allowance"
+                );
+            });
+
+            it("when from paymaster and revoked", async () => {
+                await token.revokePaymaster(true, { from: user });
+                await expectRevert(
+                    token.transferFrom(user, paymaster, amount, { from: paymaster }),
+                    "ERC20: transfer amount exceeds allowance"
+                );
+            });
+        });
+    });
+
     describe("_msgSender", async () => {
         const amount = "100000";
         let data: string;
 
         beforeEach(async () => {
             await token.mint(user, amount);
-            await token.setTrustedForwarder(trustedForwarder);
             // Call data for a transfer transaction for `amount` to `receiver`
             data = web3.eth.abi.encodeFunctionCall(
                 {
@@ -88,9 +141,9 @@ contract("Token", async (accounts) => {
                 // Append the address of `user` so the contract will consider it is the sender
                 const dataWithAddress = data + user.substr(2);
 
-                // Transaction object with `trustedForwarder` as sender
+                // Transaction object with `forwarder` as sender
                 const rawTransaction = {
-                    from: trustedForwarder,
+                    from: forwarder,
                     to: token.address,
                     data: dataWithAddress
                 };
