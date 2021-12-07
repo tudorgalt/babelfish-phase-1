@@ -64,7 +64,7 @@ const addresses: Addresses = {
         }
     },
     rskTestnet: {
-        registerAsERC777Recipient: true,
+        registerAsERC777Recipient: false,
         XUSD: {
             bassets: [
                 // ETH->RSK
@@ -146,12 +146,15 @@ const addresses: Addresses = {
         },
         MYNT: {
             bassets: [
-                "0xCB46c0ddc60D18eFEB0E586C17Af6ea36452Dae0" // DOC
-            ], // ZUSD DOC
+                "0xCB46c0ddc60D18eFEB0E586C17Af6ea36452Dae0", // DOC
+                "0x42713A6D207B1d831288f0497c7a923A517aebD9" // ZUSD
+            ],
             bridges: [
-                "0x0000000000000000000000000000000000000000"
+                "0x0000000000000000000000000000000000000000",
+                "0xd33264bb4a2003FBe832D34a707b534f4E76A3C8" // BorrowerOperations
             ],
             factors: [
+                1,
                 1
             ],
             // multisig: ?????
