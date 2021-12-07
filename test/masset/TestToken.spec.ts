@@ -114,14 +114,25 @@ contract("Token", async (accounts) => {
             it("should when called by owner and grace period ended", async () => {
                 await time.increase(time.duration.weeks(1));
                 const receipt = await token.executePaymasterUpdate();
-                const paymasterAddress = await token.paymaster();
-                assert(paymasterAddress === contract.address);
+                const update = await token.paymasterUpdate();
+                assert((await token.paymaster()) === contract.address);
+                assert(update[2] === false);
                 expectEvent(receipt, "PaymasterUpdateExecuted", {
                     newPaymaster: contract.address
                 });
             });
         });
-        context("should fail", async () => {});
+        context("should fail", async () => {
+            it("when grace period has not finished", async () => {
+                await expectRevert(token.executePaymasterUpdate(), "grace period has not finished");
+            });
+
+            it("when update already executed", async () => {
+                await time.increase(time.duration.weeks(1));
+                await token.executePaymasterUpdate();
+                await expectRevert(token.executePaymasterUpdate(), "update already executed");
+            });
+        });
     });
 
     describe("revokePaymaster", async () => {

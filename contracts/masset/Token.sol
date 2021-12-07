@@ -67,7 +67,7 @@ contract Token is ERC20, ERC20Detailed, Ownable, BaseRelayRecipient {
             paymasterUpdate.endGracePeriod <= block.timestamp,
             "grace period has not finished"
         );
-        require(paymasterUpdate.hasToBeExecuted, ": update already executed");
+        require(paymasterUpdate.hasToBeExecuted, "update already executed");
 
         paymasterUpdate.hasToBeExecuted = false;
         paymaster = paymasterUpdate.newPaymaster;
