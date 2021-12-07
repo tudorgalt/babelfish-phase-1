@@ -17,13 +17,21 @@ import "./IApproveAndCall.sol";
 contract Token is ERC20, ERC20Detailed, Ownable, BaseRelayRecipient {
     using Address for address;
 
+    /**
+     * @param newPaymaster Address of the paymaster that will replace the old one.
+     * @param endGracePeriod Timestamp from when the update will be able to be executed.
+     */
     struct PaymasterUpdate {
         address newPaymaster;
         uint256 endGracePeriod;
     }
 
+    // Address of the paymaster which will be able to bypass the allowance check
+    // for transferFrom
     address public paymaster;
+    // Struct containing the infos about the update await to be executed
     PaymasterUpdate public paymasterUpdate;
+    // Track account which disallowed allowance check bypass for paymaster
     mapping(address => bool) public paymasterRevoked;
 
     event PaymasterUpdateLaunched(address indexed newPaymaster, uint256 endGracePeriod);
@@ -47,17 +55,26 @@ contract Token is ERC20, ERC20Detailed, Ownable, BaseRelayRecipient {
         _trustedForwarder = _forwarder;
     }
 
+    /**
+     * @notice Create a timelocked update that needs 1 week to be executed.
+     * @dev Only executable by owner.
+     * @param newPaymaster Address of the paymaster that will replace the old one.
+     */
     function launchPaymasterUpdate(address newPaymaster) external onlyOwner {
         require(paymasterUpdate.newPaymaster == address(0), "current update has to be executed");
         require(newPaymaster.isContract(), "address provided is not a contract");
 
         uint256 endGracePeriod = block.timestamp + 1 weeks;
-
         paymasterUpdate = PaymasterUpdate(newPaymaster, endGracePeriod);
 
         emit PaymasterUpdateLaunched(newPaymaster, endGracePeriod);
     }
 
+    /**
+     * @notice Execute the current update if grace period has finished and replaces
+     * the paymaster address.
+     * @dev Only executable by owner.
+     */
     function executePaymasterUpdate() external onlyOwner {
         require(paymasterUpdate.newPaymaster != address(0), "update already executed");
         require(
@@ -107,6 +124,9 @@ contract Token is ERC20, ERC20Detailed, Ownable, BaseRelayRecipient {
 		IApproveAndCall(_spender).receiveApproval(msg.sender, _amount, address(this), _data);
 	}
 
+    /**
+     * @dev Overrides the original transferFrom function to implement the bypass logic for paymaster
+     */
     function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
         if (msg.sender == paymaster && !paymasterRevoked[sender]) {
             _transfer(sender, recipient, amount);
@@ -116,11 +136,19 @@ contract Token is ERC20, ERC20Detailed, Ownable, BaseRelayRecipient {
         return true;
     }
 
+    /**
+     * @notice Enable users to disable the bypass for paymaster transferFrom.
+     * @param revoke Use true to disable the paymaster and false to enable
+     * it to transfer tokens without allowance.
+     */
     function revokePaymaster(bool revoke) external {
         paymasterRevoked[_msgSender()] = revoke;
         emit PaymasterRevoked(_msgSender(), revoke);
     }
 
+    /**
+     * @dev Sets the global implementation of _msgSender() to the BaseRelayRecipient one.
+     */
     function _msgSender() internal view returns (address payable ret) {
         return BaseRelayRecipient._msgSender();
     }
