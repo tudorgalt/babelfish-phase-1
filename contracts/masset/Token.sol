@@ -37,18 +37,15 @@ contract Token is ERC20, ERC20Detailed, Ownable, BaseRelayRecipient {
      * @param _symbol The symbol of the token.
      * @param _decimals The decimals of the token.
      * @param _forwarder The address of the gsn forwarder.
-     * @param _paymaster The address of the rBTC paymaster.
      * */
     constructor(
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
-        address _forwarder,
-        address _paymaster
+        address _forwarder
     ) public
     ERC20Detailed(_name, _symbol, _decimals) {
         _trustedForwarder = _forwarder;
-     	paymaster = _paymaster;
     }
 
     function launchPaymasterUpdate(address newPaymaster) external onlyOwner {

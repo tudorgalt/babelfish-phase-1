@@ -3,6 +3,7 @@ import { toWei } from "web3-utils";
 import { TokenInstance } from "types/generated";
 
 const Token = artifacts.require("Token");
+const MockToken = artifacts.require("MockToken");
 const MockCallReceiver = artifacts.require("MockCallReceiver");
 
 contract("Token", async (accounts) => {
@@ -11,7 +12,7 @@ contract("Token", async (accounts) => {
     let token: TokenInstance;
 
     beforeEach("before all", async () => {
-        token = await Token.new("Test Token", "TT", 18, forwarder, paymaster);
+        token = await Token.new("Test Token", "TT", 18, forwarder);
         await token.mint(user, toWei("100"));
     });
 
@@ -158,20 +159,26 @@ contract("Token", async (accounts) => {
 
     describe("transferFrom", async () => {
         const amount = "1000000";
+        let mockToken;
+
+        before(async () => {
+            mockToken = await MockToken.new("Test Token", "TT", 18, forwarder, paymaster);
+            await mockToken.mint(user, toWei("100"));
+        });
 
         context("should succeed", async () => {
             it("when from paymaster and not revoked", async () => {
-                const initialBalance = await token.balanceOf(paymaster);
-                await token.transferFrom(user, paymaster, amount, { from: paymaster });
-                const finalBalance = await token.balanceOf(paymaster);
+                const initialBalance = await mockToken.balanceOf(paymaster);
+                await mockToken.transferFrom(user, paymaster, amount, { from: paymaster });
+                const finalBalance = await mockToken.balanceOf(paymaster);
                 assert(finalBalance.sub(initialBalance).toNumber() === parseInt(amount, 10));
             });
 
             it("when not from paymaster and allowance", async () => {
-                await token.approve(receiver, amount, { from: user });
-                const initialBalance = await token.balanceOf(paymaster);
-                await token.transferFrom(user, paymaster, amount, { from: receiver });
-                const finalBalance = await token.balanceOf(paymaster);
+                await mockToken.approve(receiver, amount, { from: user });
+                const initialBalance = await mockToken.balanceOf(paymaster);
+                await mockToken.transferFrom(user, paymaster, amount, { from: receiver });
+                const finalBalance = await mockToken.balanceOf(paymaster);
                 assert(finalBalance.sub(initialBalance).toNumber() === parseInt(amount, 10));
             });
         });
@@ -179,15 +186,15 @@ contract("Token", async (accounts) => {
         context("should fail", async () => {
             it("when not from paymaster and no allowance", async () => {
                 await expectRevert(
-                    token.transferFrom(user, paymaster, amount, { from: receiver }),
+                    mockToken.transferFrom(user, paymaster, amount, { from: receiver }),
                     "ERC20: transfer amount exceeds allowance"
                 );
             });
 
             it("when from paymaster and revoked", async () => {
-                await token.revokePaymaster(true, { from: user });
+                await mockToken.revokePaymaster(true, { from: user });
                 await expectRevert(
-                    token.transferFrom(user, paymaster, amount, { from: paymaster }),
+                    mockToken.transferFrom(user, paymaster, amount, { from: paymaster }),
                     "ERC20: transfer amount exceeds allowance"
                 );
             });
