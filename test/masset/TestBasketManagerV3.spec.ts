@@ -492,6 +492,13 @@ contract("BasketManagerV3", async (accounts) => {
                     "VM Exception while processing transaction: reverted with reason string 'balance not zero'"
                 );
             });
+
+            it("when basset is invalid", async () => {
+                await expectRevert(
+                    basketManager.removeBasset(sa.other, { from: owner }),
+                    "VM Exception while processing transaction: reverted with reason string 'invalid basset'"
+                );
+            });
         });
 
         context("should succeed", async () => {
