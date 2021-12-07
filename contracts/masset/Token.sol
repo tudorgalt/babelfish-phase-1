@@ -20,7 +20,6 @@ contract Token is ERC20, ERC20Detailed, Ownable, BaseRelayRecipient {
     struct PaymasterUpdate {
         address newPaymaster;
         uint256 endGracePeriod;
-        bool hasToBeExecuted;
     }
 
     address public paymaster;
@@ -49,27 +48,27 @@ contract Token is ERC20, ERC20Detailed, Ownable, BaseRelayRecipient {
     }
 
     function launchPaymasterUpdate(address newPaymaster) external onlyOwner {
-        require(!paymasterUpdate.hasToBeExecuted, "current update has to be executed");
+        require(paymasterUpdate.newPaymaster == address(0), "current update has to be executed");
         require(newPaymaster.isContract(), "address provided is not a contract");
 
         uint256 endGracePeriod = block.timestamp + 1 weeks;
 
-        paymasterUpdate = PaymasterUpdate(newPaymaster, endGracePeriod, true);
+        paymasterUpdate = PaymasterUpdate(newPaymaster, endGracePeriod);
 
         emit PaymasterUpdateLaunched(newPaymaster, endGracePeriod);
     }
 
     function executePaymasterUpdate() external onlyOwner {
+        require(paymasterUpdate.newPaymaster != address(0), "update already executed");
         require(
             paymasterUpdate.endGracePeriod <= block.timestamp,
             "grace period has not finished"
         );
-        require(paymasterUpdate.hasToBeExecuted, "update already executed");
 
-        paymasterUpdate.hasToBeExecuted = false;
         paymaster = paymasterUpdate.newPaymaster;
-
         emit PaymasterUpdateExecuted(paymasterUpdate.newPaymaster);
+        
+        delete paymasterUpdate;
     }
 
     /**

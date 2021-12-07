@@ -1,4 +1,4 @@
-import { expectRevert, expectEvent, time } from "@openzeppelin/test-helpers";
+import { expectRevert, expectEvent, time, constants } from "@openzeppelin/test-helpers";
 import { toWei } from "web3-utils";
 import { TokenInstance } from "types/generated";
 
@@ -76,7 +76,6 @@ contract("Token", async (accounts) => {
                 assert(update[0] === mockCallReceiver.address);
                 // Substrate 100 to the timestamp to take local chain timestamp discrapency with real timestamp into account
                 assert(update[1].toNumber() >= timestamp - 100 + time.duration.weeks(1).toNumber());
-                assert(update[2] === true);
                 expectEvent(receipt, "PaymasterUpdateLaunched", {
                     newPaymaster: mockCallReceiver.address
                 });
@@ -116,8 +115,10 @@ contract("Token", async (accounts) => {
                 await time.increase(time.duration.weeks(1));
                 const receipt = await token.executePaymasterUpdate();
                 const update = await token.paymasterUpdate();
+
                 assert((await token.paymaster()) === contract.address);
-                assert(update[2] === false);
+                assert(update[0] === constants.ZERO_ADDRESS);
+                assert(update[1].toNumber() === 0);
                 expectEvent(receipt, "PaymasterUpdateExecuted", {
                     newPaymaster: contract.address
                 });
