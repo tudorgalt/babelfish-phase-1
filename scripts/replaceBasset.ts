@@ -8,7 +8,7 @@ const BasketManagerV3 = artifacts.require("BasketManagerV3");
 
 const logger = new Logs().showInConsole(true);
 
-const symbol: Instances = 'MYNT';
+const symbol: Instances = 'XUSD';
 
 const PREV_BASSET = "0x71A2D1f9611eA45181aee147A84673f355894D70";
 

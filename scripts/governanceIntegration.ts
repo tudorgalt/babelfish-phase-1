@@ -22,10 +22,10 @@ const main = async () => {
         await run("transferOwnership", contractsList);
     };
 
-    // await transferForSymbol('XUSD');
+    await transferForSymbol('XUSD');
     // await transferForSymbol('ETHs');
     // await transferForSymbol('BNBs');
-    await transferForSymbol('MYNT');
+    // await transferForSymbol('MYNT');
 
     logger.success("Finish");
 };

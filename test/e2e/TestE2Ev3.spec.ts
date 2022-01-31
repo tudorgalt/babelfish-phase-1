@@ -17,7 +17,7 @@ const FeesManager = artifacts.require("FeesManager");
 
 const { expect } = envSetup.configure();
 
-const instance: Instances = "MYNT";
+const instance: Instances = "XUSD";
 
 contract("version 3 E2E test", async (accounts) => {
     const sa = new StandardAccounts(accounts);

@@ -157,9 +157,9 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
         );
     }
 
-    await upgradeInstance('MYNT', addressesForNetwork.MYNT);
+    // await upgradeInstance('MYNT', addressesForNetwork.MYNT);
     // await upgradeInstance('ETHs', addressesForNetwork.ETHs);
-    // await upgradeInstance('XUSD', addressesForNetwork.XUSD);
+    await upgradeInstance('XUSD', addressesForNetwork.XUSD);
     // await upgradeInstance('BNBs', addressesForNetwork.BNBs);
 
     logger.success("Migration completed");

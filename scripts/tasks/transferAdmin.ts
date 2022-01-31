@@ -7,8 +7,6 @@ import { Instances } from "migrations/utils/addresses";
 
 const logger = new Logs().showInConsole(true);
 
-
-
 task("transferAdmin", "transfers admin of governor alpha")
     .setAction(async (_, hre) => {
         const { network, web3, artifacts } = hre;
@@ -43,6 +41,6 @@ task("transferAdmin", "transfers admin of governor alpha")
 
         // await transferForInstance('BNBs');
         // await transferForInstance('ETHs');
-        // await transferForInstance('XUSD');
-        await transferForInstance('MYNT');
+        await transferForInstance('XUSD');
+        // await transferForInstance('MYNT');
     });
