@@ -1,16 +1,18 @@
-pragma solidity ^0.5.17;
+pragma solidity ^0.5.0;
+
+import "./IRelayRecipient.sol";
 
 /**
  * A base contract to be inherited by any contract that want to receive relayed transactions
  * A subclass must use "msgSender()" instead of "msg.sender"
  */
-contract BaseRelayRecipient {
+contract BaseRelayRecipient is IRelayRecipient {
     /*
      * Forwarder singleton we accept calls from
      */
     address internal _trustedForwarder;
 
-    function _isTrustedForwarder(address forwarder) internal view returns (bool) {
+    function isTrustedForwarder(address forwarder) public view override returns (bool) {
         return forwarder == _trustedForwarder;
     }
 
@@ -21,7 +23,7 @@ contract BaseRelayRecipient {
      * should be used in the contract anywhere instead of msg.sender
      */
     function _msgSender() internal view returns (address payable ret) {
-        if (msg.data.length >= 20 && _isTrustedForwarder(msg.sender)) {
+        if (msg.data.length >= 20 && isTrustedForwarder(msg.sender)) {
             // At this point we know that the sender is a trusted forwarder,
             // so we trust that the last bytes of msg.data are the verified sender address.
             // extract sender address from the end of msg.data
@@ -31,5 +33,9 @@ contract BaseRelayRecipient {
         } else {
             ret = msg.sender;
         }
+    }
+
+    function versionRecipient() external view override returns (string memory) {
+        return "2.2.3+opengsn.bsc.irelayrecipient";
     }
 }
