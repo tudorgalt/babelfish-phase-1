@@ -32,7 +32,7 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
 
     console.log(2);
 
-    await state.conditionalInitialize('Token', () => d_Token.initialize('XBTC', 'XBTC', 18));
+    await state.conditionalInitialize('Token', () => d_Token.initialize('BTCs', 'BTCs', 18));
 
     /*
     const d_TokenProxy = await state.conditionalDeploy(c_TokenProxy, 'TokenProxy',

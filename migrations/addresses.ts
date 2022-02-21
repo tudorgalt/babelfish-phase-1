@@ -81,5 +81,18 @@ export default {
 
             ],
             factors: [1]
+    },
+    bmainnet: {
+            bassets: [
+                // RSK->BSC
+                '', // bRBTC
+
+            ],
+            bridges: [
+                // RSK -> BSC
+                '0xdfc7127593c8af1a17146893f10e08528f4c2aa7',
+
+            ],
+        factors: [1]
     }
 };
