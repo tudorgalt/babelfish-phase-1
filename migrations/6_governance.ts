@@ -6,9 +6,10 @@ import {
     GovernorAlphaContract,
     VestingFactoryContract,
     VestingRegistry3Contract,
-    FeeSharingProxyContract
+    FeeSharingProxyContract,
+    OrigingVestingCreatorContract
 } from "types/generated";
-import { ZERO_ADDRESS } from '@utils/constants';
+import { ZERO_ADDRESS } from "@utils/constants";
 import {
     setInfo,
     printState,
@@ -19,10 +20,10 @@ import {
     getDeployed,
     getInfo
 } from "./utils/state";
-import { Instances, isDevelopmentNetwork } from './utils/addresses';
-import { DeploymentTags } from './utils/DeploymentTags';
+import { Instances, isDevelopmentNetwork } from "./utils/addresses";
+import { DeploymentTags } from "./utils/DeploymentTags";
 
-const MyntToken = artifacts.require("MyntToken");
+// const MyntToken = artifacts.require("MyntToken");
 const FishToken = artifacts.require("Fish");
 const Staking = artifacts.require("Staking");
 const StakingProxy = artifacts.require("StakingProxy");
@@ -34,6 +35,7 @@ const TimelockMock = artifacts.require("TimelockMock");
 const GovernorAlpha = artifacts.require("GovernorAlpha");
 const GovernorAlphaMock = artifacts.require("GovernorAlphaMock");
 const FeeSharingProxy = artifacts.require("FeeSharingProxy");
+const OrigingVestingCreator = artifacts.require("OrigingVestingCreator");
 
 const logger = new Logs().showInConsole(true);
 
@@ -106,11 +108,15 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts, web3 }: Ha
             feeSharingProxy.address,
             multisigAddress
         );
-        await conditionalDeploy({
+        const vestingRegistry3 = await conditionalDeploy({
             contract: VestingRegistry3,
             key: `${symbol}_VestingRegistry3`,
             deployfunc: deploy,
             deployOptions: { from: default_, args: vestingRegistryArgs }
+        });
+
+        await conditionalInitialize(`${symbol}_VestingFactory`, async () => {
+            await vestingFactory.transferOwnership(vestingRegistry3.address);
         });
 
         let timelockContract: TimelockContract;
@@ -154,41 +160,52 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts, web3 }: Ha
             deployOptions: { from: default_, args: governorAlphaArgs }
         });
 
-        await conditionalInitialize(`${symbol}_GovernorAlpha`,
-            async () => {
-                const recentBlock = await web3.eth.getBlock("latest");
-                const blockTimestamp = Number(recentBlock.timestamp) + timelockDelay + 30;
+        await conditionalInitialize(`${symbol}_GovernorAlpha`, async () => {
+            const delay = await timelock.delay();
 
-                const signature = "setPendingAdmin(address)";
-                const abiParameters = web3.eth.abi.encodeParameter("address", governorAlpha.address);
+            const recentBlock = await web3.eth.getBlock("latest");
+            const blockTimestamp = Number(recentBlock.timestamp) + delay.toNumber() + 300;
 
-                await timelock.queueTransaction(timelock.address, 0, signature, abiParameters, blockTimestamp);
+            const signature = "setPendingAdmin(address)";
+            const abiParameters = web3.eth.abi.encodeParameter("address", governorAlpha.address);
 
-                await setInfo(`${symbol}_Timelock`, "setAdminEta", blockTimestamp);
-                const etaTime = new Date(blockTimestamp * 1000).toString();
+            await timelock.queueTransaction(timelock.address, 0, signature, abiParameters, blockTimestamp); // Wed Jan 12 2022 13:56:33 GMT+0100 (Central European Standard Time)
 
-                logger.warn(`Eta for admin: ${etaTime}`);
-            }
-        );
+            await setInfo(`${symbol}_Timelock`, "setAdminEta", blockTimestamp);
+            const etaTime = new Date(blockTimestamp * 1000).toString();
+
+            logger.warn(`Eta for admin: ${etaTime}`);
+        });
+
+        const origingVestingCreatorArgs = contractConstructorArgs<OrigingVestingCreatorContract>(vestingRegistry3.address);
+
+        const origingVestingCreator = await conditionalDeploy({
+            contract: OrigingVestingCreator,
+            key: `${symbol}_OrigingVestingCreator`,
+            deployfunc: deploy,
+            deployOptions: { from: default_, args: origingVestingCreatorArgs }
+        });
+
+        await conditionalInitialize(`${symbol}_OrigingVestingCreator`, async () => {
+            await vestingRegistry3.addAdmin(origingVestingCreator.address, { from: default_ });
+        });
     }
 
     const fishToken = await getDeployed(FishToken, "FishToken");
-    const fishTokenMultiSigWallet = await getInfo('FishTokenMultiSigWallet', 'address');
+    const fishTokenMultiSigWallet = await getInfo("FishTokenMultiSigWallet", "address");
 
-    const myntToken = await getDeployed(MyntToken, 'MyntToken');
-    const myntTokenOwner = await myntToken.owner();
+    // const myntToken = await getDeployed(MyntToken, 'MyntToken');
+    // const myntTokenOwner = await myntToken.owner();
 
-    await deployInstance('MYNT', myntToken.address, myntTokenOwner, 1, 20);
+    // await deployInstance('MYNT', myntToken.address, myntTokenOwner, 1, 20);
     // await deployInstance('ETHs', fishToken.address, fishTokenMultiSigWallet, 1, 20);
-    // await deployInstance('XUSD', fishToken.address, fishTokenMultiSigWallet, 1, 20);
+    await deployInstance("XUSD", fishToken.address, fishTokenMultiSigWallet, 1, 20);
     // await deployInstance('BNBs', fishToken.address, fishTokenMultiSigWallet, 1, 20);
 
     logger.success("Migration completed");
     printState();
 };
 
-deployFunc.tags = [
-    DeploymentTags.Governance
-];
+deployFunc.tags = [DeploymentTags.Governance];
 
 export default deployFunc;

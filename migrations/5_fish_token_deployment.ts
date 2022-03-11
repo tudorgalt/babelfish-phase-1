@@ -40,7 +40,8 @@ const deployFunc = async ({ network, deployments, getUnnamedAccounts }: HardhatR
     await conditionalInitialize("FishTokenMultiSigWallet",
         async () => {
             if (!isDevelopmentNetwork(network.name)) {
-                await fishToken.transferOwnership(multiSigWallet.address);
+                // Uncomment later
+                // await fishToken.transferOwnership(multiSigWallet.address);
             }
         }
     );

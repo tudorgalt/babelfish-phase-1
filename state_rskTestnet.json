@@ -41,40 +41,78 @@
   "BNBs_Masset": {
     "address": "0xcCd36ce503e1e47B7D11601719dD977742e0FAf0"
   },
-  "MyntToken": {
-    "address": "0x686BC22575F56F99a8A266A55660b125B216b228",
-    "initialized": true
-  },
   "MYNT_Token": {
-    "address": "0xbae0e3c499BB2c01A431Be40e9DF7c99FE5aEC3E"
+    "address": "0xE0A574a940f9f2F7aE730a2DfB667B70dB989CaB"
   },
   "MYNT_Masset": {
-    "address": "0xbe4566396ef50b0A6877297976dDD09df864D693"
+    "address": "0xF89CC17eDA7dA69fb484AF189A5f56Ccd4D729F7"
   },
   "MYNT_MassetProxy": {
-    "address": "0x4DC8251Ed6dd185B9FB93ccf34ADa9b6d918aF8C",
+    "address": "0xD74E026B7F2014e0757968938158b699e2040e76",
     "initialized": true
   },
   "MYNT_BasketManager": {
-    "address": "0xF6eA9D53cE8d418ade341E8E07509Ef59E97fa41"
+    "address": "0x437aa666a317925983BbF1C289A0B8c3908B210B"
   },
   "MYNT_BasketManagerV3": {
-    "address": "0x2A916d72C9d0bC504F6456d9305258D46140DF81",
+    "address": "0x348891DAF0Afc3e0FB680E758a9d256d415332cb",
     "initialized": true
   },
   "MYNT_FeesManager": {
-    "address": "0x0899bcfe2AC5Aa4606596039944DDb5a32C43476",
+    "address": "0x46A7D17F177e9cF7f83351069DC952a824C53E68",
     "initialized": true
   },
   "MYNT_FeesVault": {
-    "address": "0x5c406ed1dA9a2Dab5eEf8187C195Fe90566a41af",
+    "address": "0x52f49f4C9Ed0584343e1D2CcF893bEDDf6eB3289",
     "initialized": true
   },
   "MYNT_FeesVaultProxy": {
-    "address": "0xAfE94A691adF39e86BC443f89559f624cD6524D0",
+    "address": "0x7657e6d60b9C4c7BA16474BAcf3CBF7d6267da7a",
     "initialized": true
   },
   "MYNT_MassetV3": {
-    "address": "0xcD150Bf98870Dbe5BD261680507f96e436994456"
+    "address": "0x6680B7c94ea5638bAF8190d517a6899f71631dF2"
+  },
+  "FishToken": {
+    "address": "0x5250D37B096099678b0957bae32153915ca2C043"
+  },
+  "FishTokenMultiSigWallet": {
+    "address": "0x3cfd801790E24cD86Ac89Ff5bD8EC1526AE90cde",
+    "initialized": true
+  },
+  "XUSD_StakingLogic": {
+    "address": "0xfb74Dd6fBaf31D46aEdc8D4540A43d246D6F87a4"
+  },
+  "XUSD_StakingProxy": {
+    "address": "0x786CD2E46fFa407114cCDb78b57F9fbe3b83Cd24",
+    "initialized": true
+  },
+  "XUSD_FeeSharingProxy": {
+    "address": "0xBF56E401e3CbE1ddF3d8fEee770d9A3a19076751"
+  },
+  "XUSD_Staking": {
+    "initialized": true
+  },
+  "XUSD_VestingLogic": {
+    "address": "0x8E3B784A020dcDc82e58d2FCfb9d46d2f29a04CA"
+  },
+  "XUSD_VestingFactory": {
+    "address": "0x85af6D027F51569986b5E31B525e123B162eb9dB",
+    "initialized": true
+  },
+  "XUSD_VestingRegistry3": {
+    "address": "0x64e0C4bBe361B3efbbcE35870FaFc9DC1A049AC6"
+  },
+  "XUSD_Timelock": {
+    "address": "0xeed994C671f4C40d14406408Da4Ff24a9AF8729c",
+    "setAdminEta": 1641992193
+  },
+  "XUSD_GovernorAlpha": {
+    "address": "0x82dF1C8d73235128A5176Af4Bdac7dDb7e049e5E",
+    "initialized": true
+  },
+  "XUSD_OrigingVestingCreator": {
+    "address": "0x14d30AE4D6014DFC1f8353805d0B4A86c6683440",
+    "initialized": true
   }
 }

@@ -2,6 +2,7 @@
 import hre from "hardhat";
 import Logs from "node-logs";
 import { getDeployed, setNetwork } from "migrations/utils/state";
+import { Instances } from "migrations/utils/addresses";
 
 const MassetV3 = artifacts.require("MassetV3");
 const BasketManagerV3 = artifacts.require("BasketManagerV3");
@@ -12,14 +13,14 @@ const main = async () => {
     const { network } = hre;
     setNetwork(network.name);
 
-    const logVersionsForInstance = async (symbol: string) => {
+    const logVersionsForInstance = async (symbol: Instances) => {
         logger.warn(`-------------------- ${symbol} --------------------\n`);
 
         try {
             const massetMock = await getDeployed(MassetV3, `${symbol}_MassetProxy`);
             logger.success(`-- Masset version: ${await massetMock.getVersion()}`);
 
-            const basketManagerMock = await getDeployed(BasketManagerV3, `${symbol}_BasketManagerV3`);
+            const basketManagerMock = await getDeployed(BasketManagerV3, `${symbol}_BasketManager`);
             logger.success(`-- Basket Manager version: ${await basketManagerMock.getVersion()}\n`);
         } catch (e) {
             logger.err("error", ["bold"]);
@@ -30,6 +31,7 @@ const main = async () => {
     await logVersionsForInstance('XUSD');
     await logVersionsForInstance('ETHs');
     await logVersionsForInstance('BNBs');
+    await logVersionsForInstance('MYNT');
 };
 
 main()

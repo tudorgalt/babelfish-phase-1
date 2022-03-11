@@ -14,8 +14,7 @@ const main = async () => {
             contracts: [
                 `${symbol}_FeesVaultProxy`,
                 `${symbol}_MassetProxy`,
-                `${symbol}_BasketManagerV3`,
-                `${symbol}_RewardsManager`,
+                `${symbol}_BasketManagerV3`
             ],
             instance: symbol
         };

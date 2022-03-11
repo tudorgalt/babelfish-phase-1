@@ -12,7 +12,11 @@ import "hardhat-docgen";
 import "hardhat-contract-sizer";
 
 import "scripts/tasks/transferOwnership";
+import "scripts/tasks/createVesting";
 import "scripts/tasks/transferAdmin";
+import "scripts/tasks/getTokens";
+import "scripts/tasks/listBassets";
+import "scripts/tasks/approve";
 
 const config: HardhatUserConfig = {
     networks: {

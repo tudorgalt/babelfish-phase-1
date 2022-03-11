@@ -147,11 +147,11 @@ const addresses: Addresses = {
         MYNT: {
             bassets: [
                 "0xCB46c0ddc60D18eFEB0E586C17Af6ea36452Dae0", // DOC
-                "0x42713A6D207B1d831288f0497c7a923A517aebD9" // ZUSD
+                "0x4a0741FA749eD6b1F810224D09f1f511952e67de" // ZUSD
             ],
             bridges: [
                 "0x0000000000000000000000000000000000000000",
-                "0xd33264bb4a2003FBe832D34a707b534f4E76A3C8" // BorrowerOperations
+                "0xb0F012fb61fA55220897Ba7B7b6B85F39a14f4Ec" // BorrowerOperations
             ],
             factors: [
                 1,

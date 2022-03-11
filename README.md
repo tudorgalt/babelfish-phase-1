@@ -37,6 +37,7 @@ Here is the list of available scripts:
 ## **3. Governance migration**
 
 ##### Here are the steps needed to properly deploy and integrate governance system:
+-   Deploy governance token: depending on the instance you will nedd to deploy diffrent tokens. e.g. `Fish` for `XUSD` (`yarn deploy-fish-token`)
 -   Run contracts migrations: `yarn migrate-governance` (this script will queue the transferAdmin call)
 -   To set the proper admin you need to execute the "transferAdmin" task after sufficient time delay. `yarn hardhat transferAdmin`
 -   Integrate governance system by changing owner of selected contracts by executing `yarn hardhat run scripts/governanceIntegration.ts`
