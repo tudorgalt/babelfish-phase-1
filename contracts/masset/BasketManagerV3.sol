@@ -48,10 +48,9 @@ contract BasketManagerV3 is InitializableOwnable {
     /**
      * @dev Event emitted when range is changed.
      * @param basset    Address of the bAsset contract.
-     * @param min       Minimal value of range.
-     * @param max       Maximal value of range.
+     * @param newRatio  Ratio value.
      */
-    event RangeChanged (address basset, uint256 min, uint256 max);
+    event RatioChanged (address basset, uint256 newRatio);
 
     /**
      * @dev Event emitted when paused is changed.
@@ -68,9 +67,10 @@ contract BasketManagerV3 is InitializableOwnable {
     address[] private bassetsArray;
     mapping(address => int256) private factorMap;
     mapping(address => address) private bridgeMap;
-    mapping(address => uint256) private minMap;
-    mapping(address => uint256) private maxMap;
+    mapping(address => uint256) private ratioMap;
     mapping(address => bool) private pausedMap;
+
+    uint256 constant public PRECISION = 1e18;
 
     // Modifiers
 
@@ -127,54 +127,6 @@ contract BasketManagerV3 is InitializableOwnable {
      */
     function isValidBasset(address _basset) public view returns(bool) {
         return (factorMap[_basset] != 0);
-    }
-
-    /**
-     * @dev Checks if ratio of bAssets in basket is within limits to make a deposit of specific asset.
-     * @param _basset           Address of bAsset to deposit.
-     * @param _bassetQuantity   Amount of bAssets to deposit.
-     * @return Flag indicating whether a deposit can be made.
-     */
-    function checkBasketBalanceForDeposit(
-        address _basset,
-        uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
-
-        (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
-        uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
-
-        (uint256 totalBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
-
-        uint256 balance = totalBassetBalanceInMasset.add(massetQuantity);
-        uint256 total = getTotalMassetBalance().add(massetQuantity);
-        uint256 ratio = balance.mul(MAX_VALUE).div(total);
-        uint256 max = maxMap[_basset];
-        return ratio <= max;
-    }
-
-    /**
-     * @dev Checks if ratio of bAssets in basket is within limits to make a withdrawal of specific asset.
-     * @param _basset           Address of bAsset to redeem.
-     * @param _bassetQuantity   Amount of bAssets to redeem.
-     * @return Flag indicating whether a withdrawal can be made.
-     */
-    function checkBasketBalanceForWithdrawal(
-        address _basset,
-        uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
-
-        (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
-        uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
-        (uint256 totalBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
-
-        require(totalBassetBalanceInMasset >= massetQuantity, "basset balance is not sufficient");
-
-        uint256 balance = totalBassetBalanceInMasset.sub(massetQuantity);
-        uint256 total = getTotalMassetBalance().sub(massetQuantity);
-
-        uint256 min = minMap[_basset];
-        if (total == 0) return min == 0;
-
-        uint256 ratio = balance.mul(MAX_VALUE).div(total);
-        return ratio >= min;
     }
 
     /**
@@ -240,6 +192,19 @@ contract BasketManagerV3 is InitializableOwnable {
         return IERC20(_basset).balanceOf(masset);
     }
 
+    function getBassetRatio(address _basset, uint256 withdrawOffset) public view returns (uint256) {
+        uint256 total = getTotalMassetBalance();
+
+        (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, getBassetBalance(_basset));
+
+        if(total <= withdrawOffset || bassetBalanceInMasset < withdrawOffset) {
+            return 0;
+        }
+
+        uint256 ratio = (bassetBalanceInMasset - withdrawOffset) * PRECISION / (total - withdrawOffset);
+        return ratio;
+    }
+
     function getVersion() external view returns(string memory) {
         return version;
     }
@@ -256,9 +221,8 @@ contract BasketManagerV3 is InitializableOwnable {
         return bridgeMap[_basset];
     }
 
-    function getRange(address _basset) public view validBasset(_basset) returns(uint256 min, uint256 max) {
-        min = minMap[_basset];
-        max = maxMap[_basset];
+    function getRatio(address _basset) public view validBasset(_basset) returns(uint256) {
+        return ratioMap[_basset];
     }
 
     function getPaused(address _basset) public view validBasset(_basset) returns(bool) {
@@ -272,11 +236,10 @@ contract BasketManagerV3 is InitializableOwnable {
      * @param _basset       Address of bAsset.
      * @param _factor       Factor amount.
      * @param _bridge       Address of bridge.
-     * @param _min          Minimum ratio in basket.
-     * @param _max          Maximum ratio in basket.
+     * @param _ratio        Ratio in basket.
      * @param _paused       Flag to determine if basset should be paused.
      */
-    function addBasset(address _basset, int256 _factor, address _bridge, uint256 _min, uint256 _max, bool _paused) public onlyOwner {
+    function addBasset(address _basset, int256 _factor, address _bridge, uint256 _ratio, bool _paused) public onlyOwner {
         require(_basset != address(0), "invalid basset address");
         require(factorMap[_basset] == 0, "basset already exists");
         require(_factor != 0, "invalid factor");
@@ -284,7 +247,7 @@ contract BasketManagerV3 is InitializableOwnable {
         bassetsArray.push(_basset);
 
         setFactor(_basset, _factor);
-        setRange(_basset, _min, _max);
+        setRatio(_basset, _ratio);
         setBridge(_basset, _bridge);
         setPaused(_basset, _paused);
 
@@ -297,29 +260,23 @@ contract BasketManagerV3 is InitializableOwnable {
      */
     function addBassets(
         address[] memory _bassets, int256[] memory _factors, address[] memory _bridges,
-        uint256[] memory _mins, uint256[] memory _maxs, bool[] memory _pausedFlags) public onlyOwner {
+        uint256[] memory _mins, uint256[] memory _ratios, bool[] memory _pausedFlags) public onlyOwner {
 
         uint length = _bassets.length;
         require(
             _factors.length == length &&
             _bridges.length == length &&
-            _mins.length == length &&
-            _maxs.length == length &&
+            _ratios.length == length &&
             _pausedFlags.length == length, "invalid lengths");
 
         for(uint i=0; i<length; i++) {
-            addBasset(_bassets[i], _factors[i], _bridges[i], _mins[i], _maxs[i], _pausedFlags[i]);
+            addBasset(_bassets[i], _factors[i], _bridges[i], _ratios[i], _pausedFlags[i]);
         }
     }
 
-    function setRange(address _basset, uint256 _min, uint256 _max) public validBasset(_basset) onlyOwner {
-        require(_min <= MAX_VALUE, "invalid minimum");
-        require(_max <= MAX_VALUE, "invalid maximum");
-        require(_max >= _min, "invalid range");
-        minMap[_basset] = _min;
-        maxMap[_basset] = _max;
-
-        emit RangeChanged(_basset, _min, _max);
+    function setRatio(address _basset, uint256 _ratio) public validBasset(_basset) onlyOwner {
+        ratioMap[_basset] = _ratio;
+        emit RatioChanged(_basset, _ratio);
     }
 
     /**

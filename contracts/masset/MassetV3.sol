@@ -210,39 +210,16 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(_bassetQuantity > 0, "quantity must not be 0");
 
         require(basketManager.isValidBasset(_basset), "invalid basset");
-        require(basketManager.checkBasketBalanceForDeposit(_basset, _bassetQuantity), "invalid basket");
 
         (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(_basset, _bassetQuantity);
 
         IERC20(_basset).safeTransferFrom(msg.sender, address(this), bassetQuantity);
 
-        uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, false);
-        token.mint(_recipient, massetsToMint);
+        token.mint(_recipient, massetQuantity);
 
-        emit Minted(msg.sender, _recipient, massetsToMint, _basset, bassetQuantity);
+        emit Minted(msg.sender, _recipient, massetQuantity, _basset, bassetQuantity);
 
-        return massetsToMint;
-    }
-
-    /**
-     * @dev Mints fee to vault contract and return the amount of massets that goes to the user.
-     * @param massetQuantity    Amount of massets.
-     * @param _bridgeFlag       Flag that indicates if the proces is used with conjunction with bridge.
-     * @return massetsToMint    Amount of massets that is left to mint for user.
-     */
-    function _mintAndCalulateFee(uint256 massetQuantity, bool _bridgeFlag) internal returns (uint256 massetsToMint) {
-        uint256 fee;
-        if (_bridgeFlag) {
-            fee = feesManager.calculateDepositBridgeFee(massetQuantity);
-        } else {
-            fee = feesManager.calculateDepositFee(massetQuantity);
-        }
-
-        massetsToMint = massetQuantity.sub(fee);
-
-        token.mint(address(feesVault), fee);
-
-        return massetsToMint;
+        return massetQuantity;
     }
 
     /***************************************
@@ -308,10 +285,8 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         // massetsToBurn is the amount of massets that is left to burn after the fee was taken.
         // It is used to calculate amount of bassets that are transfered to user.
-        uint256 massetsAfterFee = _transferAndCalulateFee(_massetQuantity, massetSource, _bridgeFlag);
+        uint256 massetsAfterFee = _transferAndCalulateFee(_basset, _massetQuantity, massetSource);
         (uint256 bassetQuantity, uint256 massetsToBurn) = basketManager.convertMassetToBassetQuantity(_basset, massetsAfterFee);
-
-        require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
 
         token.burn(massetSource, massetsToBurn);
         // In case of withdrawal to bridge the receiveTokensAt is called instead of transfer.
@@ -332,22 +307,29 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return massetsToBurn;
     }
 
+    function abs(int x) private pure returns (uint) {
+        return x >= 0 ? uint(x) : uint(-x);
+    }
+
     /**
      * @dev Transfers fee to vault contract and return the amount of massets that will be burned
      *      must have approval to spend the senders Masset.
      * @param massetQuantity        Amount of massets to withdraw.
      * @param sender                Owner of massets.
-     * @param _bridgeFlag           Flag that indicates if the proces is used with conjunction with bridge.
      * @return massetsToBurn        Amount of massets that is left to burn.
      */
-    function _transferAndCalulateFee(uint256 massetQuantity, address sender, bool _bridgeFlag) internal returns (uint256 massetsToBurn) {
-        uint256 fee;
-        if (_bridgeFlag) {
-            fee = feesManager.calculateRedeemBridgeFee(massetQuantity);
-        } else {
-            fee = feesManager.calculateRedeemFee(massetQuantity);
-        }
+    function _transferAndCalulateFee(address _basset, uint256 massetQuantity, address sender) internal returns (uint256 massetsToBurn) {
+        uint256 currentRatio = basketManager.getBassetRatio(_basset, 0);
+        uint256 desiredRatio = basketManager.getRatio(_basset);
+        uint256 ratioAferUpdate = basketManager.getBassetRatio(_basset, massetQuantity);
 
+        uint256 delta = 0;
+        if(ratioAferUpdate < desiredRatio) {
+            uint256 divergence = currentRatio >= desiredRatio ? desiredRatio : currentRatio;
+            delta = divergence - ratioAferUpdate;
+        }
+        
+        uint256 fee = feesManager.calculateRedeemFee(delta);
         massetsToBurn = massetQuantity.sub(fee);
 
         token.safeTransferFrom(sender, address(feesVault), fee);
@@ -487,13 +469,11 @@ contract MassetV3 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(msg.sender == bridgeAddress, "only bridge may call");
 
         require(basketManager.isValidBasset(basset), "invalid basset");
-        require(basketManager.checkBasketBalanceForDeposit(basset, _orderAmount), "basket out of balance");
 
         (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(basset, _orderAmount);
-        uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, true);
-        token.mint(recipient, massetsToMint);
+        token.mint(recipient, massetQuantity);
 
-        emit Minted(msg.sender, recipient, massetsToMint, basset, bassetQuantity);
+        emit Minted(msg.sender, recipient, massetQuantity, basset, bassetQuantity);
     }
 
     // Getters
