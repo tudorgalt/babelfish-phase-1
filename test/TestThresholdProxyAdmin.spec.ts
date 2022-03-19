@@ -135,7 +135,7 @@ contract("ThresholdProxyAdmin", async (accounts) => {
                 });
                 await expectRevert(
                     instance.accept({ from: sa.dummy1 }),
-                    "VM Exception while processing transaction: revert threshold not met",
+                    "VM Exception while processing transaction: reverted with reason string 'threshold not met'",
                 );
             });
             it("on double propose", async () => {
@@ -150,13 +150,13 @@ contract("ThresholdProxyAdmin", async (accounts) => {
                 });
                 await expectRevert(
                     instance.propose(ACTION_UPGRADE, sa.dummy4, "0x1234", { from: sa.dummy1 }),
-                    "VM Exception while processing transaction: revert proposal already exists",
+                    "VM Exception while processing transaction: reverted with reason string 'proposal already exists'",
                 );
             });
             it("if not proposed", async () => {
                 await expectRevert(
                     instance.accept({ from: sa.dummy1 }),
-                    "VM Exception while processing transaction: revert proposal not found",
+                    "VM Exception while processing transaction: reverted with reason string 'proposal not found'",
                 );
             });
             it("if retracted", async () => {
@@ -187,7 +187,7 @@ contract("ThresholdProxyAdmin", async (accounts) => {
                 });
                 await expectRevert(
                     instance.accept({ from: sa.dummy1 }),
-                    "VM Exception while processing transaction: revert threshold not met",
+                    "VM Exception while processing transaction: reverted with reason string 'threshold not met'",
                 );
             });
         });
