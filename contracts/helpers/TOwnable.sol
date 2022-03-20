@@ -12,7 +12,7 @@ import "./IOwnable.sol";
  * `onlyOwner`, which can be applied to your functions to restrict their use to
  * the owner.
  */
-contract Ownable is Context, IOwnable {
+contract TOwnable is Context, IOwnable {
     address private _owner;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);

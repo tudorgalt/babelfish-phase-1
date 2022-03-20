@@ -57,14 +57,51 @@ module.exports = {
     },
     rskTestnet: {
       provider() {
-        return new HDWalletProvider('chimney toss kit now firm true scan laundry hazard buffalo tiny west',
-            'https://testnet.sovryn.app/rpc', 0, 31)
+        return new HDWalletProvider('sadness moon truth plug champion throw future sell cupboard occur material scrub',
+            'wss://testnet.sovryn.app/websocket', 0, 31)
       },
+      // wss://testnet.sovryn.app/websocket
+      // https://testnet.sovryn.app/rpc'
       network_id: 31,
       gasPrice: 71680400, // 71GWei,
       skipDryRun: true,
       networkCheckTimeout: 1e9
     },
+    //Binance
+    btestnet: {
+          //provider: () => new HDWalletProvider(MNEMONIC, "https://data-seed-prebsc-1-s1.binance.org:8545/"),
+          provider() {
+           // return new HDWalletProvider(MNEMONIC, "https://data-seed-prebsc-2-s3.binance.org:8545/", 0, 97)
+            //return new HDWalletProvider(MNEMONIC, "https://data-seed-prebsc-2-s3.binance.org:8545/", 0, 97)
+            return new HDWalletProvider('sadness moon truth plug champion throw future sell cupboard occur material scrub',
+      //      'https://data-seed-prebsc-2-s2.binance.org:8545/', 0, 97)
+      //      'http://bsctestnet1.sovryn.app:8575/', 0, 97)
+             'ws://bsctestnet1.sovryn.app:8576/', 0, 97)
+             
+          },
+          //
+          network_id: 97,
+          gas: 6300000,
+          confirmations: 2,
+          timeoutBlocks: 200,
+          skipDryRun: true,
+          networkCheckTimeout: 1000000,
+    
+    },
+    bmainnet: {
+          //provider: () => new HDWalletProvider(secrets.seed, `https://bsc-dataseed1.binance.org`),
+          //provider: () => new HDWalletProvider(secrets.seed, `https://bsc-dataseed1.defibit.io/`),
+          //provider: () => new HDWalletProvider(secrets.seed, `https://data-seed-prebsc-2-s3.binance.org:8545/`, 0, 56),
+          provider() {
+            return new HDWalletProvider(secrets.seed,
+               `https://bsc-dataseed1.binance.org`, 0, 56)
+          },
+          network_id: 56,
+          gas: 5000000,
+          confirmations: 3,
+          timeoutBlocks: 200,
+          skipDryRun: true
+    },    
     rsk: {
       provider() {
         return new HDWalletProvider('receive nasty...',

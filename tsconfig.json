@@ -11,6 +11,7 @@
       "@utils/*": ["test-utils/*"],
     },
     "allowJs": true,
+    "declaration": true,
     "target": "ES5",
     "skipLibCheck": true,
     "typeRoots": [
