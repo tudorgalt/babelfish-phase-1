@@ -10,8 +10,10 @@ import { IBridge } from "./IBridge.sol";
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 import "./Token.sol";
 import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancyGuard.sol";
+import "./ApprovalReceiver.sol";
 
-contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard {
+
+contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard, ApprovalReceiver {
 
     using SafeMath for uint256;
 
@@ -29,7 +31,8 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address indexed recipient,
         uint256 massetQuantity,
         address bAsset,
-        uint256 bassetQuantity);
+        uint256 bassetQuantity,
+        bytes userData);
 
     event onTokensReceivedCalled(
         address operator,
@@ -168,11 +171,12 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
      * @param _massetQuantity   Units of the masset to redeem
      * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets
      */
+
     function redeem(
         address _bAsset,
         uint256 _massetQuantity
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, msg.sender, false);
+        return _redeemTo(_bAsset, _massetQuantity, msg.sender, bytes(""), false);
     }
 
     /**
@@ -188,17 +192,18 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         uint256 _massetQuantity,
         address _recipient
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, _recipient, false);
+        return _redeemTo(_bAsset, _massetQuantity, _recipient, bytes(""), false);
     }
 
     /***************************************
               REDEMPTION (INTERNAL)
     ****************************************/
 
-    function _redeemTo(
+        function _redeemTo(
         address _basset,
         uint256 _massetQuantity,
         address _recipient,
+        bytes memory userData,
         bool bridgeFlag
     ) internal returns (uint256 massetRedeemed) {
         require(_recipient != address(0), "must be a valid recipient");
@@ -214,19 +219,18 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
             require(bridgeAddress != address(0), "invalid bridge");
             IERC20(_basset).approve(bridgeAddress, bassetQuantity);
             require(
-                IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
+                IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, userData),
                 "call to bridge failed");
         } else {
             IERC20(_basset).transfer(_recipient, bassetQuantity);
         }
 
         token.burn(msg.sender, _massetQuantity);
-        emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity);
+        emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity, userData);
 
         return _massetQuantity;
     }
 
-    // For the BRIDGE
 
     /**
      * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
@@ -236,16 +240,36 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
      * @param _basset           Address of the bAsset to redeem
      * @param _massetQuantity   Units of the masset to redeem
      * @param _recipient        Address to credit with withdrawn bAssets
+     * @param _userData         For FastBTC: RSK address and BTC address encoded
      * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets
      */
     function redeemToBridge(
         address _basset,
         uint256 _massetQuantity,
-        address _recipient
+        address _recipient,
+        bytes calldata _userData
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_basset, _massetQuantity, _recipient, true);
+        return _redeemTo(_basset, _massetQuantity, _recipient, _userData, true);
     }
 
+    /**
+	 * @notice transfer tokens to the aggregator
+	 * @dev This function will be invoked from receiveApproval.
+	 * @dev BTCs.approveAndCall -> this.receiveApproval -> this.redeemToBridgeWithApproval
+     * @param _basset           Address of the bAsset to redeem
+     * @param _massetQuantity   Units of the masset to redeem
+     * @param _recipient        Address to credit with withdrawn bAssets
+     * @param _userData         For FastBTC: RSK address and BTC address encoded
+	 * */
+	function redeemToBridgeWithApproval(
+        address _basset,
+        uint256 _massetQuantity,
+        address _recipient,
+        bytes memory _userData
+    ) public onlyThisContract returns (uint256 massetRedeemed) {
+        return _redeemTo(_basset, _massetQuantity, _recipient, _userData, true);
+    }
+        
     function _decodeAddress(bytes memory data) private pure returns (address) {
         address addr = abi.decode(data, (address));
         require(addr != address(0), "Converter: Error decoding extraData");
@@ -344,6 +368,26 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         emit onSetTokenOwner(msg.sender, token.owner(), _newOwner);
         token.transferOwnership(_newOwner);
     }
+
+    /**
+	 * @notice Overrides default ApprovalReceiver._getToken function to
+	 * register BTCs token on this contract.
+	 * @return The address of BTCs token.
+	 * */
+	function _getToken() internal view returns (address) {
+		return address(token);
+	}
+
+	/**
+	 * @notice Overrides default ApprovalReceiver._getSelectors function to
+	 * register redeemToBridgeWithApproval selector on this contract.
+	 * @return The array of registered selectors on this contract.
+	 * */
+	function _getSelectors() internal view returns (bytes4[] memory) {
+		bytes4[] memory selectors = new bytes4[](1);
+		selectors[0] = this.redeemToBridgeWithApproval.selector;
+		return selectors;
+	}
 
     // Temporary migration code
 

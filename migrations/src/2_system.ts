@@ -20,6 +20,7 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
     const c_BasketManager = artifacts.require("BasketManager");
     const c_Masset = artifacts.require("Masset");
     const c_MassetProxy = artifacts.require("MassetProxy");
+
     //const c_TokenProxy = artifacts.require("TokenProxy");
 
     const [default_, admin] = accounts;
@@ -69,7 +70,7 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
 
     console.log(8);
 
-    //await d_Token.transferOwnership(d_MassetProxy.address);
+    await d_Token.transferOwnership(d_MassetProxy.address);
 
     console.log(9);
 
@@ -86,5 +87,6 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
         );
     });
 
+    // console.log(10);
     state.printState();
 };
