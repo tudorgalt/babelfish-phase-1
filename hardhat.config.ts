@@ -17,11 +17,9 @@ import "scripts/tasks/transferAdmin";
 const config: HardhatUserConfig = {
     networks: {
         development: {
-            url: "http://127.0.0.1:7545",
-            saveDeployments: false
+            url: "http://127.0.0.1:7545"
         },
         hardhat: {
-            live: false,
             blockGasLimit: 6800000
         },
         rskDev: {
@@ -110,8 +108,6 @@ const config: HardhatUserConfig = {
     },
     paths: {
         artifacts: "./build/contracts",
-        deploy: "./migrations",
-        deployments: "./deployments",
         sources: './contracts'
     },
     gasReporter: {
@@ -124,19 +120,6 @@ const config: HardhatUserConfig = {
     typechain: {
         outDir: "types/generated",
         target: "truffle-v5",
-    },
-    tenderly: {
-        username: "mStable",
-        project: "mStable-contracts",
-    },
-    contractSizer: {
-        alphaSort: true,
-        disambiguatePaths: false,
-    },
-    docgen: {
-        path: './docs',
-        clear: true,
-        runOnCompile: true,
     }
 };
 
