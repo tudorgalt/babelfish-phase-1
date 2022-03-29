@@ -59,7 +59,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     string private version;
     BasketManager private basketManager;
     Token private token;
-
+    
     // internal
 
     function registerAsERC777Recipient() internal {
@@ -176,7 +176,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _bAsset,
         uint256 _massetQuantity
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, msg.sender, bytes(""), false);
+        return _redeemTo(_bAsset, _massetQuantity, msg.sender, bytes(""), false, address(0));
     }
 
     /**
@@ -192,7 +192,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         uint256 _massetQuantity,
         address _recipient
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, _recipient, bytes(""), false);
+        return _redeemTo(_bAsset, _massetQuantity, _recipient, bytes(""), false, address(0));
     }
 
     /***************************************
@@ -204,7 +204,8 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         uint256 _massetQuantity,
         address _recipient,
         bytes memory userData,
-        bool bridgeFlag
+        bool bridgeFlag,
+        address _senderApproval
     ) internal returns (uint256 massetRedeemed) {
         require(_recipient != address(0), "must be a valid recipient");
         require(_massetQuantity > 0, "masset quantity must be greater than 0");
@@ -224,9 +225,18 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         } else {
             IERC20(_basset).transfer(_recipient, bassetQuantity);
         }
-
-        token.burn(msg.sender, _massetQuantity);
-        emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity, userData);
+    
+    // {_senderApproval != address(0)} only for valid invokation from receiveApproval
+        address _sender;
+        if(_senderApproval != address(0)) {
+            _sender = _senderApproval;
+            _senderApproval = address(0);
+        } else {
+            _sender = msg.sender;
+        }
+        
+        token.burn(_sender, _massetQuantity);
+        emit Redeemed(_sender, _recipient, _massetQuantity, _basset, bassetQuantity, userData);
 
         return _massetQuantity;
     }
@@ -249,25 +259,27 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _recipient,
         bytes calldata _userData
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_basset, _massetQuantity, _recipient, _userData, true);
+        return _redeemTo(_basset, _massetQuantity, _recipient, _userData, true, address(0));
     }
 
     /**
 	 * @notice transfer tokens to the aggregator
 	 * @dev This function will be invoked from receiveApproval.
 	 * @dev BTCs.approveAndCall -> this.receiveApproval -> this.redeemToBridgeWithApproval
+     * @param _sender           Address of the sender, validated by receiveApproval()
      * @param _basset           Address of the bAsset to redeem
      * @param _massetQuantity   Units of the masset to redeem
      * @param _recipient        Address to credit with withdrawn bAssets
      * @param _userData         For FastBTC: RSK address and BTC address encoded
 	 * */
 	function redeemToBridgeWithApproval(
-        address _basset,
+        address _sender,
         uint256 _massetQuantity,
+        address _basset,
         address _recipient,
         bytes memory _userData
     ) public onlyThisContract returns (uint256 massetRedeemed) {
-        return _redeemTo(_basset, _massetQuantity, _recipient, _userData, true);
+        return _redeemTo(_basset, _massetQuantity, _recipient, _userData, true, _sender);
     }
         
     function _decodeAddress(bytes memory data) private pure returns (address) {

@@ -1,19 +1,19 @@
 {
   "Migrations": {
-    "address": "0x14928186880dE0F74322E007AEFfBe7306634619"
+    "address": "0x22A62a950A29A448932265C7CE59d15176240cA9"
   },
   "Token": {
-    "address": "0x6ad37Ce8632E0A93b21d5fdb56D8E66B65571447",
+    "address": "0x26d0e6D8C89B77A86a878BA1a8b4Bb2C18AC1d97",
     "initialized": true
   },
   "MassetProxy": {
-    "address": "0x28145D617A6842F41a4F6E062F1770a6b5331732",
+    "address": "0xCaC530F30E08508Cdf4B741699b75509784cC9A8",
     "initialized": true
   },
   "BasketManager": {
-    "address": "0x12F79a5B87B2109a35d5C313E0896E31602B9009"
+    "address": "0x784edf42D47229e33AB667314324Be8170752970"
   },
   "Masset": {
-    "address": "0x4b2D52F052ff474fc8B928b54BAbcf8d6d1b1063"
+    "address": "0x54A62eD8aF6e9098FE0E7207925e82c69e91aFEd"
   }
 }
