@@ -274,7 +274,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param _recipient        Address to credit with withdrawn bAssets.
      * @param _bridgeFlag       Flag that indicates if the reedem proces is used with conjunction with bridge.
      * @param _useCallback      Flag that indicates if this method should call onTokensMinted in case of usage of bridge.
-     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+     * @return massetRedeemed     Relative number of mAsset units burned to pay for the bAssets.
      */
     function _redeemTo(
         address _basset,
@@ -291,15 +291,15 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         uint256 massetFee = basketManager.calculateWithdrawalFee(_basset, _massetQuantity);
 
-        IERC20(token).safeTransfer(address(this), massetFee);
+        token.burn(massetSource, _massetQuantity);
+
+        token.mint(address(this), massetFee);
         emit FeePaid(_recipient, massetFee);
 
-        uint256 massetsToBurn = _massetQuantity.sub(massetFee);
-        uint256 bassetQuantity = basketManager.convertMassetToBassetQuantity(_basset, massetsToBurn);
+        uint256 massetQuantityToConvert = _massetQuantity.sub(massetFee);
+        uint256 bassetQuantity = basketManager.convertMassetToBassetQuantity(_basset, massetQuantityToConvert);
 
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
-
-        token.burn(massetSource, massetsToBurn);
 
         // In case of withdrawal to bridge the receiveTokensAt is called instead of transfer.
         if(_bridgeFlag && _useCallback) {
@@ -316,7 +316,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
         emit Redeemed(massetSource, _recipient, _massetQuantity, _basset, bassetQuantity);
 
-        return massetsToBurn;
+        return _massetQuantity;
     }
 
     // For the BRIDGE
@@ -462,14 +462,6 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
 
     // Getters
 
-    function getFeesVault() external view returns (address) {
-        return address(feesVault);
-    }
-
-    function getFeesManager() external view returns (address) {
-        return address(feesManager);
-    }
-
     function getVersion() external view returns (string memory) {
         return version;
     }
@@ -482,32 +474,17 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return address(basketManager);
     }
 
-    // v3 migration
+    // v4 migration
     /**
      * @dev Migration to V3 version.
      * @param _basketManagerAddress     Address of new BasketManagerV3.
-     * @param _tokenAddress             Address of mAsset token.
-     * @param _feesVaultAddress         Address of FeesVault contract.
-     * @param _feesManagerAddress       Adress of FeesManager contract.
      */
-    function upgradeToV3(
-        address _basketManagerAddress,
-        address _tokenAddress,
-        address _feesVaultAddress,
-        address _feesManagerAddress
-    ) external {
+    function upgradeToV4(address _basketManagerAddress) external {
         require(
-            keccak256(bytes(version)) == keccak256(bytes("1.0")) ||
-            keccak256(bytes(version)) == keccak256(bytes("2.0")), "wrong version (1)");
-        require(keccak256(bytes(BasketManagerV3(_basketManagerAddress).getVersion())) == keccak256(bytes("3.0")), "wrong version (2)");
-        require(_feesVaultAddress != address(0), "invalid vault address");
-        require(_feesManagerAddress != address(0), "invalid fees manager address");
+            keccak256(bytes(version)) == keccak256(bytes("3.0")), "wrong version (1)");
+        require(keccak256(bytes(BasketManagerV3(_basketManagerAddress).getVersion())) == keccak256(bytes("4.0")), "wrong version (2)");
 
-        feesVault = FeesVault(_feesVaultAddress);
-        feesManager = FeesManager(_feesManagerAddress);
-        basketManager = BasketManagerV3(_basketManagerAddress);
-        token = Token(_tokenAddress);
-        version = "3.0";
-        InitializableReentrancyGuard._initialize();
+        basketManager = BasketManagerV4(_basketManagerAddress);
+        version = "4.0";
     }
 }

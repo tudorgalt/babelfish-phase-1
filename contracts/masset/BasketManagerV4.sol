@@ -323,7 +323,7 @@ contract BasketManagerV4 is InitializableOwnable {
         setRange(_basset, _min, _max);
         setBridge(_basset, _bridge);
         setPaused(_basset, _paused);
-        setTargetRatio(_targetRatio);
+        setTargetRatio(_basset, _targetRatio);
 
         emit BassetAdded(_basset);
     }
@@ -342,8 +342,8 @@ contract BasketManagerV4 is InitializableOwnable {
             _bridges.length == length &&
             _mins.length == length &&
             _maxs.length == length &&
-            _pausedFlags.length &&
-            _targetRatios.length == length == length, "invalid lengths");
+            _pausedFlags.length == length &&
+            _targetRatios.length == length, "invalid lengths");
 
         for(uint i=0; i<length; i++) {
             addBasset(_bassets[i], _factors[i], _bridges[i], _mins[i], _maxs[i], _pausedFlags[i], _targetRatios[i]);
@@ -360,7 +360,7 @@ contract BasketManagerV4 is InitializableOwnable {
         emit RangeChanged(_basset, _min, _max);
     }
 
-    function setTargetRaio(address _basset, uint256 _targetRatio) public validBasset(_basset) onlyOwner {
+    function setTargetRatio(address _basset, uint256 _targetRatio) public validBasset(_basset) onlyOwner {
         require(_targetRatio <= MAX_PROMIL, "invalid ratio");
         require(_targetRatio >= 0, "invalid ratio");
         targetRatioMap[_basset] = _targetRatio;
