@@ -9,7 +9,7 @@ import { IERC1820Registry } from "@openzeppelin/contracts/introspection/IERC1820
 import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancyGuard.sol";
 import { IBridge } from "./IBridge.sol";
-import { BasketManagerV3 } from "./BasketManagerV3.sol";
+import { BasketManagerV4 } from "./BasketManagerV4.sol";
 import "./Token.sol";
 
 /**
@@ -140,7 +140,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         InitializableOwnable._initialize();
         InitializableReentrancyGuard._initialize();
 
-        basketManager = BasketManagerV3(_basketManagerAddress);
+        basketManager = BasketManagerV4(_basketManagerAddress);
         token = Token(_tokenAddress);
         if(_registerAsERC777RecipientFlag) {
             registerAsERC777Recipient();
@@ -243,7 +243,23 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         address _bAsset,
         uint256 _massetQuantity
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, msg.sender, false, false);
+        return _redeemTo(_bAsset, _massetQuantity, msg.sender, false, false, 1E36);
+    }
+
+    /**
+     * @dev Credits the sender with a certain quantity of selected bAsset, in exchange for burning the
+     *      relative mAsset quantity from the sender. Sender also incurs a small mAsset fee, if any.
+     * @param _bAsset           Address of the bAsset to redeem.
+     * @param _massetQuantity   Units of the masset to redeem.
+     * @param  _maxFee          Max fee allowed to charge
+     * @return massetRedeemed   Relative number of mAsset units burned to pay for the bAssets.
+     */
+    function redeemWithMaxFee(
+        address _bAsset,
+        uint256 _massetQuantity,
+        uint256 _maxFee
+    ) external nonReentrant returns (uint256 massetRedeemed) {
+        return _redeemTo(_bAsset, _massetQuantity, msg.sender, false, false, _maxFee);
     }
 
     /**
@@ -259,7 +275,25 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 _massetQuantity,
         address _recipient
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, _recipient, false, false);
+        return _redeemTo(_bAsset, _massetQuantity, _recipient, false, false, 1E36);
+    }
+
+    /**
+     * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
+     *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
+     * @param _bAsset           Address of the bAsset to redeem.
+     * @param _massetQuantity   Units of the masset to redeem.
+     * @param _recipient        Address to credit with withdrawn bAssets.
+     * @param  _maxFee          Max fee allowed to charge
+     * @return massetRedeemed   Relative number of mAsset units burned to pay for the bAssets.
+     */
+    function redeemToWithMaxFee(
+        address _bAsset,
+        uint256 _massetQuantity,
+        address _recipient,
+        uint256 _maxFee
+    ) external nonReentrant returns (uint256 massetRedeemed) {
+        return _redeemTo(_bAsset, _massetQuantity, _recipient, false, false, _maxFee);
     }
 
     /***************************************
@@ -274,6 +308,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
      * @param _recipient        Address to credit with withdrawn bAssets.
      * @param _bridgeFlag       Flag that indicates if the reedem proces is used with conjunction with bridge.
      * @param _useCallback      Flag that indicates if this method should call onTokensMinted in case of usage of bridge.
+     * @param  _maxFee          Max fee allowed to charge
      * @return massetRedeemed     Relative number of mAsset units burned to pay for the bAssets.
      */
     function _redeemTo(
@@ -281,7 +316,8 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 _massetQuantity,
         address _recipient,
         bool _bridgeFlag,
-        bool _useCallback
+        bool _useCallback,
+        uint256 _maxFee
     ) internal returns (uint256 massetRedeemed) {
         require(_recipient != address(0), "must be a valid recipient");
         require(_massetQuantity > 0, "masset quantity must be greater than 0");
@@ -290,6 +326,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         address massetSource = (_bridgeFlag && !_useCallback) ? _recipient : msg.sender;
 
         uint256 massetFee = basketManager.calculateWithdrawalFee(_basset, _massetQuantity);
+        require(massetFee <= _maxFee, "fee exceeds maximum");
 
         token.burn(massetSource, _massetQuantity);
 
@@ -297,7 +334,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         emit FeePaid(_recipient, massetFee);
 
         uint256 massetQuantityToConvert = _massetQuantity.sub(massetFee);
-        uint256 bassetQuantity = basketManager.convertMassetToBassetQuantity(_basset, massetQuantityToConvert);
+        (uint256 bassetQuantity, ) = basketManager.convertMassetToBassetQuantity(_basset, massetQuantityToConvert);
 
         require(basketManager.checkBasketBalanceForWithdrawal(_basset, bassetQuantity), "invalid basket");
 
@@ -338,7 +375,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         address _recipient,
         address _bridgeAddress // IGNORED! for backward compatibility
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_basset, _massetQuantity, _recipient, true, true);
+        return _redeemTo(_basset, _massetQuantity, _recipient, true, true, 1E36);
     }
 
     /**
@@ -356,7 +393,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         uint256 _massetQuantity,
         address _recipient
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_basset, _massetQuantity, _recipient, true, true);
+        return _redeemTo(_basset, _massetQuantity, _recipient, true, true, 1E36);
     }
 
     /**
@@ -377,9 +414,73 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(bridgeAddress != address(0), "invalid bridge");
         require(bridgeAddress == msg.sender, "must be called by bridge");
 
-        return _redeemTo(_basset, _massetQuantity, _recipient, true, false);
+        return _redeemTo(_basset, _massetQuantity, _recipient, true, false, 1E36);
     }
 
+    /**
+     * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
+     *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
+     *      This function is designed to also call the bridge in order to have the basset tokens sent to
+     *      another blockchain.
+     * @param _basset           Address of the bAsset to redeem.
+     * @param _massetQuantity   Units of the mAsset to redeem.
+     * @param _recipient        Address to credit with withdrawn bAssets.
+     * @param _bridgeAddress    This is ignored and is left here for backward compatibility with the FE.
+     * @param  _maxFee          Max fee allowed to charge
+     * @return massetRedeemed   Relative number of mAsset units burned to pay for the bAssets.
+     */
+    function redeemToBridgeWithMaxFee(
+        address _basset,
+        uint256 _massetQuantity,
+        address _recipient,
+        address _bridgeAddress, // IGNORED! for backward compatibility
+        uint256 _maxFee
+    ) external nonReentrant returns (uint256 massetRedeemed) {
+        return _redeemTo(_basset, _massetQuantity, _recipient, true, true, _maxFee);
+    }
+
+    /**
+     * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
+     *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
+     *      This function is designed to also call the bridge in order to have the basset tokens sent to
+     *      another blockchain.
+     * @param _basset           Address of the bAsset to redeem.
+     * @param _massetQuantity   Units of the mAsset to redeem.
+     * @param _recipient        Address to credit with withdrawn bAssets.
+     * @param  _maxFee          Max fee allowed to charge
+     * @return massetRedeemed   Relative number of mAsset units burned to pay for the bAssets.
+     */
+    function redeemToBridgeWithMaxFee(
+        address _basset,
+        uint256 _massetQuantity,
+        address _recipient,
+        uint256 _maxFee
+    ) external nonReentrant returns (uint256 massetRedeemed) {
+        return _redeemTo(_basset, _massetQuantity, _recipient, true, true, _maxFee);
+    }
+
+    /**
+     * @dev Credits a recipient with a certain quantity of selected bAsset, in exchange for burning the
+     *      relative mAsset quantity from the sender. Sender also incurs a small fee, if any.
+     *      This function is designed to be called by the bridge in order to have diffrent fees.
+     * @param _basset           Address of the bAsset to redeem.
+     * @param _massetQuantity   Units of the mAsset to redeem.
+     * @param _recipient        Address to credit with withdrawn bAssets.
+     * @param  _maxFee          Max fee allowed to charge
+     * @return massetMinted     Relative number of mAsset units burned to pay for the bAssets.
+     */
+    function redeemByBridgeWithMaxFee(
+        address _basset,
+        uint256 _massetQuantity,
+        address _recipient,
+        uint256 _maxFee
+    ) external nonReentrant returns (uint256 massetRedeemed) {
+        address bridgeAddress = basketManager.getBridge(_basset);
+        require(bridgeAddress != address(0), "invalid bridge");
+        require(bridgeAddress == msg.sender, "must be called by bridge");
+
+        return _redeemTo(_basset, _massetQuantity, _recipient, true, false, _maxFee);
+    }
     /**
      * @dev Decode bytes data to address.
      * @param data              Data to decode.
@@ -454,10 +555,9 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         require(basketManager.checkBasketBalanceForDeposit(basset, _orderAmount), "basket out of balance");
 
         (uint256 massetQuantity, uint256 bassetQuantity) = basketManager.convertBassetToMassetQuantity(basset, _orderAmount);
-        uint256 massetsToMint = _mintAndCalulateFee(massetQuantity, true);
-        token.mint(recipient, massetsToMint);
+        token.mint(recipient, massetQuantity);
 
-        emit Minted(msg.sender, recipient, massetsToMint, basset, bassetQuantity);
+        emit Minted(msg.sender, recipient, massetQuantity, basset, bassetQuantity);
     }
 
     // Getters
@@ -474,6 +574,14 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
         return address(basketManager);
     }
 
+    function sendTokensToMS(address _token, address _multisig, uint256 _amount) external onlyOwner {
+
+        require(_multisig == 0x26712A09D40F11f34e6C14633eD2C7C34c903eF0 /* mainnet */
+            || _multisig == 0x7e0980892E25bEe5a3D2fB76be0E5E9746Fae5aA /* testnet */, "not multisig");
+
+        IERC20(_token).safeTransferFrom(address(this), _multisig, _amount);
+    }
+
     // v4 migration
     /**
      * @dev Migration to V3 version.
@@ -482,7 +590,7 @@ contract MassetV4 is IERC777Recipient, InitializableOwnable, InitializableReentr
     function upgradeToV4(address _basketManagerAddress) external {
         require(
             keccak256(bytes(version)) == keccak256(bytes("3.0")), "wrong version (1)");
-        require(keccak256(bytes(BasketManagerV3(_basketManagerAddress).getVersion())) == keccak256(bytes("4.0")), "wrong version (2)");
+        require(keccak256(bytes(BasketManagerV4(_basketManagerAddress).getVersion())) == keccak256(bytes("4.0")), "wrong version (2)");
 
         basketManager = BasketManagerV4(_basketManagerAddress);
         version = "4.0";

@@ -11,7 +11,7 @@ import { setNetwork, getDeployed, clearState, getInfo } from "migrations/utils/s
 import { ERC20MintableInstance, StakingInstance } from "types/generated";
 
 const Token = artifacts.require("Token");
-const BasketManagerV3 = artifacts.require("BasketManagerV3");
+const BasketManagerV4 = artifacts.require("BasketManagerV4");
 const GovernorAlpha = artifacts.require("GovernorAlpha");
 const Staking = artifacts.require("Staking");
 const ERC20Mintable = artifacts.require("ERC20Mintable");
@@ -50,7 +50,7 @@ contract("Governance", async (accounts) => {
             // transfer ownership of selected contracts
             const contractsList: TransferOwnershipParams = {
                 contracts: [
-                    `${instance}_BasketManagerV3`
+                    `${instance}_BasketManagerV4`
                 ],
                 instance
             };
@@ -69,7 +69,7 @@ contract("Governance", async (accounts) => {
         network.provider.send("evm_mine");
 
         const governorAlpha = await getDeployed(GovernorAlpha, `${instance}_GovernorAlpha`);
-        const basketManager = await getDeployed(BasketManagerV3, `${instance}_BasketManagerV3`);
+        const basketManager = await getDeployed(BasketManagerV4, `${instance}_BasketManagerV4`);
         const timelock = await getDeployed(Timelock, `${instance}_Timelock`);
 
         const votingDelay = await governorAlpha.votingDelay();
@@ -77,7 +77,7 @@ contract("Governance", async (accounts) => {
         const timelockDelay = await timelock.delay();
 
         const stakeAddress: string = await getInfo(`${instance}_StakingProxy`, "address");
-        const basketManagerAddress: string = await getInfo(`${instance}_BasketManagerV3`, "address");
+        const basketManagerAddress: string = await getInfo(`${instance}_BasketManagerV4`, "address");
 
         const stakeAmount = 1000000;
         const stakeUntilDate = Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7 * 3);

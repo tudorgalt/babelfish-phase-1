@@ -63,9 +63,9 @@ contract BasketManagerV4 is InitializableOwnable {
     /**
      * @dev Event emitted when target ratio is changed.
      * @param basset    Address of the bAsset contract.
-     * @param targetRatio    The target ration.
+     * @param targetRatio    The target ratio.
      */
-    event TargetRatiohanged (address basset, uint256 targetRatio);
+    event TargetRatioChanged (address basset, uint256 targetRatio);
 
     uint256 constant MAX_PROMIL = 1000;
 
@@ -148,7 +148,7 @@ contract BasketManagerV4 is InitializableOwnable {
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
         (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
-        uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
+        uint256 bassetBalance = getBassetBalance(_basset);
 
         (uint256 totalBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
@@ -170,7 +170,7 @@ contract BasketManagerV4 is InitializableOwnable {
         uint256 _bassetQuantity) public view validBasset(_basset) notPaused(_basset) returns(bool) {
 
         (uint256 massetQuantity, ) = convertBassetToMassetQuantity(_basset, _bassetQuantity);
-        uint256 bassetBalance = IERC20(_basset).balanceOf(masset);
+        uint256 bassetBalance = getBassetBalance(_basset);
         (uint256 totalBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
 
         require(totalBassetBalanceInMasset >= massetQuantity, "basset balance is not sufficient");
@@ -229,25 +229,34 @@ contract BasketManagerV4 is InitializableOwnable {
         return (bassetQuantity, massetQuantity);
     }
 
+    function _feeFormula(uint256 targetRatio, uint256 ratioBeforeTx, uint256 ratioAfterTx) public pure returns(uint256) {
+        uint256 d1 = targetRatio.sub(ratioAfterTx).mul(MAX_PROMIL).div(targetRatio);
+        uint256 d2 = targetRatio.sub(ratioBeforeTx).mul(MAX_PROMIL).div(targetRatio);
+        return d1.sub(d2);
+    }
+
     function calculateWithdrawalFee(address _basset, uint256 _massetQuantity) public view returns (uint256 fee) {
 
         uint256 bassetBalance = getBassetBalance(_basset);
-        uint256 bassetQuantity = convertMassetToBassetQuantity(_basset, _massetQuantity);
+        (uint256 bassetQuantity, ) = convertMassetToBassetQuantity(_basset, _massetQuantity);
+        require(bassetBalance >= bassetQuantity, "insufficient balance");
+
         uint256 newBassetBalance = bassetBalance.sub(bassetQuantity);
-        uint256 massetBalance = getMassetBalance();
+        uint256 massetBalance = getTotalMassetBalance();
+        uint256 newMassetBalance = massetBalance.sub(_massetQuantity);
 
-        uint256 ratioBeforeTx = convertBassetToMassetQuantity(bassetBalance)
-        .mul(MAX_PROMIL).div(massetBalance);
+        (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
+        uint256 ratioBeforeTx = bassetBalanceInMasset.mul(MAX_PROMIL).div(massetBalance);
 
-        uint256 ratioAfterTx = convertBassetToMassetQuantity(newBassetBalance)
-            .mul(MAX_PROMIL).div(massetBalance);
+        (uint256 newBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, newBassetBalance);
+        uint256 ratioAfterTx = newBassetBalanceInMasset.mul(MAX_PROMIL).div(newMassetBalance);
 
         uint256 targetRatio = getTargetRatio(_basset);
         if(ratioAfterTx >= targetRatio) {
             return 0;
         }
 
-        uint256 d = targetRatio.sub(actualRatioAfterTx).mul(MAX_PROMIL).div(targetRatio);
+        uint256 d = _feeFormula(targetRatio, ratioBeforeTx, ratioAfterTx);
         return d.mul(_massetQuantity).div(MAX_PROMIL);
     }
 
@@ -262,7 +271,7 @@ contract BasketManagerV4 is InitializableOwnable {
             address basset = bassetsArray[i];
             uint256 balance = IERC20(basset).balanceOf(masset);
             (uint256 massetQuantity, ) = convertBassetToMassetQuantity(basset, balance);
-            total += massetQuantity;
+            total = total.add(massetQuantity);
         }
     }
 
@@ -334,7 +343,7 @@ contract BasketManagerV4 is InitializableOwnable {
      */
     function addBassets(
         address[] memory _bassets, int256[] memory _factors, address[] memory _bridges,
-        uint256[] memory _mins, uint256[] memory _maxs, bool[] memory _pausedFlags, uint256[] _targetRatios) public onlyOwner {
+        uint256[] memory _mins, uint256[] memory _maxs, bool[] memory _pausedFlags, uint256[] memory _targetRatios) public onlyOwner {
 
         uint length = _bassets.length;
         require(

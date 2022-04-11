@@ -1,7 +1,7 @@
-import { BasketManagerV3Instance } from "types/generated";
+import { BasketManagerV4Instance } from "types/generated";
 
 const Token = artifacts.require("Token");
-const BasketManagerV3 = artifacts.require("BasketManagerV3");
+const BasketManagerV4 = artifacts.require("BasketManagerV4");
 
 export const createToken = async (massetAddress: string) => {
     const token = await Token.new("Mock1", "MK1", 18);
@@ -9,22 +9,22 @@ export const createToken = async (massetAddress: string) => {
     return token;
 };
 
-export type CreateBasketV3Args = {
+export type CreateBasketV4Args = {
     massetAddress: string,
     txDetails?: Truffle.TransactionDetails
 };
 
-export type UpgradeBasketToV4Args = Omit<CreateBasketV3Args, 'massetAddress'>;
+export type UpgradeBasketToV4Args = Omit<CreateBasketV4Args, 'massetAddress'>;
 
 export const RATIO_PRECISION = 1000;
 
-export const createBasketManagerV3 = async (
-    config: CreateBasketV3Args
-): Promise<BasketManagerV3Instance> => {
+export const createBasketManagerV4 = async (
+    config: CreateBasketV4Args
+): Promise<BasketManagerV4Instance> => {
     const { massetAddress, txDetails } = config;
 
-    const basketManagerV3 = await BasketManagerV3.new(txDetails);
-    await basketManagerV3.initialize(massetAddress);
+    const basketManagerV4 = await BasketManagerV4.new(txDetails);
+    await basketManagerV4.initialize(massetAddress);
 
-    return basketManagerV3;
+    return basketManagerV4;
 };
