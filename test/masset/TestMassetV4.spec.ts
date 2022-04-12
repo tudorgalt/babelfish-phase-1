@@ -41,7 +41,6 @@ contract("MassetV4", async (accounts) => {
     describe("initialize", async () => {
 
         beforeEach(async () => {
-            vault = await FeesVault.new();
             masset = await MassetV4.new();
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
             token = await createToken(masset);
@@ -56,16 +55,13 @@ contract("MassetV4", async (accounts) => {
                 );
 
                 let version = await masset.getVersion();
-                expect(version).to.eq("1.0");
+                expect(version).to.eq("4.0");
 
                 const setToken = await masset.getToken();
                 expect(setToken).to.eq(token.address);
 
                 const setBasketManager = await masset.getBasketManager();
                 expect(setBasketManager).to.eq(basketManagerObj.basketManager.address);
-
-                version = await masset.getVersion();
-                expect(version).to.eq("4.0");
             });
         });
         context("should fail", async () => {
@@ -122,8 +118,6 @@ contract("MassetV4", async (accounts) => {
             it("if all params are valid", async () => {
                 const sum = tokens(1024);
                 const massetQuantity = sum.div(new BN(100));
-                const expectedFee = massetQuantity.mul(standardFees.deposit).div(FEE_PRECISION);
-                const expectedMassetQuantity = massetQuantity.sub(expectedFee);
 
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
@@ -135,16 +129,13 @@ contract("MassetV4", async (accounts) => {
                 await expectEvent(tx.receipt, "Minted", {
                     minter: standardAccounts.dummy1,
                     recipient: standardAccounts.dummy1,
-                    massetQuantity: expectedMassetQuantity,
+                    massetQuantity: massetQuantity,
                     bAsset: basketManagerObj.mockToken1.address,
                     bassetQuantity: sum,
                 });
 
                 const balance = await token.balanceOf(standardAccounts.dummy1);
-                expect(balance).bignumber.to.eq(expectedMassetQuantity);
-
-                const vaultBalance = await token.balanceOf(vault.address);
-                expect(vaultBalance).bignumber.to.eq(expectedFee, "fee should be transfered to vault contract");
+                expect(balance).bignumber.to.eq(massetQuantity);
             });
 
             it("if all params are valid, amounts that don't divide evenly", async () => {
@@ -157,9 +148,6 @@ contract("MassetV4", async (accounts) => {
                 const bassetsLeft = sum.sub(expectedReminder);
                 const massetsToMint = sum.sub(expectedReminder).div(factor);
 
-                const expectedFee = massetsToMint.mul(standardFees.deposit).div(FEE_PRECISION);
-                const expectedMassetQuantity = massetsToMint.sub(expectedFee);
-
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
                 });
@@ -170,16 +158,13 @@ contract("MassetV4", async (accounts) => {
                 await expectEvent(tx.receipt, "Minted", {
                     minter: standardAccounts.dummy1,
                     recipient: standardAccounts.dummy1,
-                    massetQuantity: expectedMassetQuantity,
+                    massetQuantity: massetsToMint,
                     bAsset: basketManagerObj.mockToken1.address,
                     bassetQuantity: bassetsLeft,
                 });
 
                 const balance = await token.balanceOf(standardAccounts.dummy1);
-                expect(balance).bignumber.to.eq(expectedMassetQuantity);
-
-                const vaultBalance = await token.balanceOf(vault.address);
-                expect(vaultBalance).bignumber.to.eq(expectedFee, "fee should be transfered to vault contract");
+                expect(balance).bignumber.to.eq(massetsToMint);
             });
         });
 
@@ -220,8 +205,7 @@ contract("MassetV4", async (accounts) => {
         context("should succeed", () => {
             it("if all params are valid", async () => {
                 const sum = tokens(1);
-                const expectedFee = sum.mul(standardFees.deposit).div(FEE_PRECISION);
-                const expectedMassetQuantity = sum.sub(expectedFee);
+                const expectedMassetQuantity = sum;
 
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
@@ -241,9 +225,6 @@ contract("MassetV4", async (accounts) => {
                 });
                 const balance = await token.balanceOf(standardAccounts.dummy4);
                 expect(balance).bignumber.to.eq(expectedMassetQuantity);
-
-                const vaultBalance = await token.balanceOf(vault.address);
-                expect(vaultBalance).bignumber.to.eq(expectedFee, "fee should be transfered to vault contract");
             });
         });
     });
@@ -268,7 +249,6 @@ contract("MassetV4", async (accounts) => {
             it("if all params are valid", async () => {
                 const initialBalance = await basketManagerObj.mockToken1.balanceOf(standardAccounts.dummy1);
                 const sum = new BN(123123).pow(new BN(2));
-                const mintFee = sum.mul(standardFees.deposit).div(FEE_PRECISION);
 
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
@@ -281,16 +261,11 @@ contract("MassetV4", async (accounts) => {
                 const calculated = await basketManagerObj.basketManager.convertBassetToMassetQuantity(basketManagerObj.mockToken1.address, sum);
                 let mintedMassets = calculated[0];
 
-                mintedMassets = mintedMassets.sub(mintFee);
-
                 let balance = await token.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.equal(mintedMassets);
 
                 balance = await basketManagerObj.mockToken1.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.equal(initialBalance.sub(sum));
-
-                const withdrawalFee = mintedMassets.mul(standardFees.withdrawal).div(FEE_PRECISION);
-                const withdrawnBassets = mintedMassets.sub(withdrawalFee);
 
                 await token.approve(masset.address, mintedMassets, {
                     from: standardAccounts.dummy1,
@@ -304,17 +279,14 @@ contract("MassetV4", async (accounts) => {
                     recipient: standardAccounts.dummy1,
                     massetQuantity: mintedMassets,
                     bAsset: basketManagerObj.mockToken1.address,
-                    bassetQuantity: withdrawnBassets,
+                    bassetQuantity: mintedMassets,
                 });
 
                 balance = await token.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.equal(tokens(0));
 
                 balance = await basketManagerObj.mockToken1.balanceOf(standardAccounts.dummy1);
-                expect(balance).bignumber.to.equal(initialBalance.sub(mintFee).sub(withdrawalFee));
-
-                const vaultBalance = await token.balanceOf(vault.address);
-                expect(vaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
+                expect(balance).bignumber.to.equal(initialBalance);
             });
 
             it("if all params are valid, amounts that don't divide evenly", async () => {
@@ -326,8 +298,6 @@ contract("MassetV4", async (accounts) => {
                 const bassetsLeft = sum;
                 const massetsToMint = sum.mul(factor.abs());
 
-                const mintFee = massetsToMint.mul(standardFees.deposit).div(FEE_PRECISION);
-
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
                 });
@@ -339,19 +309,11 @@ contract("MassetV4", async (accounts) => {
                 const calculated = await basketManagerObj.basketManager.convertBassetToMassetQuantity(basketManagerObj.mockToken1.address, sum);
                 let mintedMassets = calculated[0];
 
-                mintedMassets = mintedMassets.sub(mintFee);
-
                 let balance = await token.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.equal(mintedMassets);
 
                 balance = await basketManagerObj.mockToken1.balanceOf(standardAccounts.dummy1);
                 expect(balance).bignumber.to.equal(initialBalance.sub(bassetsLeft));
-
-                const withdrawalFee = mintedMassets.mul(standardFees.withdrawal).div(FEE_PRECISION);
-                const massetsSubFee = mintedMassets.sub(withdrawalFee);
-                const redeemReminder = massetsSubFee.mod(factor.abs());
-                const massetsLeft = massetsSubFee.sub(redeemReminder);
-                const withdrawnBassets = massetsLeft.div(factor.abs());
 
                 await token.approve(masset.address, mintedMassets, {
                     from: standardAccounts.dummy1,
@@ -365,28 +327,11 @@ contract("MassetV4", async (accounts) => {
                     recipient: standardAccounts.dummy1,
                     massetQuantity: mintedMassets,
                     bAsset: basketManagerObj.mockToken1.address,
-                    bassetQuantity: withdrawnBassets,
+                    bassetQuantity: mintedMassets,
                 });
 
-                balance = await token.balanceOf(standardAccounts.dummy1);
-                expect(balance).bignumber.to.equal(redeemReminder);
-
                 balance = await basketManagerObj.mockToken1.balanceOf(standardAccounts.dummy1);
-                expect(balance).bignumber.to.equal(initialBalance.sub(sum.sub(withdrawnBassets)));
-
-                const sumOfOperations = mintFee
-                    .add(withdrawalFee)
-                    .add(redeemReminder)
-                    .div(factor.abs()) // convert to bassets
-                    .add(withdrawnBassets);
-
-                expect(sumOfOperations).bignumber.to.eq(
-                    sum,
-                    "check that sum of funds in system after deposit and redeem is the same as before"
-                );
-
-                const vaultBalance = await token.balanceOf(vault.address);
-                expect(vaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
+                expect(balance).bignumber.to.equal(initialBalance.sub(sum.sub(mintedMassets)));
             });
         });
         context("should fail", () => {
@@ -448,9 +393,7 @@ contract("MassetV4", async (accounts) => {
         context("should succeed", () => {
             it("if all params are valid", async () => {
                 const sum = new BN(10).pow(new BN(3));
-                const mintFee = sum.mul(standardFees.deposit).div(FEE_PRECISION);
-                const withdrawAmount = sum.sub(mintFee);
-                const withdrawalFee = withdrawAmount.mul(standardFees.withdrawal).div(FEE_PRECISION);
+                const withdrawAmount = sum;
                 const recipient = standardAccounts.dummy2;
 
                 await basketManagerObj.mockToken1.approve(masset.address, sum, { from: standardAccounts.dummy1 });
@@ -464,10 +407,7 @@ contract("MassetV4", async (accounts) => {
                 expect(tokenBalance).bignumber.to.eq("0");
 
                 const balance = await basketManagerObj.mockToken1.balanceOf(recipient);
-                expect(balance).bignumber.to.equal(withdrawAmount.sub(withdrawalFee), "should transfer bassets to correct recipient");
-
-                const vaultBalance = await token.balanceOf(vault.address);
-                expect(vaultBalance).bignumber.to.eq(mintFee.add(withdrawalFee));
+                expect(balance).bignumber.to.equal(withdrawAmount, "should transfer bassets to correct recipient");
             });
         });
     });
@@ -750,13 +690,13 @@ contract("MassetV4", async (accounts) => {
                         standardAccounts.dummy1,
                         { from: standardAccounts.default }
                     ),
-                    "VM Exception while processing transaction: reverted with reason string 'basset balance is not sufficient'"
+                    "VM Exception while processing transaction: reverted with reason string 'insufficient balance'"
                 );
             });
         });
 
         context("should succeed", async () => {
-            it("whit all valid params", async () => {
+            it("whith all valid params", async () => {
                 const recipient = standardAccounts.dummy1;
                 
                 // ----- make a deposit to get some massets -----

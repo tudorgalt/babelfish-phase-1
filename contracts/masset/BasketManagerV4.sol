@@ -237,18 +237,21 @@ contract BasketManagerV4 is InitializableOwnable {
 
     function calculateWithdrawalFee(address _basset, uint256 _massetQuantity) public view returns (uint256 fee) {
 
+        require(_massetQuantity > 0, "0 withdrawal");
         uint256 bassetBalance = getBassetBalance(_basset);
         (uint256 bassetQuantity, ) = convertMassetToBassetQuantity(_basset, _massetQuantity);
-        require(bassetBalance >= bassetQuantity, "insufficient balance");
 
         uint256 newBassetBalance = bassetBalance.sub(bassetQuantity);
         uint256 massetBalance = getTotalMassetBalance();
+        require(massetBalance > 0, "0 masset balance");
+
         uint256 newMassetBalance = massetBalance.sub(_massetQuantity);
 
         (uint256 bassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, bassetBalance);
         uint256 ratioBeforeTx = bassetBalanceInMasset.mul(MAX_PROMIL).div(massetBalance);
 
         (uint256 newBassetBalanceInMasset, ) = convertBassetToMassetQuantity(_basset, newBassetBalance);
+        if(newMassetBalance == 0) return _massetQuantity;
         uint256 ratioAfterTx = newBassetBalanceInMasset.mul(MAX_PROMIL).div(newMassetBalance);
 
         uint256 targetRatio = getTargetRatio(_basset);

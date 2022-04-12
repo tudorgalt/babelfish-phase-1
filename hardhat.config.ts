@@ -25,7 +25,7 @@ const config: HardhatUserConfig = {
         rskDev: {
             from: "0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826",
             url: 'http://localhost:4444',
-            chainId: 33,
+            chainId: 1337,
             gasPrice: 2,
             timeout: 1e9,
             gas: 6800000
