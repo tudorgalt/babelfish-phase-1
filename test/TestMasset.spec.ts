@@ -21,10 +21,11 @@ const { expect } = envSetup.configure();
 
 const ThresholdProxyAdmin = artifacts.require("ThresholdProxyAdmin");
 const BasketManager = artifacts.require("BasketManager");
-const bridges = [ZERO_ADDRESS, ZERO_ADDRESS];
+let bridges = [ZERO_ADDRESS, ZERO_ADDRESS];
 const Masset = artifacts.require("Masset");
 const Token = artifacts.require("Token");
 const MockERC20 = artifacts.require("MockERC20");
+const MockBridge = artifacts.require("MockBridge");
 
 let standardAccounts;
 
@@ -272,6 +273,176 @@ contract("Masset", async (accounts) => {
                 "1000000000000",
             );
         });
+    });
+
+    describe("redeemToBridge", async () => {
+        let masset;
+        let basketManagerObj, token;
+        let mockTokenDummy;
+        const sum = '1000000000000000000';    
+        context("should fail", () => {
+            it("when bridge is not valid", async () => {
+                masset = await Masset.new();
+                token = await createToken(masset);
+                basketManagerObj = await createBasketManager(
+                    masset,
+                    [18, 18],
+                    [1, 1]
+                );
+                await masset.initialize(basketManagerObj.basketManager.address, token. address, false);
+                mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
+                
+                await basketManagerObj.mockToken1.approve(masset.address, sum, { from: standardAccounts.dummy1 });
+                await masset.mint(basketManagerObj.mockToken1.address, sum, { from: standardAccounts.dummy1 });
+                await token.approve(masset.address, sum, { from: standardAccounts.dummy1 });
+    
+                await expectRevert(
+                    masset.methods["redeemToBridge(address,uint256,address,bytes)"](
+                        basketManagerObj.mockToken1.address,
+                        sum,
+                        standardAccounts.dummy2,
+                        Buffer.from(""),
+                        { from: standardAccounts.dummy1 }
+                    ),
+                    "VM Exception while processing transaction: reverted with reason string 'invalid bridge'"
+                );
+            });
+        });
+
+        context("should succeed", () => {
+            it("if all params are valid", async () => {
+                masset = await Masset.new();
+                token = await createToken(masset);
+                let massetAddr = masset.address;
+                let mockBridge1 = await MockBridge.new();
+                bridges = [mockBridge1.address, mockBridge1.address]
+                basketManagerObj = await createBasketManager(
+                    masset,
+                    [18, 18],
+                    [1, 1]
+                );
+                await masset.initialize(basketManagerObj.basketManager.address, token. address, false);
+                mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
+    
+                await basketManagerObj.mockToken1.approve(masset.address, sum, { from: standardAccounts.dummy1 });
+                await masset.mint(basketManagerObj.mockToken1.address, sum, { from: standardAccounts.dummy1 });
+                await token.approve(masset.address, sum, { from: standardAccounts.dummy1 });
+    
+                await masset.methods["redeemToBridge(address,uint256,address,bytes)"](
+                    basketManagerObj.mockToken1.address,
+                    sum,
+                    standardAccounts.dummy2,
+                    Buffer.from(""),
+                    { from: standardAccounts.dummy1 }
+                );
+
+                const bridgeBalance = await getBalance(basketManagerObj.mockToken1, mockBridge1.address);
+                expect(bridgeBalance).to.bignumber.eq(sum, "should transfer bassets to bridge");
+            });
+        });
+    });
+
+
+    describe("redeemToBridgeWithApproval", async () => {
+        let masset;
+        let basketManagerObj, token;
+        let mockTokenDummy;
+        const sum = '1000000000000000000';    
+        context("should fail", () => {
+            it("if invoked directly", async () => {
+                masset = await Masset.new();
+                token = await createToken(masset);
+                let massetAddr = masset.address;
+                let mockBridge1 = await MockBridge.new();
+                bridges = [mockBridge1.address, mockBridge1.address]
+                basketManagerObj = await createBasketManager(
+                    masset,
+                    [18, 18],
+                    [1, 1]
+                );
+                await masset.initialize(basketManagerObj.basketManager.address, token. address, false);
+                mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
+    
+                await basketManagerObj.mockToken1.approve(masset.address, sum, { from: standardAccounts.dummy1 });
+                await masset.mint(basketManagerObj.mockToken1.address, sum, { from: standardAccounts.dummy1 });
+                await token.approve(masset.address, sum, { from: standardAccounts.dummy1 });
+    
+                await expectRevert(masset.redeemToBridgeWithApproval(
+                    standardAccounts.dummy1,
+                    sum,
+                    basketManagerObj.mockToken1.address,
+                    standardAccounts.dummy2,
+                    Buffer.from(""),
+                    { from: standardAccounts.dummy1 }
+                ),
+                "unauthorized");
+            });
+
+            it("if pass wrong method in data", async () => {
+                masset = await Masset.new();
+                token = await createToken(masset);
+                let massetAddr = masset.address;
+                let mockBridge1 = await MockBridge.new();
+                bridges = [mockBridge1.address, mockBridge1.address]
+                basketManagerObj = await createBasketManager(
+                    masset,
+                    [18, 18],
+                    [1, 1]
+                );
+                await masset.initialize(basketManagerObj.basketManager.address, token. address, false);
+                mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
+    
+                await basketManagerObj.mockToken1.approve(masset.address, sum, { from: standardAccounts.dummy1 });
+                await masset.mint(basketManagerObj.mockToken1.address, sum, { from: standardAccounts.dummy1 });
+                
+                let contract = new web3.eth.Contract(masset.abi, masset.address); 
+                let data = contract.methods.redeemToBridge(
+                    basketManagerObj.mockToken1.address,
+                    sum,
+                    standardAccounts.dummy2,
+                    Buffer.from(""))
+                    .encodeABI();
+                
+                await expectRevert(
+                    token.approveAndCall(masset.address, sum, data, { from: standardAccounts.dummy1 }),
+                    "method is not allowed"
+                );
+            });
+        });
+
+        context("should succeed", () => {
+            it("if all params are valid", async () => {
+                masset = await Masset.new();
+                token = await createToken(masset);
+                let massetAddr = masset.address;
+                let mockBridge1 = await MockBridge.new();
+                bridges = [mockBridge1.address, mockBridge1.address]
+                basketManagerObj = await createBasketManager(
+                    masset,
+                    [18, 18],
+                    [1, 1]
+                );
+                await masset.initialize(basketManagerObj.basketManager.address, token. address, false);
+                mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
+    
+                await basketManagerObj.mockToken1.approve(masset.address, sum, { from: standardAccounts.dummy1 });
+                await masset.mint(basketManagerObj.mockToken1.address, sum, { from: standardAccounts.dummy1 });
+                
+                let contract = new web3.eth.Contract(masset.abi, masset.address); 
+                let data = contract.methods.redeemToBridgeWithApproval(
+                    standardAccounts.dummy1,
+                    sum,
+                    basketManagerObj.mockToken1.address,
+                    standardAccounts.dummy2,
+                    Buffer.from(""))
+                    .encodeABI();
+                
+                await token.approveAndCall(masset.address, sum, data, { from: standardAccounts.dummy1 });
+                const bridgeBalance = await getBalance(basketManagerObj.mockToken1, mockBridge1.address);
+                expect(bridgeBalance).to.bignumber.eq(sum, "should transfer bassets to bridge");
+
+            });
+        });  
     });
 });
 

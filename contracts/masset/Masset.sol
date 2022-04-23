@@ -176,7 +176,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _bAsset,
         uint256 _massetQuantity
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, msg.sender, bytes(""), false, address(0));
+        return _redeemTo(_bAsset, _massetQuantity, msg.sender, bytes(""), false, msg.sender);
     }
 
     /**
@@ -192,7 +192,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         uint256 _massetQuantity,
         address _recipient
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, _recipient, bytes(""), false, address(0));
+        return _redeemTo(_bAsset, _massetQuantity, _recipient, bytes(""), false, msg.sender);
     }
 
     /***************************************
@@ -205,7 +205,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _recipient,
         bytes memory userData,
         bool bridgeFlag,
-        address _senderApproval
+        address _sender
     ) internal returns (uint256 massetRedeemed) {
         require(_recipient != address(0), "must be a valid recipient");
         require(_massetQuantity > 0, "masset quantity must be greater than 0");
@@ -226,14 +226,14 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
             IERC20(_basset).transfer(_recipient, bassetQuantity);
         }
     
-    // {_senderApproval != address(0)} only for valid invokation from receiveApproval
-        address _sender;
-        if(_senderApproval != address(0)) {
-            _sender = _senderApproval;
-            _senderApproval = address(0);
-        } else {
-            _sender = msg.sender;
-        }
+    // // {_senderApproval != address(0)} only for valid invokation from receiveApproval
+    //     address _sender;
+    //     if(_senderApproval != address(0)) {
+    //         _sender = _senderApproval;
+    //         _senderApproval = address(0);
+    //     } else {
+    //         _sender = msg.sender;
+    //     }
         
         token.burn(_sender, _massetQuantity);
         emit Redeemed(_sender, _recipient, _massetQuantity, _basset, bassetQuantity, userData);
@@ -259,7 +259,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _recipient,
         bytes calldata _userData
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_basset, _massetQuantity, _recipient, _userData, true, address(0));
+        return _redeemTo(_basset, _massetQuantity, _recipient, _userData, true, msg.sender);
     }
 
     /**
