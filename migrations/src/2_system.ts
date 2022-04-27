@@ -86,7 +86,7 @@ export default async ({ artifacts }: { artifacts: Truffle.Artifacts },
             initData2,
         );
     });
-
+console.log(admin);
     // console.log(10);
     state.printState();
 };

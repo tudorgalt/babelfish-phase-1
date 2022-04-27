@@ -2,7 +2,17 @@ require('ts-node/register')
 // OPTIONAL: Allows the use of tsconfig path mappings with ts-node
 require('tsconfig-paths/register')
 
+const fs = require('fs');
 const HDWalletProvider = require('@truffle/hdwallet-provider')
+const secrets = fs.existsSync('../../../deploy_bridge/bridgeKeyMain/.secrets')
+    ? JSON.parse(
+          fs
+              .readFileSync('../../../deploy_bridge/bridgeKeyMain/.secrets')
+              .toString()
+              .trim(),
+      )
+    : '';
+
 
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
@@ -94,7 +104,8 @@ module.exports = {
           //provider: () => new HDWalletProvider(secrets.seed, `https://data-seed-prebsc-2-s3.binance.org:8545/`, 0, 56),
           provider() {
             return new HDWalletProvider(secrets.seed,
-               `https://bsc-dataseed1.binance.org`, 0, 56)
+    //           `https://bsc-dataseed1.binance.org`, 0, 56)
+           `http://bscmainnet1.sovryn.app:8545/`, 0, 56)
           },
           network_id: 56,
           gas: 5000000,

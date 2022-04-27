@@ -93,6 +93,7 @@ export default {
                 '0xdfc7127593c8af1a17146893f10e08528f4c2aa7',
 
             ],
-        factors: [1]
+        factors: [1],
+        multisig: '0xec3fabc3517e64e07669dd1d2d673f466f93a328'
     }
 };
