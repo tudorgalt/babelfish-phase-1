@@ -347,17 +347,13 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 
     // Temporary migration code
 
-    function migrateV1ToV2() public {
-        version = "2.0";
-    }
-
     address[] assets;
     int256[] factors;
     address[] bridges;
 
-    function migrateV22ToV23() public {
+    function migrateV23ToV24() public {
         require(
-            keccak256(bytes(version)) == keccak256(bytes("2.2")), "wrong version");
+            keccak256(bytes(version)) == keccak256(bytes("2.3")), "wrong version");
 
         uint256 chainId;
         assembly {
@@ -368,7 +364,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         factors.length = 0;
         bridges.length = 0;
 
-        version = "2.3";
+        version = "2.4";
 
         // testnet
         if (chainId == 31) {
@@ -412,6 +408,10 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
             bridges.push(0x0000000000000000000000000000000000000000);
 
             assets.push(0xCB46c0ddc60D18eFEB0E586C17Af6ea36452Dae0); // DOC
+            factors.push(int256(1));
+            bridges.push(0x0000000000000000000000000000000000000000);
+
+            assets.push(0x4A0741FA749Ed6b1F810224D09f1f511952e67De); // zUSD
             factors.push(int256(1));
             bridges.push(0x0000000000000000000000000000000000000000);
 
@@ -461,6 +461,10 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
             bridges.push(0x0000000000000000000000000000000000000000);
 
             assets.push(0xe700691dA7b9851F2F35f8b8182c69c53CcaD9Db); // DOC
+            factors.push(int256(1));
+            bridges.push(0x0000000000000000000000000000000000000000);
+
+            assets.push(0xB450ff06d950eFA9A9c0aD63790C51971C1BE885); // BDUS
             factors.push(int256(1));
             bridges.push(0x0000000000000000000000000000000000000000);
 

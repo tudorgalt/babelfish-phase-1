@@ -9,20 +9,20 @@ export default async function mint(truffle): Promise<any> {
     const provider = truffle.web3.currentProvider;
     const admin = provider.getAddress(1);
 
-    state.setNetwork('rsk');
+    state.setNetwork('rskTesnet');
+
+    const fake = await Masset.at(massetProxyAddress);
+    console.log('version before: ', await fake.getVersion());
 
     const Masset = artifacts.require("Masset");
     const masset = await state.conditionalDeploy(Masset, 'Masset', () => Masset.new());
 
     const MassetProxy = artifacts.require("MassetProxy");
     const massetProxy = await MassetProxy.at(massetProxyAddress);
-    //await massetProxy.upgradeTo(masset.address, { from: admin });
 
     const abi = massetProxy.contract.methods['upgradeTo(address)'](masset.address).encodeABI();
     console.log(abi);
 
-    const fake = await Masset.at(massetProxyAddress);
-    console.log('version before: ', await fake.getVersion());
-    await fake.migrateV22ToV23();
+    await fake.migrateV23ToV24();
     console.log('version after: ', await fake.getVersion());
 }
