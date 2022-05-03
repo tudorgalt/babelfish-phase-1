@@ -1,7 +1,5 @@
 import HDWalletProvider from '@truffle/hdwallet-provider';
-import state from '../../migrations/state'
-
-const massetProxyAddress = '0x1440d19436bEeaF8517896bffB957a88EC95a00F';
+import state from '../../migrations/state';
 
 export default async function mint(truffle): Promise<any> {
 
@@ -9,20 +7,26 @@ export default async function mint(truffle): Promise<any> {
     const provider = truffle.web3.currentProvider;
     const admin = provider.getAddress(1);
 
-    state.setNetwork('rskTesnet');
-
-    const fake = await Masset.at(massetProxyAddress);
-    console.log('version before: ', await fake.getVersion());
+    state.setNetwork('rskTestnet');
 
     const Masset = artifacts.require("Masset");
+    const fake = await state.getDeployed(Masset, 'MassetProxy');
+    console.log('version before: ', await fake.getVersion());
+
     const masset = await state.conditionalDeploy(Masset, 'Masset', () => Masset.new());
 
     const MassetProxy = artifacts.require("MassetProxy");
-    const massetProxy = await MassetProxy.at(massetProxyAddress);
+    const massetProxy = await state.getDeployed(MassetProxy, 'MassetProxy');
 
-    const abi = massetProxy.contract.methods['upgradeTo(address)'](masset.address).encodeABI();
-    console.log(abi);
+    // console.log(massetProxy.contract.methods);
+    // const abi = massetProxy.contract.methods['upgradeTo(address)'](masset.address).encodeABI();
+    // console.log(abi);
 
-    await fake.migrateV23ToV24();
+    console.log('upgrade...');
+    await massetProxy.upgradeTo(masset.address, { from: admin });
+
+    console.log('migrateV22ToV24...');
+    await fake.migrateV22ToV24();
+
     console.log('version after: ', await fake.getVersion());
 }
