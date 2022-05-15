@@ -7,6 +7,9 @@ export default async function mint(truffle): Promise<any> {
     const provider = truffle.web3.currentProvider;
     const admin = provider.getAddress(1);
 
+    console.log(provider.getAddress(0), provider.getAddress(1));
+    return;
+
     state.setNetwork('rskTestnet');
 
     const Masset = artifacts.require("Masset");
