@@ -11,9 +11,10 @@ import { InitializableOwnable } from "../helpers/InitializableOwnable.sol";
 import "./Token.sol";
 import { InitializableReentrancyGuard } from "../helpers/InitializableReentrancyGuard.sol";
 import "./ApprovalReceiver.sol";
+import "./BaseRelayRecipient.sol";
 
 
-contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard, ApprovalReceiver {
+contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentrancyGuard, ApprovalReceiver, BaseRelayRecipient {
 
     using SafeMath for uint256;
 
@@ -72,7 +73,8 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     function initialize(
         address _basketManagerAddress,
         address _tokenAddress,
-        bool _registerAsERC777RecipientFlag) public {
+        bool _registerAsERC777RecipientFlag,
+        address _forwarder) public {
 
         require(address(basketManager) == address(0) && address(token) == address(0), "already initialized");
         require(_basketManagerAddress != address(0), "invalid basket manager");
@@ -86,6 +88,8 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         if(_registerAsERC777RecipientFlag) {
             registerAsERC777Recipient();
         }
+
+        _trustedForwarder = _forwarder;
 
         version = "1.0";
     }
@@ -109,7 +113,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     nonReentrant
     returns (uint256 massetMinted)
     {
-        return _mintTo(_bAsset, _bAssetQuantity, msg.sender);
+        return _mintTo(_bAsset, _bAssetQuantity, _msgSender());
     }
 
     /**
@@ -150,12 +154,14 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         require(basketManager.isValidBasset(_basset), "invalid basset");
         require(basketManager.checkBasketBalanceForDeposit(_basset, _bassetQuantity));
 
+        address msgSender = _msgSender();
+
         uint256 massetQuantity = basketManager.convertBassetToMassetQuantity(_basset, _bassetQuantity);
 
-        IERC20(_basset).transferFrom(msg.sender, address(this), _bassetQuantity);
+        IERC20(_basset).transferFrom(msgSender, address(this), _bassetQuantity);
 
         token.mint(_recipient, massetQuantity);
-        emit Minted(msg.sender, _recipient, massetQuantity, _basset, _bassetQuantity);
+        emit Minted(msgSender, _recipient, massetQuantity, _basset, _bassetQuantity);
 
         return massetQuantity;
     }
@@ -176,7 +182,8 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _bAsset,
         uint256 _massetQuantity
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, msg.sender, bytes(""), false, msg.sender);
+        address msgSender = _msgSender();
+        return _redeemTo(_bAsset, _massetQuantity, msgSender, bytes(""), false, msgSender);
     }
 
     /**
@@ -192,7 +199,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         uint256 _massetQuantity,
         address _recipient
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, _recipient, bytes(""), false, msg.sender);
+        return _redeemTo(_bAsset, _massetQuantity, _recipient, bytes(""), false, _msgSender());
     }
 
     /***************************************
@@ -232,7 +239,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     //         _sender = _senderApproval;
     //         _senderApproval = address(0);
     //     } else {
-    //         _sender = msg.sender;
+    //         _sender = _msgSender();
     //     }
         
         token.burn(_sender, _massetQuantity);
@@ -259,7 +266,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _recipient,
         bytes calldata _userData
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_basset, _massetQuantity, _recipient, _userData, true, msg.sender);
+        return _redeemTo(_basset, _massetQuantity, _recipient, _userData, true, _msgSender());
     }
 
     /**
@@ -323,7 +330,8 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _tokenAddress,
         bytes calldata _userData
     ) external nonReentrant {
-        emit onTokensMintedCalled(msg.sender, _orderAmount, _tokenAddress, _userData);
+        address msgSender = _msgSender();
+        emit onTokensMintedCalled(msgSender, _orderAmount, _tokenAddress, _userData);
 
         require(_orderAmount > 0, "amount must be > 0");
 
@@ -331,14 +339,14 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address basset = _tokenAddress;
 
         address bridgeAddress = basketManager.getBridge(basset);
-        require(msg.sender == bridgeAddress, "only bridge may call");
+        require(msgSender == bridgeAddress, "only bridge may call");
 
         require(basketManager.isValidBasset(basset), "invalid basset");
         require(basketManager.checkBasketBalanceForDeposit(basset, _orderAmount), "basket out of balance");
 
         uint256 massetQuantity = basketManager.convertBassetToMassetQuantity(basset, _orderAmount);
         token.mint(recipient, massetQuantity);
-        emit Minted(msg.sender, recipient, massetQuantity, basset, _orderAmount);
+        emit Minted(msgSender, recipient, massetQuantity, basset, _orderAmount);
     }
 
     // Getters
@@ -361,7 +369,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         require(_basketManagerAddress != address(0), "address invalid");
         require(_basketManagerAddress != address(basketManager), "same address");
 
-        emit onSetBasketManager(msg.sender, address(basketManager), _basketManagerAddress);
+        emit onSetBasketManager(_msgSender(), address(basketManager), _basketManagerAddress);
         basketManager = BasketManager(_basketManagerAddress);
     }
 
@@ -369,7 +377,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         require(_tokenAddress != address(0), "address invalid");
         require(_tokenAddress != address(token), "same address");
 
-        emit onSetToken(msg.sender, address(token), _tokenAddress);
+        emit onSetToken(_msgSender(), address(token), _tokenAddress);
         token = Token(_tokenAddress);
     }
 
@@ -377,7 +385,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         require(_newOwner != address(0), "address invalid");
         require(_newOwner != token.owner(), "same address");
 
-        emit onSetTokenOwner(msg.sender, token.owner(), _newOwner);
+        emit onSetTokenOwner(_msgSender(), token.owner(), _newOwner);
         token.transferOwnership(_newOwner);
     }
 
@@ -400,6 +408,13 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
 		selectors[0] = this.redeemToBridgeWithApproval.selector;
 		return selectors;
 	}
+
+    /**
+     * @dev Sets the global implementation of _msgSender() to the BaseRelayRecipient one.
+     */
+    function _msgSender() internal view returns (address payable ret) {
+        return BaseRelayRecipient._msgSender();
+    }
 
     // Temporary migration code
 
