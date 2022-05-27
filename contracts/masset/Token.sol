@@ -112,7 +112,7 @@ contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable, BaseR
 		bytes memory _data
 	) public {
 		approve(_spender, _amount);
-		IApproveAndCall(_spender).receiveApproval(msg.sender, _amount, address(this), _data);
+		IApproveAndCall(_spender).receiveApproval(_msgSender(), _amount, address(this), _data);
 	}
 
         /**
