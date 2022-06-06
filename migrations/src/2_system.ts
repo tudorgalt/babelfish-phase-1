@@ -52,6 +52,12 @@ export default async (
         d_Token.initialize("BTCs", "BTCs", 18, forwarderAddress),
     );
 
+    const paymasterAddress = await d_Token.paymaster();
+    if (paymasterAddress === "0x0000000000000000000000000000000000000000") {
+        await d_Token.launchPaymasterUpdate(ADDRESSES.paymaster);
+        await d_Token.executePaymasterUpdate();
+    }
+
     /*
     const d_TokenProxy = await state.conditionalDeploy(c_TokenProxy, 'TokenProxy',
         () => c_TokenProxy.new());

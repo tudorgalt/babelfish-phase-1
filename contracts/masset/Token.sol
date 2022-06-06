@@ -3,6 +3,7 @@ pragma solidity 0.5.16;
 import "../openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/access/Roles.sol";
 import "../helpers/InitializableOwnable.sol";
 import "../helpers/InitializableERC20Detailed.sol";
 import "./BaseRelayRecipient.sol";
@@ -10,7 +11,8 @@ import "./IApproveAndCall.sol";
 
 contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable, BaseRelayRecipient {
     using Address for address;
-
+    using Roles for Roles.Role;
+    
     /**
      * @param newPaymaster Address of the paymaster that will replace the old one.
      * @param endGracePeriod Timestamp from when the update will be able to be executed.
@@ -23,14 +25,23 @@ contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable, BaseR
     // Address of the paymaster which will be able to bypass the allowance check
     // for transferFrom
     address public paymaster;
+    Roles.Role private updaters;
     // Struct containing the infos about the update await to be executed
     PaymasterUpdate public paymasterUpdate;
     // Track account which disallowed allowance check bypass for paymaster
     mapping(address => bool) public paymasterRevoked;
 
+    event UpdaterAdded(address indexed account);
+    event UpdaterRemoved(address indexed account);
     event PaymasterUpdateLaunched(address indexed newPaymaster, uint256 endGracePeriod);
     event PaymasterUpdateExecuted(address indexed newPaymaster);
+    event PaymasterUpdateCancelled();
     event PaymasterRevoked(address indexed account, bool revoked);
+
+    modifier onlyUpdater() {
+        require(isUpdater(_msgSender()), "UpdaterRole: caller does not have the Updater role");
+        _;
+    }
 
     /**
      * @notice initialize called on deployment, initiates the contract.
@@ -44,6 +55,29 @@ contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable, BaseR
         InitializableERC20Detailed.initialize(_name, _symbol, _decimals);
         InitializableOwnable._initialize();
         _trustedForwarder = _forwarder;
+        _addUpdater(_msgSender());
+    }
+
+    function isUpdater(address account) public view returns (bool) {
+        return updaters.has(account);
+    }
+
+    function addUpdater(address account) public onlyUpdater {
+        _addUpdater(account);
+    }
+
+    function renounceUpdater() public {
+        _removeUpdater(_msgSender());
+    }
+
+    function _addUpdater(address account) internal {
+        updaters.add(account);
+        emit UpdaterAdded(account);
+    }
+
+    function _removeUpdater(address account) internal {
+        updaters.remove(account);
+        emit UpdaterRemoved(account);
     }
 
     /**
@@ -51,14 +85,25 @@ contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable, BaseR
      * @dev Only executable by owner.
      * @param newPaymaster Address of the paymaster that will replace the old one.
      */
-    function launchPaymasterUpdate(address newPaymaster) external onlyOwner {
+    function launchPaymasterUpdate(address newPaymaster) external onlyUpdater {
         require(paymasterUpdate.newPaymaster == address(0), "current update has to be executed");
         require(newPaymaster.isContract(), "address provided is not a contract");
 
-        uint256 endGracePeriod = block.timestamp + 1 weeks;
+        uint256 endGracePeriod;
+        if (paymaster == address(0)) {
+            endGracePeriod = 0;
+        } else {
+            endGracePeriod = block.timestamp + 1 weeks;
+        }
+            
         paymasterUpdate = PaymasterUpdate(newPaymaster, endGracePeriod);
 
         emit PaymasterUpdateLaunched(newPaymaster, endGracePeriod);
+    }
+
+    function cancelPaymasterUpdate() external onlyUpdater {
+        delete paymasterUpdate;
+        emit PaymasterUpdateCancelled();
     }
 
     /**
@@ -66,7 +111,7 @@ contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable, BaseR
      * the paymaster address.
      * @dev Only executable by owner.
      */
-    function executePaymasterUpdate() external onlyOwner {
+    function executePaymasterUpdate() external onlyUpdater {
         require(paymasterUpdate.newPaymaster != address(0), "update already executed");
         require(
             paymasterUpdate.endGracePeriod <= block.timestamp,
