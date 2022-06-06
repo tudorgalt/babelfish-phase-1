@@ -24,6 +24,7 @@ export default {
             "0x2b2bcad081fa773dc655361d1bb30577caa556f8",
             "0x2b2bcad081fa773dc655361d1bb30577caa556f8",
         ],
+        paymaster: "",
         factors: [1, 1, 1, 1, 1, 1, 1],
     },
     rsk: {
@@ -57,6 +58,7 @@ export default {
             // non bridge
             "0x0000000000000000000000000000000000000000",
         ],
+        paymaster: "",
         factors: [1, 1, 1, 1, 1, 1, 1, 1],
         multisig: "0x37a706259f5201c03f6cb556a960f30f86842d01",
     },
@@ -65,6 +67,7 @@ export default {
             "0xc064a7d5741dfDdAe7C6792972a5337845e180E3", // bogus
         ],
         bridges: ["0x0000000000000000000000000000000000000000"],
+        paymaster: "",
         factors: [1],
     },
     btestnet: {
@@ -76,7 +79,7 @@ export default {
             // RSK -> BSC
             "0x862e8aff917319594cc7faaae5350d21196c086f",
         ],
-        paymaster: "0x69E3cC9f027f61bDf5c965C735EBA6d35Ebcc826",
+        paymaster: "",
         factors: [1],
     },
     bmainnet: {
@@ -88,6 +91,7 @@ export default {
             // RSK -> BSC
             "0xdfc7127593c8af1a17146893f10e08528f4c2aa7",
         ],
+        paymaster: "",
         factors: [1],
         multisig: "0xec3fabc3517e64e07669dd1d2d673f466f93a328",
     },

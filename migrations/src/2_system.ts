@@ -6,6 +6,7 @@
 
 import state from "../state";
 import ADDRESSES from "../addresses";
+import { ZERO_ADDRESS } from "@utils/constants";
 
 class BassetIntegrationDetails {
     bAssets: Array<string>;
@@ -52,9 +53,13 @@ export default async (
         d_Token.initialize("BTCs", "BTCs", 18, forwarderAddress),
     );
 
+    console.log(3);
+
     const paymasterAddress = await d_Token.paymaster();
-    if (paymasterAddress === "0x0000000000000000000000000000000000000000") {
-        await d_Token.launchPaymasterUpdate(ADDRESSES.paymaster);
+    if (paymasterAddress !== ZERO_ADDRESS) console.log("Paymaster already set");
+    else if (!addresses.paymaster) console.log("No paymaster address provided in config");
+    else {
+        await d_Token.launchPaymasterUpdate(addresses.paymaster);
         await d_Token.executePaymasterUpdate();
     }
 
@@ -72,8 +77,6 @@ export default async (
         );
     });
     */
-
-    console.log(3);
 
     console.log(4);
 
