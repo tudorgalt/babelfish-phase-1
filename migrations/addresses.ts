@@ -79,7 +79,7 @@ export default {
             // RSK -> BSC
             "0x862e8aff917319594cc7faaae5350d21196c086f",
         ],
-        paymaster: "",
+        paymaster: "0xD76464394C9792781D1ed33bD73Fe1ff9D13c554",
         factors: [1],
     },
     bmainnet: {
