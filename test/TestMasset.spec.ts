@@ -529,7 +529,6 @@ contract("Masset", async (accounts) => {
     describe("_msgSender", async () => {
         let masset;
         let basketManagerObj, token;
-        let mockTokenDummy;
         let data: string;
 
         beforeEach(async () => {

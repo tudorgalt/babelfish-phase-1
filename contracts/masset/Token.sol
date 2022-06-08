@@ -58,23 +58,42 @@ contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable, BaseR
         _addUpdater(_msgSender());
     }
 
+    /**
+     * @notice Check if an address has the updater role.
+     * @param account Address to check.
+     */
     function isUpdater(address account) public view returns (bool) {
         return updaters.has(account);
     }
 
+    /**
+     * @notice Gives the updater role to an address.
+     * @param account Address to update.
+     */
     function addUpdater(address account) public onlyUpdater {
         _addUpdater(account);
     }
 
+    /**
+     * @notice Remove updater role to the caller.
+     */
     function renounceUpdater() public {
         _removeUpdater(_msgSender());
     }
 
+    /**
+     * @notice Internal function to assign updater role to an address.
+     * @param account Address to update.
+     */
     function _addUpdater(address account) internal {
         updaters.add(account);
         emit UpdaterAdded(account);
     }
 
+    /**
+     * @notice Internal function to remove updater role to an address.
+     * @param account Address to update.
+     */
     function _removeUpdater(address account) internal {
         updaters.remove(account);
         emit UpdaterRemoved(account);
@@ -82,7 +101,8 @@ contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable, BaseR
 
     /**
      * @notice Create a timelocked update that needs 1 week to be executed.
-     * @dev Only executable by owner.
+     * In case of no paymaster set, the update can be executed instantly.
+     * @dev Only executable by updater.
      * @param newPaymaster Address of the paymaster that will replace the old one.
      */
     function launchPaymasterUpdate(address newPaymaster) external onlyUpdater {
@@ -101,6 +121,10 @@ contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable, BaseR
         emit PaymasterUpdateLaunched(newPaymaster, endGracePeriod);
     }
 
+    /**
+     * @notice Deletes the currently awaiting update.
+     * @dev Only executable by updater.
+     */
     function cancelPaymasterUpdate() external onlyUpdater {
         delete paymasterUpdate;
         emit PaymasterUpdateCancelled();
@@ -109,7 +133,7 @@ contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable, BaseR
     /**
      * @notice Execute the current update if grace period has finished and replaces
      * the paymaster address.
-     * @dev Only executable by owner.
+     * @dev Only executable by updater.
      */
     function executePaymasterUpdate() external onlyUpdater {
         require(paymasterUpdate.newPaymaster != address(0), "update already executed");
@@ -160,7 +184,7 @@ contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable, BaseR
 		IApproveAndCall(_spender).receiveApproval(_msgSender(), _amount, address(this), _data);
 	}
 
-        /**
+    /**
      * @dev Overrides the original transferFrom function to implement the bypass logic for paymaster
      */
     function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
@@ -186,6 +210,7 @@ contract Token is ERC20, InitializableERC20Detailed, InitializableOwnable, BaseR
      * @dev Sets the global implementation of _msgSender() to the BaseRelayRecipient one.
      */
     function _msgSender() internal view returns (address payable ret) {
+        // Forces to use _msgSender() from BaseRelayRecipient instead of Context
         return BaseRelayRecipient._msgSender();
     }
 }

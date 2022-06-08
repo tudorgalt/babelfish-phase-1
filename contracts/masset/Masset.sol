@@ -413,6 +413,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
      * @dev Sets the global implementation of _msgSender() to the BaseRelayRecipient one.
      */
     function _msgSender() internal view returns (address payable ret) {
+        // Forces to use _msgSender() from BaseRelayRecipient instead of Context
         return BaseRelayRecipient._msgSender();
     }
 
