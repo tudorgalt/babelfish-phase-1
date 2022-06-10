@@ -1,5 +1,6 @@
 import HDWalletProvider from '@truffle/hdwallet-provider';
 import state from '../../migrations/state';
+import BN from "bn.js";
 
 export default async function mint(truffle): Promise<any> {
 
@@ -11,6 +12,15 @@ export default async function mint(truffle): Promise<any> {
     //return;
 
     state.setNetwork('rskTestnet');
+
+/*
+    const MockToken = artifacts.require("MockERC20");
+    const mockToken = await state.conditionalDeploy(MockToken, 'MockToken', () => MockToken.new('MOCK',
+        'MOCK', 18,
+        '0x2bD2201BFE156A71EB0D02837172ffc237218505', new BN('100000000000000000000000000')));
+    console.log('MockToken: ', mockToken.address);
+    return;
+*/
 
     const Masset = artifacts.require("Masset");
     const fake = await state.getDeployed(Masset, 'MassetProxy');
@@ -28,8 +38,8 @@ export default async function mint(truffle): Promise<any> {
     console.log('upgrade...');
     await massetProxy.upgradeTo(masset.address, { from: admin });
 
-    console.log('migrateV22ToV24...');
-    await fake.migrateV22ToV24();
+    console.log('migrateToV29...');
+    await fake.migrateToV29();
 
     console.log('version after: ', await fake.getVersion());
 }

@@ -13,7 +13,10 @@
   "BasketManager": {
     "address": "0x3c6625beB6b077B40B6A3BB524F3463ab0b933b2"
   },
+  "MockToken": {
+    "address": "0x0188F7676eC4956aDbEa415D38ce7Af45d4721bd"
+  },
   "Masset": {
-    "address": "0x528f156AfB0E501a0243eC6995d8baD0F27bDC2d"
+    "address": "0x9345e6fa97Eea459267aA4Cf3320b92211909CD0"
   }
 }

@@ -58,7 +58,9 @@ module.exports = {
     rskTestnet: {
       provider() {
         return new HDWalletProvider('chimney toss kit now firm true scan laundry hazard buffalo tiny west',
-            'https://testnet.sovryn.app/rpc', 0, 31)
+            //'https://testnet.sovryn.app/rpc',
+            'https://public-node.testnet.rsk.co',
+            0, 31)
       },
       network_id: 31,
       gasPrice: 71680400, // 71GWei,
