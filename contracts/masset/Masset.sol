@@ -351,7 +351,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     int256[] factors;
     address[] bridges;
 
-    function migrateToV29() public {
+    function migrateToV2_10() public {
         require(
             keccak256(bytes(version)) == keccak256(bytes("2.2")) ||
             keccak256(bytes(version)) == keccak256(bytes("2.3")) ||
@@ -359,7 +359,8 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
             keccak256(bytes(version)) == keccak256(bytes("2.5")) ||
             keccak256(bytes(version)) == keccak256(bytes("2.6")) ||
             keccak256(bytes(version)) == keccak256(bytes("2.7")) ||
-            keccak256(bytes(version)) == keccak256(bytes("2.8")), "wrong version");
+            keccak256(bytes(version)) == keccak256(bytes("2.8")) ||
+            keccak256(bytes(version)) == keccak256(bytes("2.9")), "wrong version");
 
         uint256 chainId;
         assembly {
@@ -370,7 +371,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         factors.length = 0;
         bridges.length = 0;
 
-        version = "2.9";
+        version = "2.10";
 
         // testnet
         if (chainId == 31) {
@@ -477,7 +478,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
             factors.push(int256(1));
             bridges.push(0x0000000000000000000000000000000000000000);
 
-            assets.push(0xB450ff06d950eFA9A9c0aD63790C51971C1BE885); // BDUS
+            assets.push(0xB450ff06d950eFA9A9c0aD63790C51971C1BE885); // ZUSD
             factors.push(int256(1));
             bridges.push(0x0000000000000000000000000000000000000000);
 

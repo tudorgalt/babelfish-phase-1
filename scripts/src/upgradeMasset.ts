@@ -11,7 +11,7 @@ export default async function mint(truffle): Promise<any> {
     console.log(provider.getAddress(0), provider.getAddress(1));
     //return;
 
-    state.setNetwork('rskTestnet');
+    state.setNetwork('rsk');
 
 /*
     const MockToken = artifacts.require("MockERC20");
@@ -31,15 +31,16 @@ export default async function mint(truffle): Promise<any> {
     const MassetProxy = artifacts.require("MassetProxy");
     const massetProxy = await state.getDeployed(MassetProxy, 'MassetProxy');
 
-    // console.log(massetProxy.contract.methods);
-    // const abi = massetProxy.contract.methods['upgradeTo(address)'](masset.address).encodeABI();
-    // console.log(abi);
+    //console.log(massetProxy.contract.methods);
+    const abi = massetProxy.contract.methods['upgradeTo(address)'](masset.address).encodeABI();
+    console.log(abi);
+    return;
 
     console.log('upgrade...');
     await massetProxy.upgradeTo(masset.address, { from: admin });
 
-    console.log('migrateToV29...');
-    await fake.migrateToV29();
+    console.log('migrateToV2_10...');
+    await fake.migrateToV2_10();
 
     console.log('version after: ', await fake.getVersion());
 }

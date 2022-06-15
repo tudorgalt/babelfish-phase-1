@@ -70,7 +70,7 @@ module.exports = {
     rsk: {
       provider() {
         return new HDWalletProvider('receive nasty...',
-            'https://mainnet.sovryn.app/rpc', 0, 31)
+            'https://public-node.rsk.co', 0, 31)
       },
       network_id: 30,
       gasPrice: 100000000,
