@@ -39,6 +39,9 @@ export default async (
         case "btestnet":
             forwarderAddress = "0xeB230bF62267E94e657b5cbE74bdcea78EB3a5AB";
             break;
+        case "bmainnet":
+            forwarderAddress = "0xeB230bF62267E94e657b5cbE74bdcea78EB3a5AB";
+            break;
         default:
             console.log("Forwarder address not set for network");
     }
