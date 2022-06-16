@@ -31,7 +31,7 @@ export default async function mint(truffle): Promise<any> {
     const MassetProxy = artifacts.require("MassetProxy");
     const massetProxy = await state.getDeployed(MassetProxy, 'MassetProxy');
 
-    //console.log(massetProxy.contract.methods);
+    console.log('New masset: ' + masset.address);
     const abi = massetProxy.contract.methods['upgradeTo(address)'](masset.address).encodeABI();
     console.log(abi);
     return;

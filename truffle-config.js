@@ -69,7 +69,7 @@ module.exports = {
     },
     rsk: {
       provider() {
-        return new HDWalletProvider('receive nasty...',
+        return new HDWalletProvider('receive nasty',
             'https://public-node.rsk.co', 0, 31)
       },
       network_id: 30,

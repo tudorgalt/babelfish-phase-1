@@ -478,7 +478,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
             factors.push(int256(1));
             bridges.push(0x0000000000000000000000000000000000000000);
 
-            assets.push(0xB450ff06d950eFA9A9c0aD63790C51971C1BE885); // ZUSD
+            assets.push(0xdB107FA69E33f05180a4C2cE9c2E7CB481645C2d); // ZUSD
             factors.push(int256(1));
             bridges.push(0x0000000000000000000000000000000000000000);
 
