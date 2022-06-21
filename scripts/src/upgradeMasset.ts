@@ -26,11 +26,14 @@ export default async function mint(truffle): Promise<any> {
     const fake = await state.getDeployed(Masset, 'MassetProxy');
     console.log('version before: ', await fake.getVersion());
 
+/*
     const masset = await state.conditionalDeploy(Masset, 'Masset', () => Masset.new());
+*/
 
     const MassetProxy = artifacts.require("MassetProxy");
     const massetProxy = await state.getDeployed(MassetProxy, 'MassetProxy');
 
+/*
     console.log('New masset: ' + masset.address);
     const abi = massetProxy.contract.methods['upgradeTo(address)'](masset.address).encodeABI();
     console.log(abi);
@@ -38,7 +41,7 @@ export default async function mint(truffle): Promise<any> {
 
     console.log('upgrade...');
     await massetProxy.upgradeTo(masset.address, { from: admin });
-
+*/
     console.log('migrateToV2_10...');
     await fake.migrateToV2_10();
 
