@@ -358,9 +358,9 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     int256[] factors;
     address[] bridges;
 
-    function migrateV22ToV23() public {
+    function migrateV0ToV01() public {
         require(
-            keccak256(bytes(version)) == keccak256(bytes("2.2")), "wrong version");
+            keccak256(bytes(version)) == keccak256(bytes("0")), "wrong version");
 
         uint256 chainId;
         assembly {
@@ -371,101 +371,38 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         factors.length = 0;
         bridges.length = 0;
 
-        version = "2.3";
+        version = "0.1";
 
         // testnet
-        if (chainId == 31) {
+        if (chainId == 97) {
 
             // ETH->RSK
 
-            assets.push(0xcB92c8d49Ec01b92f2a766C7c3C9C501C45271e0); // DAIes
-            factors.push(int256(1));
-            bridges.push(0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156);
-
-            assets.push(0xCc8EEc21aE75f1A2DE4aC7b32a7de888A45cF859); // USDCes
-            factors.push(int256(1));
-            bridges.push(0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156);
-
-            assets.push(0x10C5A7930fc417E728574e334b1488b7895C4b81); // USDTes
-            factors.push(int256(1));
-            bridges.push(0xC0E7A7FfF4aBa5e7286D5d67dD016B719DCc9156);
 
             // BSC->RSK
 
-            assets.push(0x407Ff7D4760d3a81b4740D268eb04490C7dFE7f2); // bsDAI
-            factors.push(int256(1));
-            bridges.push(0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8);
-
-            assets.push(0x3e2cf87e7fF4048A57F9Cdde9368C9f4bfb43aDf); // bsUSDC
-            factors.push(int256(1));
-            bridges.push(0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8);
-
-            assets.push(0x43bC3f0FfFf6c9BBf3C2EAfe464C314d43f561De); // bsUSDT
-            factors.push(int256(1));
-            bridges.push(0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8);
-
-            assets.push(0x8c9abb6c9D8D15ddB7ada2e50086e1050aB32688); // bsBUSD
-            factors.push(int256(1));
-            bridges.push(0x2b2BCAD081fA773DC655361d1Bb30577Caa556F8);
-
             // non bridge
-
-            assets.push(0xC3De9F38581f83e281f260d0DdbaAc0e102ff9F8); // rDOC
-            factors.push(int256(1));
-            bridges.push(0x0000000000000000000000000000000000000000);
-
-            assets.push(0xCB46c0ddc60D18eFEB0E586C17Af6ea36452Dae0); // DOC
-            factors.push(int256(1));
-            bridges.push(0x0000000000000000000000000000000000000000);
+            
 
             basketManager = new BasketManager(assets, factors, bridges);
         }
 
         // mainnet
-        if (chainId == 30) {
+        if (chainId == 56) {
 
             // ETH->RSK
-            assets.push(0x1a37c482465e78E6dabE1eC77b9A24d4236D2A11); // DAIes
-            factors.push(int256(1));
-            bridges.push(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581);
-
-            assets.push(0x8D1F7cBC6391d95E2774380E80a666fEBf655d6B); // USDCes
-            factors.push(int256(1));
-            bridges.push(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581);
-
-            assets.push(0xD9665Ea8F5Ff70CF97e1b1CD1B4Cd0317B0976e8); // USDTes
-            factors.push(int256(1));
-            bridges.push(0x1CcAd820B6d031B41C54f1F3dA11c0d48b399581);
 
             // BSC->RSK
-            assets.push(0x6A42FF12215a90F50866a5CE43a9c9c870116E76); // DAIbs
+            // taken from https://bscscan.com/address/0x152E8D16f7fF6F9BDA5d989CC2daA514f427a9BB#code
+            assets.push(0x68e75416a99f61a8ef3186b3bee41dbf2a3fd4e8); // brBTC
             factors.push(int256(1));
-            bridges.push(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350);
-
-            assets.push(0x91eDceE9567cD5612C9DeDeAAe24D5e574820Af1); // USDCbs
-            factors.push(int256(1));
-            bridges.push(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350);
-
-            assets.push(0xFf4299bcA0313c20A61dC5Ed597739743bEf3f6D); // USDTbs
-            factors.push(int256(1));
-            bridges.push(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350);
-
-            assets.push(0x61e9604E31a736129D7f5c58964C75935b2D80d6); // BUSDbs
-            factors.push(int256(1));
-            bridges.push(0x971B97C8cc82E7D27Bc467C2DC3F219c6eE2e350);
+            bridges.push(0xdfc7127593c8af1a17146893f10e08528f4c2aa7);
 
             // non bridge
-            assets.push(0xef213441A85dF4d7ACbDaE0Cf78004e1E486bB96); // RUSDT
+            assets.push(0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c); // BTCB - should  this be nonbridgeable?
             factors.push(int256(1));
             bridges.push(0x0000000000000000000000000000000000000000);
-
-            assets.push(0x2d919F19D4892381D58edeBeca66D5642Cef1a1f); // rDOC
-            factors.push(int256(1));
-            bridges.push(0x0000000000000000000000000000000000000000);
-
-            assets.push(0xe700691dA7b9851F2F35f8b8182c69c53CcaD9Db); // DOC
-            factors.push(int256(1));
-            bridges.push(0x0000000000000000000000000000000000000000);
+            
 
             basketManager = new BasketManager(assets, factors, bridges);
         }
