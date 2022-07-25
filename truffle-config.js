@@ -5,10 +5,15 @@ require('tsconfig-paths/register')
 const HDWalletProvider = require('@truffle/hdwallet-provider')
 const fs = require('fs');
 
-const secrets = JSON.parse(
-  fs.readFileSync("./../../../deploy_bridge/bridgeKeyMain/.secrets").toString().trim()
-);
-let MNEMONIC = fs.existsSync('../../../bridgeKey/mnemonic.key') ? fs.readFileSync('../../../bridgeKey/mnemonic.key', { encoding: 'utf8' }) : "";// Your metamask's recovery words
+// const secrets = JSON.parse(
+//   fs.readFileSync("./../../../deploy_bridge/bridgeKeyMain/.secrets").toString().trim()
+// );
+// let MNEMONIC = fs.existsSync('../../../bridgeKey/mnemonic.key') ? fs.readFileSync('../../../bridgeKey/mnemonic.key', { encoding: 'utf8' }) : "";// Your metamask's recovery words
+
+let PK = process.env.PK;
+if(!PK) {
+  throw new Error('PK is not prezent');
+}
 
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
@@ -77,7 +82,9 @@ module.exports = {
       provider() {
        // return new HDWalletProvider(MNEMONIC, "https://data-seed-prebsc-2-s3.binance.org:8545/", 0, 97)
         //return new HDWalletProvider(MNEMONIC, "https://data-seed-prebsc-1-s1.binance.org:8545/", 0, 97)
-        return new HDWalletProvider(MNEMONIC, "https://data-seed-prebsc-2-s2.binance.org:8545/", 0, 97)
+        // return new HDWalletProvider(MNEMONIC, "https://data-seed-prebsc-2-s2.binance.org:8545/", 0, 97)
+        let w = new HDWalletProvider('0x' + PK, "https://data-seed-prebsc-2-s2.binance.org:8545/", 0, 1)
+        return w;
       },
       //
       network_id: 97,

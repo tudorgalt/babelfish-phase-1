@@ -73,14 +73,15 @@ export default {
             bassets: [
                 // RSK->BSC
                 '0xc41d41cb7a31c80662ac2d8ab7a7e5f5841eebc3', // bRBTC
+                '0x6ce8da28e2f864420840cf74474eff5fd80e65b8', // BTCB-testnet
 
             ],
             bridges: [
                 // RSK -> BSC
                 '0x862e8aff917319594cc7faaae5350d21196c086f',
-
+                '0x0000000000000000000000000000000000000000',
             ],
-            factors: [1]
+            factors: [1, 1]
     },
     bmainnet: {
             bassets: [
